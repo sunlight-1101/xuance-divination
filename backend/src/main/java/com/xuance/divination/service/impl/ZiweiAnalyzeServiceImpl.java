@@ -18,6 +18,7 @@ import com.xuance.divination.service.ZiweiAnalyzeService;
 import com.xuance.divination.vo.ZiweiAnalyzeVO;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,6 +38,7 @@ public class ZiweiAnalyzeServiceImpl implements ZiweiAnalyzeService {
     private final DivinationRecordMapper recordMapper;
     private final AiCallLogMapper aiCallLogMapper;
     private final ObjectMapper objectMapper;
+    private final AnalysisCacheSupport cacheSupport;
 
     @Value("${ai.model:mock-local}")
     private String modelName;
@@ -49,7 +51,8 @@ public class ZiweiAnalyzeServiceImpl implements ZiweiAnalyzeService {
             QuotaService quotaService,
             DivinationRecordMapper recordMapper,
             AiCallLogMapper aiCallLogMapper,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            AnalysisCacheSupport cacheSupport) {
         this.knowledgeService = knowledgeService;
         this.classicBookService = classicBookService;
         this.promptTemplateService = promptTemplateService;
@@ -58,11 +61,18 @@ public class ZiweiAnalyzeServiceImpl implements ZiweiAnalyzeService {
         this.recordMapper = recordMapper;
         this.aiCallLogMapper = aiCallLogMapper;
         this.objectMapper = objectMapper;
+        this.cacheSupport = cacheSupport;
     }
 
     @Override
     public ZiweiAnalyzeVO analyze(ZiweiAnalyzeDTO dto) {
         validate(dto);
+        String cacheKey = ziweiCacheKey(dto);
+        DivinationRecord cached = cacheSupport.findRecent(TYPE, dto.getUserId(), cacheKey);
+        if (cached != null) {
+            return cachedVO(cached);
+        }
+        dto.setCacheKey(cacheKey);
         quotaService.consumeForAnalysis(dto.getUserId(), TYPE);
         String chartSummary = summarizeChart(dto.getChartJson());
         String referenceContext = dto.getQuestion() + " " + dto.getQuestionType() + " " + chartSummary;
@@ -103,6 +113,28 @@ public class ZiweiAnalyzeServiceImpl implements ZiweiAnalyzeService {
         vo.setKnowledgeRules(rules);
         vo.setClassicReferences(classicReferences);
         return vo;
+    }
+
+    private ZiweiAnalyzeVO cachedVO(DivinationRecord record) {
+        ZiweiAnalyzeVO vo = new ZiweiAnalyzeVO();
+        vo.setRecordId(record.getId());
+        vo.setResultJson(record.getResultJson());
+        vo.setResultText(record.getResultText());
+        vo.setKnowledgeRules(Collections.emptyList());
+        vo.setClassicReferences(Collections.emptyList());
+        return vo;
+    }
+
+    private String ziweiCacheKey(ZiweiAnalyzeDTO dto) {
+        return cacheSupport.fingerprint(
+                TYPE,
+                dto.getQuestionType(),
+                dto.getQuestion(),
+                dto.getGender(),
+                dto.getBirthDate(),
+                dto.getBirthTime(),
+                dto.getBirthPlace(),
+                dto.getChartJson());
     }
 
     private void validate(ZiweiAnalyzeDTO dto) {

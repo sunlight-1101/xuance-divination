@@ -9,6 +9,7 @@ public class ZiweiAnalyzeDTO {
     private String questionType;
     private String question;
     private String chartJson;
+    private String cacheKey;
 
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
@@ -26,4 +27,6 @@ public class ZiweiAnalyzeDTO {
     public void setQuestion(String question) { this.question = question; }
     public String getChartJson() { return chartJson; }
     public void setChartJson(String chartJson) { this.chartJson = chartJson; }
+    public String getCacheKey() { return cacheKey; }
+    public void setCacheKey(String cacheKey) { this.cacheKey = cacheKey; }
 }

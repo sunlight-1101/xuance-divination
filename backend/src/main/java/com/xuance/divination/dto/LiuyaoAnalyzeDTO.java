@@ -20,6 +20,7 @@ public class LiuyaoAnalyzeDTO {
     private String mainGua;
     private String changedGua;
     private List<LiuyaoYaoDTO> yaoList;
+    private String cacheKey;
 
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
@@ -55,4 +56,6 @@ public class LiuyaoAnalyzeDTO {
     public void setChangedGua(String changedGua) { this.changedGua = changedGua; }
     public List<LiuyaoYaoDTO> getYaoList() { return yaoList; }
     public void setYaoList(List<LiuyaoYaoDTO> yaoList) { this.yaoList = yaoList; }
+    public String getCacheKey() { return cacheKey; }
+    public void setCacheKey(String cacheKey) { this.cacheKey = cacheKey; }
 }

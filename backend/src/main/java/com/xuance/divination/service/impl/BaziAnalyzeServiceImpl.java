@@ -17,6 +17,7 @@ import com.xuance.divination.service.PromptTemplateService;
 import com.xuance.divination.service.QuotaService;
 import com.xuance.divination.vo.BaziAnalyzeVO;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,7 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
     private final DivinationRecordMapper recordMapper;
     private final AiCallLogMapper aiCallLogMapper;
     private final ObjectMapper objectMapper;
+    private final AnalysisCacheSupport cacheSupport;
 
     @Value("${ai.model:mock-local}")
     private String modelName;
@@ -47,7 +49,8 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
             QuotaService quotaService,
             DivinationRecordMapper recordMapper,
             AiCallLogMapper aiCallLogMapper,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            AnalysisCacheSupport cacheSupport) {
         this.knowledgeService = knowledgeService;
         this.classicBookService = classicBookService;
         this.promptTemplateService = promptTemplateService;
@@ -56,11 +59,18 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         this.recordMapper = recordMapper;
         this.aiCallLogMapper = aiCallLogMapper;
         this.objectMapper = objectMapper;
+        this.cacheSupport = cacheSupport;
     }
 
     @Override
     public BaziAnalyzeVO analyze(BaziAnalyzeDTO dto) {
         validate(dto);
+        String cacheKey = baziCacheKey(dto);
+        DivinationRecord cached = cacheSupport.findRecent(TYPE, dto.getUserId(), cacheKey);
+        if (cached != null) {
+            return cachedVO(cached);
+        }
+        dto.setCacheKey(cacheKey);
         quotaService.consumeForAnalysis(dto.getUserId(), TYPE);
         String referenceContext = dto.getQuestion() + " " + dto.getQuestionType() + " " + dto.getBaziDetails();
         List<KnowledgeRule> rules = knowledgeService.findForAnalysis(TYPE, referenceContext);
@@ -100,6 +110,35 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         vo.setKnowledgeRules(rules);
         vo.setClassicReferences(classicReferences);
         return vo;
+    }
+
+    private BaziAnalyzeVO cachedVO(DivinationRecord record) {
+        BaziAnalyzeVO vo = new BaziAnalyzeVO();
+        vo.setRecordId(record.getId());
+        vo.setResultJson(record.getResultJson());
+        vo.setResultText(record.getResultText());
+        vo.setKnowledgeRules(Collections.emptyList());
+        vo.setClassicReferences(Collections.emptyList());
+        return vo;
+    }
+
+    private String baziCacheKey(BaziAnalyzeDTO dto) {
+        return cacheSupport.fingerprint(
+                TYPE,
+                dto.getQuestionType(),
+                dto.getQuestion(),
+                dto.getGender(),
+                dto.getBirthDate(),
+                dto.getBirthTime(),
+                dto.getBirthPlace(),
+                dto.getYearPillar(),
+                dto.getMonthPillar(),
+                dto.getDayPillar(),
+                dto.getHourPillar(),
+                dto.getDayMaster(),
+                dto.getLuckPillar(),
+                dto.getCurrentYearPillar(),
+                dto.getBaziDetails());
     }
 
     private void validate(BaziAnalyzeDTO dto) {

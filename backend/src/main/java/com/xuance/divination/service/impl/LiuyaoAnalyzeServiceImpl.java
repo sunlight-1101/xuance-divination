@@ -18,6 +18,7 @@ import com.xuance.divination.service.PromptTemplateService;
 import com.xuance.divination.service.QuotaService;
 import com.xuance.divination.vo.LiuyaoAnalyzeVO;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,7 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
     private final DivinationRecordMapper recordMapper;
     private final AiCallLogMapper aiCallLogMapper;
     private final ObjectMapper objectMapper;
+    private final AnalysisCacheSupport cacheSupport;
 
     @Value("${ai.model:mock-local}")
     private String modelName;
@@ -48,7 +50,8 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
             QuotaService quotaService,
             DivinationRecordMapper recordMapper,
             AiCallLogMapper aiCallLogMapper,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            AnalysisCacheSupport cacheSupport) {
         this.knowledgeService = knowledgeService;
         this.classicBookService = classicBookService;
         this.promptTemplateService = promptTemplateService;
@@ -57,11 +60,18 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
         this.recordMapper = recordMapper;
         this.aiCallLogMapper = aiCallLogMapper;
         this.objectMapper = objectMapper;
+        this.cacheSupport = cacheSupport;
     }
 
     @Override
     public LiuyaoAnalyzeVO analyze(LiuyaoAnalyzeDTO dto) {
         validate(dto);
+        String cacheKey = liuyaoCacheKey(dto);
+        DivinationRecord cached = cacheSupport.findRecent(TYPE, dto.getUserId(), cacheKey);
+        if (cached != null) {
+            return cachedVO(cached);
+        }
+        dto.setCacheKey(cacheKey);
         quotaService.consumeForAnalysis(dto.getUserId(), TYPE);
         String referenceContext = dto.getQuestion() + " " + dto.getMainGua() + " " + dto.getChangedGua()
                 + " " + dto.getMonthBranch() + " " + dto.getDayBranch() + " " + dto.getEmptyBranches();
@@ -103,6 +113,38 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
         vo.setKnowledgeRules(rules);
         vo.setClassicReferences(classicReferences);
         return vo;
+    }
+
+    private LiuyaoAnalyzeVO cachedVO(DivinationRecord record) {
+        LiuyaoAnalyzeVO vo = new LiuyaoAnalyzeVO();
+        vo.setRecordId(record.getId());
+        vo.setResultJson(record.getResultJson());
+        vo.setResultText(record.getResultText());
+        vo.setKnowledgeRules(Collections.emptyList());
+        vo.setClassicReferences(Collections.emptyList());
+        return vo;
+    }
+
+    private String liuyaoCacheKey(LiuyaoAnalyzeDTO dto) {
+        String yaoKey = dto.getYaoList().stream().map(this::formatYao).collect(Collectors.joining(";"));
+        return cacheSupport.fingerprint(
+                TYPE,
+                dto.getQuestion(),
+                dto.getGender(),
+                dto.getBirthDate(),
+                dto.getBirthTime(),
+                dto.getBirthPlace(),
+                dto.getBirthDayGanZhi(),
+                dto.getBirthDayMaster(),
+                dto.getTime(),
+                dto.getDayGanZhi(),
+                dto.getDayStem(),
+                dto.getMonthBranch(),
+                dto.getDayBranch(),
+                dto.getEmptyBranches(),
+                dto.getMainGua(),
+                dto.getChangedGua(),
+                yaoKey);
     }
 
     private void validate(LiuyaoAnalyzeDTO dto) {

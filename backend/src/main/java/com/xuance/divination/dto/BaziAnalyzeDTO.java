@@ -16,6 +16,7 @@ public class BaziAnalyzeDTO {
     private String baziDetails;
     private String questionType;
     private String question;
+    private String cacheKey;
 
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
@@ -47,4 +48,6 @@ public class BaziAnalyzeDTO {
     public void setQuestionType(String questionType) { this.questionType = questionType; }
     public String getQuestion() { return question; }
     public void setQuestion(String question) { this.question = question; }
+    public String getCacheKey() { return cacheKey; }
+    public void setCacheKey(String cacheKey) { this.cacheKey = cacheKey; }
 }
