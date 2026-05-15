@@ -24,7 +24,7 @@
       <el-button @click="load">搜索</el-button>
     </div>
 
-    <div class="panel">
+    <div class="panel desktop-records">
       <el-table :data="records" border class="record-table">
         <el-table-column prop="type" label="类型" width="100" />
         <el-table-column prop="question" label="问题" min-width="260" />
@@ -37,12 +37,35 @@
         </el-table-column>
       </el-table>
     </div>
+
+    <div class="mobile-records">
+      <el-empty v-if="!records.length" description="暂无历史记录" />
+      <div v-for="row in records" :key="row.id" class="record-card">
+        <div class="record-card-head">
+          <el-tag size="small">{{ typeLabel(row.type) }}</el-tag>
+          <span>{{ formatTime(row.createTime) }}</span>
+        </div>
+        <strong>{{ row.question || '未填写问题' }}</strong>
+        <div class="record-card-actions">
+          <el-button type="primary" plain @click="show(row)">查看报告</el-button>
+          <el-button type="danger" plain @click="remove(row)">删除</el-button>
+        </div>
+      </div>
+    </div>
     </template>
 
-    <el-dialog v-model="detailVisible" title="记录详情" width="800px" class="record-dialog">
+    <el-dialog
+      v-model="detailVisible"
+      title="记录详情"
+      width="860px"
+      class="record-dialog"
+      :fullscreen="isMobile"
+      append-to-body
+    >
+      <div class="record-detail">
       <div class="detail-actions">
-        <el-button type="primary" :disabled="!parsedResult" @click="copyCurrentReport">复制报告</el-button>
-        <el-button :disabled="!parsedResult" @click="exportCurrentReport">导出 Markdown</el-button>
+        <el-button type="primary" :disabled="!parsedResult" @click="copyCurrentReport">复制</el-button>
+        <el-button :disabled="!parsedResult" @click="exportCurrentReport">导出</el-button>
       </div>
       <div class="record-summary">
         <div class="summary-head">
@@ -64,18 +87,18 @@
       <h3>分析结果</h3>
       <ResultReport :report="parsedResult" />
       <KnowledgeReferences :rules="current.knowledgeRules || []" />
+      </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import KnowledgeReferences from '../../components/KnowledgeReferences.vue'
 import ResultReport from '../../components/ResultReport.vue'
 import { deleteRecord, getRecord, listRecords } from '../../api/record'
 import { useUserStore } from '../../stores/user'
-import { computed } from 'vue'
 import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
 
 const userStore = useUserStore()
@@ -83,7 +106,9 @@ const records = ref([])
 const detailVisible = ref(false)
 const current = ref({})
 const query = reactive({ userId: userStore.userId, type: '', keyword: '' })
+const windowWidth = ref(typeof window === 'undefined' ? 1024 : window.innerWidth)
 const isGuest = computed(() => !userStore.userId)
+const isMobile = computed(() => windowWidth.value <= 700)
 const parsedResult = computed(() => {
   try {
     return current.value.resultJson ? JSON.parse(current.value.resultJson) : null
@@ -149,7 +174,12 @@ function exportCurrentReport() {
 }
 
 function typeLabel(type) {
-  return { LIUYAO: '六爻', BAZI: '八字', QIMEN: '奇门' }[type] || type || '记录'
+  return { LIUYAO: '六爻', BAZI: '八字', ZIWEI: '紫微', QIMEN: '奇门' }[type] || type || '记录'
+}
+
+function formatTime(value) {
+  if (!value) return '-'
+  return String(value).replace('T', ' ').slice(0, 16)
 }
 
 function parseJson(value) {
@@ -176,7 +206,18 @@ function pretty(value) {
   }
 }
 
-onMounted(load)
+function handleResize() {
+  windowWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  load()
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <style scoped>
@@ -189,6 +230,17 @@ pre {
   border-radius: 8px;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.mobile-records {
+  display: none;
+}
+
+.record-detail {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .detail-actions {
@@ -257,6 +309,54 @@ pre {
 }
 
 @media (max-width: 700px) {
+  .desktop-records {
+    display: none;
+  }
+
+  .mobile-records {
+    display: grid;
+    gap: 10px;
+  }
+
+  .record-card {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  }
+
+  .record-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: #667085;
+    font-size: 12px;
+  }
+
+  .record-card strong {
+    display: block;
+    color: #101828;
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+
+  .record-card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .record-card-actions .el-button {
+    width: 100%;
+    margin-left: 0;
+  }
+
   .toolbar {
     align-items: stretch;
     flex-direction: column;
@@ -269,11 +369,19 @@ pre {
   }
 
   .detail-actions {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     justify-content: stretch;
+    margin: -8px -4px 4px;
+    padding: 8px 4px;
+    background: #fff;
+    border-bottom: 1px solid #eef0f3;
   }
 
   .detail-actions .el-button {
     flex: 1;
+    margin-left: 0;
   }
 
   .summary-head {
@@ -283,6 +391,46 @@ pre {
 
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .record-summary {
+    padding: 12px;
+  }
+
+  .raw-collapse {
+    display: none;
+  }
+
+  pre {
+    max-height: 220px;
+    font-size: 12px;
+  }
+}
+</style>
+
+<style>
+@media (max-width: 700px) {
+  .record-dialog.el-dialog {
+    --el-dialog-padding-primary: 12px;
+    max-width: 100vw;
+    overflow: hidden;
+  }
+
+  .record-dialog .el-dialog__header {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    margin: 0;
+    padding: 12px 14px;
+    background: #fff;
+    border-bottom: 1px solid #eef0f3;
+  }
+
+  .record-dialog .el-dialog__body {
+    height: calc(100vh - 52px);
+    padding: 10px 10px 88px;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 </style>
