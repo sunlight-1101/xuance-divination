@@ -1,0 +1,31 @@
+backend/target/
+frontend/node_modules/
+frontend/dist/
+.idea/
+.vscode/
+*.log
+*.iml
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+
+# Local deployment / platform state
+.vercel/
+
+# Runtime artifacts and temporary previews
+pet-runs/
+tmp_pdf_preview/
+*.zip
+*.tar
+*.tar.gz
+
+# Secrets and private keys
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+id_rsa
+id_ed25519
+

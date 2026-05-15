@@ -1,0 +1,1163 @@
+<template>
+  <div class="page">
+    <div class="page-header">
+      <h1 class="page-title">八字分析</h1>
+      <p class="page-desc">输入出生日期、时间和问题，系统会先自动排出四柱，再结合知识库生成分析。</p>
+    </div>
+
+    <el-row :gutter="16" class="mobile-stack">
+      <el-col :xs="24" :lg="14">
+        <div class="panel">
+          <h2 class="section-title">命盘信息</h2>
+          <el-form :model="form" label-position="top">
+            <el-row :gutter="12">
+              <el-col :xs="12" :sm="8">
+                <el-form-item label="性别">
+                  <el-select v-model="form.gender" placeholder="选择" @change="refreshLuckPillar">
+                    <el-option label="男" value="男" />
+                    <el-option label="女" value="女" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8"><el-form-item label="出生日期"><el-input v-model="form.birthDate" placeholder="YYYY-MM-DD" @input="fillPillarsFromBirth" @change="fillPillarsFromBirth" /></el-form-item></el-col>
+              <el-col :xs="12" :sm="8"><el-form-item label="出生时间"><el-input v-model="form.birthTime" placeholder="08:30 / 辰时 / 8点" @input="fillPillarsFromBirth" @change="fillPillarsFromBirth" /></el-form-item></el-col>
+              <el-col :xs="12" :sm="8">
+                <el-form-item label="出生省份">
+                  <el-select
+                    v-model="form.birthProvince"
+                    filterable
+                    placeholder="选择省份"
+                    @change="onProvinceChange"
+                  >
+                    <el-option
+                      v-for="province in provinceOptions"
+                      :key="province.name"
+                      :label="province.name"
+                      :value="province.name"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8">
+                <el-form-item label="出生城市">
+                  <el-select
+                    v-model="form.birthPlace"
+                    filterable
+                    placeholder="选择城市"
+                    :disabled="!form.birthProvince"
+                    @change="onBirthPlaceChange"
+                  >
+                    <el-option
+                      v-for="city in cityOptions"
+                      :key="city.name"
+                      :label="city.name"
+                      :value="city.name"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8"><el-form-item label="真太阳时"><el-switch v-model="form.useTrueSolarTime" @change="fillPillarsFromBirth" /></el-form-item></el-col>
+              <el-col :xs="12" :sm="8"><el-form-item label="修正时间"><el-input :model-value="trueSolarTimeText" readonly /></el-form-item></el-col>
+            </el-row>
+
+            <el-alert
+              class="auto-note"
+              title="四柱会自动填写；打开真太阳时后，系统会按出生地自动匹配经度，并结合均时差修正出生时间。月柱目前按常用节气日期近似换月，临近节气日可手动校正。"
+              type="info"
+              :closable="false"
+              show-icon
+            />
+
+            <div class="chart-preview">
+              <div class="chart-tabs">
+                <button
+                  v-for="tab in chartTabs"
+                  :key="tab.key"
+                  type="button"
+                  :class="{ active: activeChartTab === tab.key }"
+                  @click="activeChartTab = tab.key"
+                >{{ tab.label }}</button>
+              </div>
+              <div class="chart-banner">
+                <div>
+                  <span>阳历：{{ solarText }}</span>
+                  <small>{{ chartStatus }}</small>
+                </div>
+                <el-button size="small" @click="rebuildPillars">重排</el-button>
+              </div>
+
+              <div v-if="activeChartTab === 'info'" class="tab-pane info-pane">
+                <div class="info-grid">
+                  <div><span>性别</span><strong>{{ form.gender || '未填' }}</strong></div>
+                  <div><span>出生日期</span><strong>{{ form.birthDate || '未填' }}</strong></div>
+                  <div><span>出生时间</span><strong>{{ form.birthTime || '未填' }}</strong></div>
+                  <div><span>出生地</span><strong>{{ form.birthPlace || '未填' }}</strong></div>
+                  <div><span>真太阳时</span><strong>{{ trueSolarTimeText }}</strong></div>
+                  <div><span>日主</span><strong>{{ form.dayMaster || '未排' }}</strong></div>
+                  <div><span>流年</span><strong>{{ form.currentYearPillar || '未排' }}</strong></div>
+                </div>
+              </div>
+
+              <div v-else-if="activeChartTab === 'chart'" class="bazi-board">
+                <div class="board-row header-row">
+                  <div class="row-label">日期</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell">{{ pillar.label }}</div>
+                </div>
+                <div class="board-row">
+                  <div class="row-label">主星</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell main-star">{{ pillar.tenGod || '-' }}</div>
+                </div>
+                <div class="board-row stem-row">
+                  <div class="row-label">天干</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell">
+                    <strong class="big-char" :class="elementClass(pillar.stemElement)">{{ pillar.stem || '-' }}</strong>
+                  </div>
+                </div>
+                <div class="board-row branch-row">
+                  <div class="row-label">地支</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell">
+                    <strong class="big-char" :class="elementClass(pillar.branchElement)">{{ pillar.branch || '-' }}</strong>
+                  </div>
+                </div>
+                <div class="board-row tall-row">
+                  <div class="row-label">藏干</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell stack-cell">
+                    <span
+                      v-for="hidden in pillar.hiddenStems"
+                      :key="hidden.stem"
+                      :class="elementClass(hidden.element)"
+                    >{{ hidden.stem }}{{ hidden.element }}</span>
+                    <span v-if="!pillar.hiddenStems.length">-</span>
+                  </div>
+                </div>
+                <div class="board-row tall-row">
+                  <div class="row-label">副星</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell stack-cell">
+                    <span v-for="hidden in pillar.hiddenStems" :key="hidden.stem">{{ hidden.tenGod }}</span>
+                    <span v-if="!pillar.hiddenStems.length">-</span>
+                  </div>
+                </div>
+                <div class="board-row">
+                  <div class="row-label">星运</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell">{{ pillar.selfSitting || '-' }}</div>
+                </div>
+                <div class="board-row">
+                  <div class="row-label">自坐</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell">{{ pillar.selfSitting || '-' }}</div>
+                </div>
+                <div class="board-row">
+                  <div class="row-label">空亡</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell">{{ pillar.emptyText }}</div>
+                </div>
+                <div class="board-row">
+                  <div class="row-label">纳音</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell">{{ pillar.naYin || '-' }}</div>
+                </div>
+                <div class="board-row shensha-row">
+                  <div class="row-label">神煞</div>
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="board-cell stack-cell shensha-cell">
+                    <span v-for="name in pillar.shenSha" :key="name">{{ name }}</span>
+                    <span v-if="!pillar.shenSha.length">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else-if="activeChartTab === 'detail'" class="tab-pane detail-pane">
+                <div class="detail-card">
+                  <span>天干十神</span>
+                  <strong>{{ baziDetails.summary.tenGods }}</strong>
+                </div>
+                <div class="detail-card">
+                  <span>地支藏干</span>
+                  <strong>{{ baziDetails.summary.hiddenStems }}</strong>
+                </div>
+                <div class="detail-card">
+                  <span>旬空</span>
+                  <strong>{{ baziDetails.summary.empty }}</strong>
+                </div>
+                <div class="detail-card">
+                  <span>大运</span>
+                  <strong>{{ baziDetails.summary.luck }}</strong>
+                </div>
+                <div class="detail-card">
+                  <span>神煞</span>
+                  <strong>{{ baziDetails.summary.shenSha }}</strong>
+                </div>
+                <div v-if="luckInfo.cycles.length" class="luck-grid">
+                  <div
+                    v-for="luck in luckInfo.cycles"
+                    :key="luck.index"
+                    :class="{ active: luck.active }"
+                  >
+                    <strong>{{ luck.pillar }}</strong>
+                    <span>{{ luck.startAge }}-{{ luck.endAge }}岁</span>
+                    <small>{{ luck.startYear }}-{{ luck.endYear }}</small>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else class="tab-pane note-pane">
+                <div class="note-line">
+                  <span>求测方向</span>
+                  <strong>{{ form.questionType }}</strong>
+                </div>
+                <div class="note-line">
+                  <span>当前问题</span>
+                  <strong>{{ form.question || '还没有填写问题' }}</strong>
+                </div>
+                <div class="note-line">
+                  <span>引用规则</span>
+                  <strong>{{ knowledgeRules.length ? `${knowledgeRules.length} 条，含 ${caseRuleCount} 条案例` : '分析后显示' }}</strong>
+                </div>
+                <div v-if="caseRules.length" class="case-list">
+                  <span v-for="rule in caseRules" :key="rule.id">{{ rule.title }}</span>
+                </div>
+              </div>
+            </div>
+
+            <el-row :gutter="12">
+              <el-col :xs="12" :sm="6"><el-form-item label="年柱"><el-input v-model="form.yearPillar" placeholder="如 庚午" @change="refreshLuckPillar" /></el-form-item></el-col>
+              <el-col :xs="12" :sm="6"><el-form-item label="月柱"><el-input v-model="form.monthPillar" placeholder="如 己丑" @change="refreshLuckPillar" /></el-form-item></el-col>
+              <el-col :xs="12" :sm="6"><el-form-item label="日柱"><el-input v-model="form.dayPillar" placeholder="自动或手填" @change="syncDayMaster" /></el-form-item></el-col>
+              <el-col :xs="12" :sm="6"><el-form-item label="时柱"><el-input v-model="form.hourPillar" placeholder="如 壬辰" /></el-form-item></el-col>
+              <el-col :xs="12" :sm="6"><el-form-item label="日主"><el-input v-model="form.dayMaster" readonly /></el-form-item></el-col>
+              <el-col :xs="12" :sm="6"><el-form-item label="当前大运"><el-input v-model="form.luckPillar" placeholder="可选" /></el-form-item></el-col>
+              <el-col :xs="12" :sm="6"><el-form-item label="当前流年"><el-input v-model="form.currentYearPillar" placeholder="可选" /></el-form-item></el-col>
+              <el-col :xs="12" :sm="6">
+                <el-form-item label="求测方向">
+                  <el-select v-model="form.questionType">
+                    <el-option label="综合" value="综合" />
+                    <el-option label="感情" value="感情" />
+                    <el-option label="事业" value="事业" />
+                    <el-option label="财运" value="财运" />
+                    <el-option label="学业" value="学业" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-form-item label="具体问题">
+              <el-input v-model="form.question" type="textarea" :rows="3" placeholder="例如：今年事业是否适合转型？" />
+            </el-form-item>
+
+            <div class="actions">
+              <el-button size="large" @click="saveBirthProfile">保存出生资料</el-button>
+              <el-button type="primary" size="large" :loading="loading" @click="submit">开始分析</el-button>
+            </div>
+            <el-alert
+              v-if="loading"
+              class="estimate-note"
+              type="warning"
+              :closable="false"
+              title="正在调用 AI 细断，预计 60-120 秒，请不要重复点击。"
+            />
+          </el-form>
+        </div>
+      </el-col>
+
+      <el-col v-if="result || loading" :xs="24" :lg="10">
+        <div ref="reportPanelRef" class="panel result-panel">
+          <div class="result-head">
+            <h2 class="section-title">分析报告</h2>
+            <div class="result-actions">
+              <el-button :disabled="!parsedResult" @click="copyCurrentReport">复制报告</el-button>
+              <el-button :disabled="!parsedResult" @click="exportCurrentReport">导出 Markdown</el-button>
+            </div>
+          </div>
+          <ResultReport :report="parsedResult" />
+          <KnowledgeReferences
+            v-if="knowledgeRules.length || classicReferences.length"
+            :rules="knowledgeRules"
+            :classic-references="classicReferences"
+          />
+        </div>
+      </el-col>
+    </el-row>
+  </div>
+</template>
+
+<script setup>
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { updateProfile } from '../../api/auth'
+import { analyzeBazi } from '../../api/bazi'
+import KnowledgeReferences from '../../components/KnowledgeReferences.vue'
+import ResultReport from '../../components/ResultReport.vue'
+import { useUserStore } from '../../stores/user'
+import { getBaziDetails, getFourPillars, getLuckCycles, getYearGanZhi } from '../../utils/ganzhi'
+import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
+import { provinceOptions } from '../../utils/chinaCities'
+
+const userStore = useUserStore()
+const loading = ref(false)
+const result = ref('')
+const knowledgeRules = ref([])
+const classicReferences = ref([])
+const reportPanelRef = ref(null)
+const activeChartTab = ref('chart')
+const chartTabs = [
+  { key: 'info', label: '基本信息' },
+  { key: 'chart', label: '基本排盘' },
+  { key: 'detail', label: '专业细盘' },
+  { key: 'note', label: '断事笔记' }
+]
+
+const cityOptions = computed(() => provinceOptions.find(item => item.name === form.birthProvince)?.cities || [])
+
+const form = reactive({
+  userId: userStore.userId,
+  gender: '',
+  birthDate: '',
+  birthTime: '',
+  birthProvince: '',
+  birthPlace: '',
+  useTrueSolarTime: false,
+  yearPillar: '',
+  monthPillar: '',
+  dayPillar: '',
+  hourPillar: '',
+  dayMaster: '',
+  luckPillar: '',
+  currentYearPillar: '',
+  questionType: '综合',
+  question: ''
+})
+
+const parsedResult = computed(() => {
+  try {
+    return result.value ? JSON.parse(result.value) : null
+  } catch {
+    return { coreConclusion: result.value, confidence: '未知', keyEvidence: [], detailedAnalysis: {}, timing: [], suggestion: '' }
+  }
+})
+
+const pillarCards = computed(() => [
+  buildPillarCard('year', '年柱', form.yearPillar),
+  buildPillarCard('month', '月柱', form.monthPillar),
+  buildPillarCard('day', '日柱', form.dayPillar),
+  buildPillarCard('hour', '时柱', form.hourPillar)
+])
+
+const baziDetails = computed(() => getBaziDetails({
+  yearPillar: form.yearPillar,
+  monthPillar: form.monthPillar,
+  dayPillar: form.dayPillar,
+  hourPillar: form.hourPillar,
+  dayMaster: form.dayMaster,
+  luck: luckInfo.value
+}))
+
+const luckInfo = computed(() => getLuckCycles({
+  birthDate: form.birthDate,
+  birthTime: effectiveBirthTime.value || normalizeBirthTime(form.birthTime),
+  gender: form.gender,
+  yearPillar: form.yearPillar,
+  monthPillar: form.monthPillar,
+  currentDate: new Date()
+}))
+
+const selectedCity = computed(() => getCityLocation(form.birthPlace))
+const trueSolarInfo = computed(() => getTrueSolarTimeInfo())
+const effectiveBirthTime = computed(() => trueSolarInfo.value?.time || normalizeBirthTime(form.birthTime))
+const trueSolarTimeText = computed(() => {
+  if (!form.useTrueSolarTime) return '未启用'
+  if (!normalizeBirthTime(form.birthTime)) return '待填写时间'
+  if (!selectedCity.value) return '请选择出生省市'
+  const info = trueSolarInfo.value
+  if (!info) return '无法修正'
+  const sign = info.offsetMinutes >= 0 ? '+' : '-'
+  return `${info.date} ${info.time}（${selectedCity.value.name}，${sign}${Math.abs(info.offsetMinutes)}分钟）`
+})
+
+function buildPillarCard(key, label, value) {
+  const detail = baziDetails.value.pillars.find(item => item.key === key) || {}
+  return {
+    key,
+    label,
+    value,
+    stem: detail.stem || '',
+    branch: detail.branch || '',
+    stemElement: detail.stemElement || '',
+    branchElement: detail.branchElement || '',
+    tenGod: key === 'day' && value ? '日主' : detail.stemTenGod,
+    hiddenStems: detail.hiddenStems || [],
+    selfSitting: detail.selfSitting || '',
+    naYin: detail.naYin || '',
+    isEmpty: detail.isEmpty,
+    emptyText: detail.emptyText || '-',
+    shenSha: detail.shenSha || []
+  }
+}
+
+const solarText = computed(() => {
+  if (!form.birthDate) return '未填写'
+  const base = `${form.birthDate}${form.birthTime ? ` ${form.birthTime}` : ''}`
+  return form.useTrueSolarTime && trueSolarInfo.value ? `${base} → ${trueSolarInfo.value.date} ${trueSolarInfo.value.time}` : base
+})
+
+function elementClass(element) {
+  return {
+    wood: element === '木',
+    fire: element === '火',
+    earth: element === '土',
+    metal: element === '金',
+    water: element === '水'
+  }
+}
+
+const chartStatus = computed(() => {
+  if (!form.birthDate) return '先填写出生日期'
+  if (!form.birthTime) return '已排年/月/日，填写出生时间后可排时柱'
+  if (form.useTrueSolarTime && !selectedCity.value) return '已启用真太阳时，请选择出生省市'
+  if (!form.hourPillar) return '出生时间格式未识别，可填 08:30、8点、辰时'
+  return `日主 ${form.dayMaster || '待定'}，流年 ${form.currentYearPillar || '待定'}`
+})
+
+const caseRules = computed(() => knowledgeRules.value.filter(rule => rule.category?.includes('案例')))
+const caseRuleCount = computed(() => caseRules.value.length)
+
+function applyProfile() {
+  const profile = userStore.getBirthProfile()
+  if (!profile) return
+  form.gender = profile.gender || ''
+  form.birthDate = profile.birthDate || ''
+  form.birthTime = profile.birthTime || ''
+  form.birthPlace = profile.birthPlace || ''
+  form.birthProvince = profile.birthProvince || ''
+  form.useTrueSolarTime = Boolean(profile.useTrueSolarTime)
+  const matchedProvince = findProvinceByCity(form.birthPlace)
+  form.birthProvince = form.birthProvince || matchedProvince?.name || ''
+  form.yearPillar = profile.yearPillar || ''
+  form.monthPillar = profile.monthPillar || ''
+  form.dayPillar = profile.dayPillar || profile.birthDayGanZhi || ''
+  form.hourPillar = profile.hourPillar || ''
+  form.dayMaster = profile.dayMaster || profile.birthDayMaster || ''
+  fillPillarsFromBirth({ preserveExisting: true })
+}
+
+async function saveBirthProfile(options = {}) {
+  fillPillarsFromBirth({ preserveExisting: true })
+  syncDayMaster()
+  const profile = userStore.saveBirthProfile({
+    gender: form.gender,
+    birthDate: form.birthDate,
+    birthTime: form.birthTime,
+    birthProvince: form.birthProvince,
+    birthPlace: form.birthPlace,
+    useTrueSolarTime: form.useTrueSolarTime,
+    yearPillar: form.yearPillar,
+    monthPillar: form.monthPillar,
+    dayPillar: form.dayPillar,
+    hourPillar: form.hourPillar,
+    dayMaster: form.dayMaster,
+    birthDayGanZhi: form.dayPillar,
+    birthDayMaster: form.dayMaster
+  })
+  if (userStore.userId) {
+    const user = await updateProfile({
+      userId: userStore.userId,
+      gender: profile.gender,
+      birthDate: profile.birthDate,
+      birthTime: profile.birthTime,
+      birthPlace: profile.birthPlace,
+      birthDayGanZhi: profile.birthDayGanZhi,
+      birthDayMaster: profile.birthDayMaster
+    })
+    userStore.setUser(user)
+    userStore.saveBirthProfile(profile)
+  }
+  if (!options.silent) {
+    ElMessage.success(userStore.userId ? '出生资料已保存到账号' : '出生资料已保存到本机')
+  }
+}
+
+function onProvinceChange() {
+  const cities = cityOptions.value
+  if (!cities.some(city => city.name === form.birthPlace)) {
+    form.birthPlace = cities[0]?.name || ''
+  }
+  enableTrueSolarTimeWhenPlaceSelected()
+  fillPillarsFromBirth()
+}
+
+function onBirthPlaceChange() {
+  enableTrueSolarTimeWhenPlaceSelected()
+  fillPillarsFromBirth()
+}
+
+function enableTrueSolarTimeWhenPlaceSelected() {
+  if (form.birthPlace) {
+    form.useTrueSolarTime = true
+  }
+}
+
+function fillPillarsFromBirth(options = {}) {
+  if (!form.birthDate) return
+  const normalizedTime = normalizeBirthTime(form.birthTime)
+  const hasBirthTime = Boolean(normalizedTime)
+  const effectiveTime = hasBirthTime ? effectiveBirthTime.value : ''
+  const effectiveDate = hasBirthTime && trueSolarInfo.value ? trueSolarInfo.value.date : form.birthDate
+  const birthDateTime = hasBirthTime ? `${effectiveDate}T${effectiveTime}` : form.birthDate
+  const pillars = getFourPillars(birthDateTime)
+  const shouldWrite = (field) => !options.preserveExisting || !form[field]
+
+  if (pillars.yearPillar && shouldWrite('yearPillar')) form.yearPillar = pillars.yearPillar
+  if (pillars.monthPillar && shouldWrite('monthPillar')) form.monthPillar = pillars.monthPillar
+  if (pillars.dayPillar && shouldWrite('dayPillar')) form.dayPillar = pillars.dayPillar
+  if (pillars.dayMaster && shouldWrite('dayMaster')) form.dayMaster = pillars.dayMaster
+  if (hasBirthTime && pillars.hourPillar && shouldWrite('hourPillar')) {
+    form.hourPillar = pillars.hourPillar
+  } else if (!hasBirthTime && !options.preserveExisting) {
+    form.hourPillar = ''
+  }
+  if (!form.currentYearPillar) {
+    form.currentYearPillar = getYearGanZhi(new Date())
+  }
+  if (luckInfo.value.currentLuck && shouldWrite('luckPillar')) {
+    form.luckPillar = luckInfo.value.currentLuck
+  }
+}
+
+function rebuildPillars() {
+  form.yearPillar = ''
+  form.monthPillar = ''
+  form.dayPillar = ''
+  form.hourPillar = ''
+  form.dayMaster = ''
+  form.luckPillar = ''
+  form.currentYearPillar = ''
+  fillPillarsFromBirth()
+}
+
+function refreshLuckPillar() {
+  if (luckInfo.value.currentLuck) {
+    form.luckPillar = luckInfo.value.currentLuck
+  }
+}
+
+function getTrueSolarTimeInfo() {
+  const normalizedTime = normalizeBirthTime(form.birthTime)
+  const city = selectedCity.value
+  if (!form.useTrueSolarTime || !form.birthDate || !normalizedTime || !city) return null
+  const date = new Date(`${form.birthDate}T${normalizedTime}`)
+  if (Number.isNaN(date.getTime())) return null
+  const offsetMinutes = Math.round((city.longitude - 120) * 4 + getEquationOfTimeMinutes(date))
+  const corrected = new Date(date.getTime() + offsetMinutes * 60 * 1000)
+  return {
+    date: formatDateValue(corrected),
+    time: `${String(corrected.getHours()).padStart(2, '0')}:${String(corrected.getMinutes()).padStart(2, '0')}`,
+    offsetMinutes
+  }
+}
+
+function getEquationOfTimeMinutes(date) {
+  const start = new Date(date.getFullYear(), 0, 0)
+  const dayOfYear = Math.floor((date - start) / 86400000)
+  const b = (2 * Math.PI * (dayOfYear - 81)) / 364
+  return 9.87 * Math.sin(2 * b) - 7.53 * Math.cos(b) - 1.5 * Math.sin(b)
+}
+
+function formatDateValue(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function getCityLocation(place) {
+  const value = String(place || '')
+  return provinceOptions
+    .flatMap(province => province.cities)
+    .find(city => city.name === value || value.includes(city.name)) || null
+}
+
+function findProvinceByCity(place) {
+  const value = String(place || '')
+  return provinceOptions.find(province => province.cities.some(city => city.name === value || value.includes(city.name))) || null
+}
+
+function normalizeBirthTime(value) {
+  if (!value || !String(value).trim()) return ''
+  const raw = String(value).trim()
+  const branchHours = {
+    子: '00:00',
+    丑: '02:00',
+    寅: '04:00',
+    卯: '06:00',
+    辰: '08:00',
+    巳: '10:00',
+    午: '12:00',
+    未: '14:00',
+    申: '16:00',
+    酉: '18:00',
+    戌: '20:00',
+    亥: '22:00'
+  }
+  const branch = raw.match(/[子丑寅卯辰巳午未申酉戌亥]/)?.[0]
+  if (branch) return branchHours[branch]
+
+  const colonMatch = raw.match(/^(\d{1,2})[:：](\d{1,2})$/)
+  if (colonMatch) return formatTime(colonMatch[1], colonMatch[2])
+
+  const chineseTimeMatch = raw.match(/^(\d{1,2})\s*(点|時|时)(?:\s*(\d{1,2})\s*(分)?)?$/)
+  if (chineseTimeMatch) return formatTime(chineseTimeMatch[1], chineseTimeMatch[3] || '0')
+
+  const compactMatch = raw.match(/^(\d{1,2})(\d{2})$/)
+  if (compactMatch) return formatTime(compactMatch[1], compactMatch[2])
+
+  const hourOnlyMatch = raw.match(/^(\d{1,2})$/)
+  if (hourOnlyMatch) return formatTime(hourOnlyMatch[1], '0')
+
+  return raw
+}
+
+function formatTime(hourValue, minuteValue) {
+  const hour = Number(hourValue)
+  const minute = Number(minuteValue)
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return ''
+  }
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
+
+function syncDayMaster() {
+  form.dayMaster = form.dayPillar ? form.dayPillar.slice(0, 1) : ''
+}
+
+async function submit() {
+  fillPillarsFromBirth({ preserveExisting: true })
+  syncDayMaster()
+  if (!form.question.trim()) {
+    ElMessage.warning('请先填写问题')
+    return
+  }
+  if (!form.birthDate && !form.dayPillar) {
+    ElMessage.warning('请填写出生日期，或手动补充日柱')
+    return
+  }
+  loading.value = true
+  try {
+    await saveBirthProfile({ silent: true })
+    const data = await analyzeBazi({
+      ...form,
+      baziDetails: JSON.stringify({
+        ...baziDetails.value,
+        trueSolarTime: {
+          enabled: form.useTrueSolarTime,
+          province: form.birthProvince,
+          city: selectedCity.value?.name || form.birthPlace,
+          longitude: selectedCity.value?.longitude || '',
+          display: trueSolarTimeText.value,
+          corrected: trueSolarInfo.value
+        }
+      }),
+      userId: userStore.userId
+    })
+    result.value = data.resultJson
+    knowledgeRules.value = data.knowledgeRules || []
+    classicReferences.value = data.classicReferences || []
+    ElMessage.success('分析完成')
+    await nextTick()
+    reportPanelRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } finally {
+    loading.value = false
+  }
+}
+
+async function copyCurrentReport() {
+  await copyText(buildReportMarkdown(parsedResult.value, knowledgeRules.value, {
+    title: '八字分析报告',
+    classicReferences: classicReferences.value
+  }))
+  ElMessage.success('报告已复制')
+}
+
+function exportCurrentReport() {
+  downloadMarkdown(`八字分析报告-${Date.now()}.md`, buildReportMarkdown(parsedResult.value, knowledgeRules.value, {
+    title: '八字分析报告',
+    classicReferences: classicReferences.value
+  }))
+}
+
+onMounted(applyProfile)
+</script>
+
+<style scoped>
+.result-panel {
+  min-height: 520px;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.auto-note {
+  margin: 2px 0 14px;
+}
+
+.estimate-note {
+  margin-top: 12px;
+}
+
+.chart-preview {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 0;
+  margin-bottom: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.chart-tabs {
+  display: flex;
+  background: #050505;
+  min-height: 48px;
+}
+
+.chart-tabs button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #f5f5f5;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.chart-tabs button.active {
+  color: #c5a563;
+}
+
+.chart-banner {
+  min-height: 58px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #f2f2f2;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.92), rgba(19, 18, 15, 0.88)),
+    radial-gradient(circle at 16% 30%, rgba(190, 155, 80, 0.38), transparent 30%);
+}
+
+.chart-banner span {
+  display: block;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.chart-banner small {
+  display: block;
+  color: #c9c9c9;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.bazi-board {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.board-row {
+  display: grid;
+  grid-template-columns: 62px repeat(4, minmax(86px, 1fr));
+  min-width: 430px;
+  border-bottom: 1px solid #ededed;
+}
+
+.board-row:nth-child(even) {
+  background: #f7f7f7;
+}
+
+.header-row {
+  background: #fff;
+}
+
+.row-label,
+.board-cell {
+  min-height: 52px;
+  padding: 9px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #3f3f46;
+  font-size: 15px;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.row-label {
+  color: #9a9a9a;
+  font-weight: 500;
+  justify-content: flex-start;
+  padding-left: 18px;
+}
+
+.header-row .board-cell,
+.header-row .row-label {
+  color: #9a9a9a;
+  font-size: 15px;
+}
+
+.main-star {
+  font-size: 16px;
+}
+
+.stem-row .board-cell,
+.branch-row .board-cell {
+  min-height: 70px;
+}
+
+.big-char {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.wood {
+  color: #2ca24f;
+}
+
+.fire {
+  color: #cf2f2f;
+}
+
+.earth {
+  color: #987032;
+}
+
+.metal {
+  color: #c98400;
+}
+
+.water {
+  color: #2f80d9;
+}
+
+.tall-row .row-label,
+.tall-row .board-cell {
+  min-height: 96px;
+}
+
+.stack-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  white-space: normal;
+}
+
+.stack-cell span {
+  display: block;
+}
+
+.shensha-row .row-label,
+.shensha-row .board-cell {
+  align-items: flex-start;
+  min-height: 118px;
+  padding-top: 14px;
+}
+
+.shensha-cell {
+  justify-content: flex-start;
+  color: #9a7a36;
+  font-size: 14px;
+}
+
+.shensha-cell span {
+  display: block;
+  width: 100%;
+  min-height: 24px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  line-height: 24px;
+  text-align: center;
+}
+
+.bazi-board::-webkit-scrollbar {
+  height: 4px;
+}
+
+.bazi-board::-webkit-scrollbar-thumb {
+  background: #d0d5dd;
+  border-radius: 999px;
+}
+
+.tab-pane {
+  padding: 14px;
+  background: #fff;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.info-grid div,
+.detail-card,
+.note-line {
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+  background: #fafafa;
+  padding: 10px 12px;
+}
+
+.info-grid span,
+.detail-card span,
+.note-line span {
+  display: block;
+  color: #8b8b8b;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.info-grid strong,
+.detail-card strong,
+.note-line strong {
+  display: block;
+  color: #303133;
+  font-size: 15px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.detail-pane {
+  display: grid;
+  gap: 10px;
+}
+
+.luck-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.luck-grid div {
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+  background: #fafafa;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.luck-grid div.active {
+  border-color: #c59a42;
+  background: #fff8e8;
+}
+
+.luck-grid strong,
+.luck-grid span,
+.luck-grid small {
+  display: block;
+}
+
+.luck-grid strong {
+  color: #303133;
+  font-size: 16px;
+}
+
+.luck-grid span {
+  margin-top: 4px;
+  color: #606266;
+  font-size: 12px;
+}
+
+.luck-grid small {
+  margin-top: 2px;
+  color: #909399;
+  font-size: 11px;
+}
+
+.note-pane {
+  display: grid;
+  gap: 10px;
+}
+
+.case-list {
+  display: grid;
+  gap: 8px;
+}
+
+.case-list span {
+  border-left: 3px solid #c5a563;
+  background: #fffaf0;
+  color: #6b5523;
+  padding: 8px 10px;
+  border-radius: 6px;
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+.result-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.result-head .section-title {
+  margin-bottom: 0;
+}
+
+.result-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding: 10px 8px 88px;
+  }
+
+  .panel {
+    padding: 10px;
+  }
+
+  .result-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    text-align: stretch;
+  }
+
+  .actions .el-button {
+    width: 100%;
+  }
+
+  .result-actions {
+    width: 100%;
+  }
+
+  .result-actions .el-button {
+    flex: 1;
+  }
+
+  .chart-tabs {
+    min-height: 42px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chart-tabs button {
+    min-width: 82px;
+    padding: 0 6px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .chart-banner {
+    min-height: 50px;
+    padding: 8px 10px;
+  }
+
+  .chart-banner span {
+    font-size: 13px;
+  }
+
+  .chart-banner small {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .board-row {
+    grid-template-columns: 44px repeat(4, minmax(0, 1fr));
+    min-width: 0;
+    width: 100%;
+  }
+
+  .row-label,
+  .board-cell {
+    min-width: 0;
+    min-height: 46px;
+    padding: 7px 3px;
+    font-size: 12px;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .row-label {
+    padding-left: 6px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .big-char {
+    font-size: 24px;
+  }
+
+  .stem-row .board-cell,
+  .branch-row .board-cell {
+    min-height: 58px;
+  }
+
+  .tall-row .row-label,
+  .tall-row .board-cell {
+    min-height: 82px;
+  }
+
+  .shensha-row .row-label,
+  .shensha-row .board-cell {
+    min-height: 92px;
+    padding-top: 8px;
+    align-items: flex-start;
+  }
+
+  .stack-cell {
+    gap: 2px;
+    font-size: 12px;
+  }
+
+  .shensha-cell {
+    display: block;
+    justify-content: flex-start;
+    font-size: 12px;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .shensha-cell span {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: 22px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #8a6b2d;
+    line-height: 22px;
+    white-space: nowrap;
+  }
+
+  .tab-pane {
+    padding: 10px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .luck-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .info-grid div,
+  .detail-card,
+  .note-line {
+    padding: 8px 10px;
+  }
+
+  .result-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+</style>

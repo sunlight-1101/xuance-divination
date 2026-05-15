@@ -1,0 +1,180 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  background: #f6f7f9;
+  color: #20242a;
+  overflow-x: hidden;
+}
+
+.page {
+  padding: 24px;
+}
+
+.page-header {
+  margin-bottom: 18px;
+}
+
+.page-title {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.page-desc {
+  margin: 0;
+  color: #667085;
+  line-height: 1.6;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.section-title {
+  margin: 0 0 14px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: #f7f8fa;
+  }
+
+  .page {
+    width: 100%;
+    max-width: 100vw;
+    padding: 10px 8px 88px;
+    overflow-x: hidden;
+  }
+
+  .page-header {
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    line-height: 1.25;
+  }
+
+  .page-desc {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  .section-title {
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  .el-row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .el-col {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+
+  .el-form-item {
+    margin-bottom: 12px;
+  }
+
+  .el-input,
+  .el-select,
+  .el-textarea,
+  .el-input-number {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .el-form-item__label {
+    padding-bottom: 4px;
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .el-input__wrapper,
+  .el-select__wrapper,
+  .el-textarea__inner {
+    border-radius: 7px;
+    min-height: 42px;
+  }
+
+  .el-input__inner,
+  .el-select__placeholder,
+  .el-select__selected-item,
+  .el-textarea__inner {
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .el-button {
+    min-height: 38px;
+    margin-left: 0 !important;
+  }
+
+  .el-button--large {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .el-alert {
+    padding: 8px 10px;
+  }
+
+  .el-alert__title {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .auth-panel .el-form,
+  .auth-panel .el-form-item,
+  .auth-panel .el-form-item__content,
+  .auth-panel .el-input,
+  .auth-panel .el-button {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}

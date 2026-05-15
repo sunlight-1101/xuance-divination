@@ -1,0 +1,236 @@
+<template>
+  <el-container class="layout">
+    <el-aside width="228px" class="aside">
+      <div class="brand">
+        <img class="brand-logo" src="/icons/zhexuan-logo.png" alt="哲玄" />
+        <div>
+          <div class="brand-name">哲玄</div>
+          <div class="brand-sub">术数分析系统</div>
+        </div>
+      </div>
+      <el-menu router :default-active="$route.path" class="menu">
+        <el-menu-item v-if="userStore.isAdmin" index="/dashboard"><LayoutDashboard :size="18" />首页</el-menu-item>
+        <el-menu-item index="/bazi"><CalendarDays :size="18" />八字</el-menu-item>
+        <el-menu-item index="/liuyao"><ScrollText :size="18" />六爻</el-menu-item>
+        <el-menu-item index="/ziwei"><Sparkles :size="18" />紫微</el-menu-item>
+        <el-menu-item index="/quota"><CreditCard :size="18" />额度</el-menu-item>
+        <el-menu-item index="/knowledge"><BookOpen :size="18" />知识库</el-menu-item>
+        <el-menu-item index="/records"><Clock3 :size="18" />历史</el-menu-item>
+      </el-menu>
+    </el-aside>
+
+    <el-container>
+      <el-header class="header">
+        <div class="mobile-title">
+          <img class="mobile-logo" src="/icons/icon-192.png" alt="哲玄" />
+          <span>哲玄</span>
+        </div>
+        <el-dropdown>
+          <span class="user">
+            <UserRound :size="18" />
+            {{ userStore.user?.nickname || userStore.user?.username }}
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-header>
+      <el-main class="main">
+        <router-view />
+      </el-main>
+    </el-container>
+
+    <nav class="bottom-nav">
+      <router-link to="/bazi" class="bottom-item">
+        <CalendarDays :size="20" />
+        <span>八字</span>
+      </router-link>
+      <router-link to="/liuyao" class="bottom-item">
+        <ScrollText :size="20" />
+        <span>六爻</span>
+      </router-link>
+      <router-link to="/ziwei" class="bottom-item">
+        <Sparkles :size="20" />
+        <span>紫微</span>
+      </router-link>
+      <router-link to="/records" class="bottom-item">
+        <Clock3 :size="20" />
+        <span>历史</span>
+      </router-link>
+      <router-link to="/quota" class="bottom-item">
+        <CreditCard :size="20" />
+        <span>额度</span>
+      </router-link>
+      <router-link to="/knowledge" class="bottom-item">
+        <BookOpen :size="20" />
+        <span>知识</span>
+      </router-link>
+    </nav>
+  </el-container>
+</template>
+
+<script setup>
+import { useRouter } from 'vue-router'
+import { BookOpen, CalendarDays, Clock3, CreditCard, LayoutDashboard, ScrollText, Sparkles, UserRound } from 'lucide-vue-next'
+import { useUserStore } from '../stores/user'
+
+const router = useRouter()
+const userStore = useUserStore()
+
+function handleLogout() {
+  userStore.clearUser()
+  router.push('/login')
+}
+</script>
+
+<style scoped>
+.layout {
+  min-height: 100vh;
+}
+
+.aside {
+  background: #151a22;
+  color: #fff;
+}
+
+.brand {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: block;
+  object-fit: cover;
+  background: #f7f0e5;
+}
+
+.brand-name {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.brand-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #aeb7c2;
+}
+
+.menu {
+  border-right: 0;
+  background: transparent;
+}
+
+.menu :deep(.el-menu-item) {
+  color: #d1d5db;
+  gap: 10px;
+}
+
+.menu :deep(.el-menu-item.is-active) {
+  color: #d6a954;
+  background: rgba(214, 169, 84, 0.12);
+}
+
+.header {
+  height: 58px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mobile-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.mobile-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.user {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.main {
+  padding: 0;
+}
+
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .layout {
+    display: block;
+    min-height: 100dvh;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+
+  .aside {
+    display: none;
+  }
+
+  .header {
+    height: 48px;
+    padding: 0 10px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .user {
+    max-width: 48vw;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    min-height: 58px;
+    height: calc(58px + env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .bottom-item {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 3px;
+    color: #667085;
+    text-decoration: none;
+    font-size: 11px;
+  }
+
+  .bottom-item.router-link-active {
+    color: #a36f12;
+  }
+}
+</style>

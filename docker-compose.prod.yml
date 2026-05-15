@@ -1,0 +1,79 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: xuance-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: xuance_divination
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docs/schema.sql:/docker-entrypoint-initdb.d/00-schema.sql:ro
+      - ./docs/seed_knowledge.sql:/docker-entrypoint-initdb.d/10-liuyao-base.sql:ro
+      - ./docs/seed_knowledge_extra.sql:/docker-entrypoint-initdb.d/11-liuyao-extra.sql:ro
+      - ./docs/seed_bazi_knowledge.sql:/docker-entrypoint-initdb.d/20-bazi-base.sql:ro
+      - ./docs/seed_bazi_knowledge_extra.sql:/docker-entrypoint-initdb.d/21-bazi-extra.sql:ro
+      - ./docs/seed_bazi_knowledge_more.sql:/docker-entrypoint-initdb.d/22-bazi-more.sql:ro
+      - ./docs/seed_divination_knowledge_deep_cases.sql:/docker-entrypoint-initdb.d/30-deep-cases.sql:ro
+      - ./docs/seed_bazi_shensha_rules.sql:/docker-entrypoint-initdb.d/31-bazi-shensha.sql:ro
+      - ./docs/seed_divination_cases_more.sql:/docker-entrypoint-initdb.d/32-more-cases.sql:ro
+      - ./docs/seed_classic_pattern_cases.sql:/docker-entrypoint-initdb.d/33-classic-cases.sql:ro
+      - ./docs/seed_bazi_classic_books.sql:/docker-entrypoint-initdb.d/34-bazi-classic-books.sql:ro
+      - ./docs/seed_classic_books_catalog.sql:/docker-entrypoint-initdb.d/35-classic-books-catalog.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: xuance-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/xuance_divination?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      AI_ENABLED: ${AI_ENABLED:-false}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1/chat/completions}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      AI_TEMPERATURE: ${AI_TEMPERATURE:-0.2}
+      AI_MAX_TOKENS: ${AI_MAX_TOKENS:-1800}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_STARTTLS_ENABLE: ${MAIL_STARTTLS_ENABLE:-true}
+      MAIL_SSL_ENABLE: ${MAIL_SSL_ENABLE:-false}
+      ALIPAY_ENABLED: ${ALIPAY_ENABLED:-false}
+      ALIPAY_GATEWAY_URL: ${ALIPAY_GATEWAY_URL:-https://openapi.alipay.com/gateway.do}
+      ALIPAY_APP_ID: ${ALIPAY_APP_ID:-}
+      ALIPAY_PRIVATE_KEY: ${ALIPAY_PRIVATE_KEY:-}
+      ALIPAY_PUBLIC_KEY: ${ALIPAY_PUBLIC_KEY:-}
+      ALIPAY_NOTIFY_URL: ${ALIPAY_NOTIFY_URL:-}
+      ALIPAY_RETURN_URL: ${ALIPAY_RETURN_URL:-}
+      TZ: Asia/Shanghai
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: xuance-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${APP_PORT:-80}:80"
+
+volumes:
+  mysql_data:
