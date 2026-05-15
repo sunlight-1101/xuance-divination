@@ -15,5 +15,8 @@
 - 字段：`coreConclusion`, `plainSummary`, `confidence`, `keyEvidence`, `detailedAnalysis`, `timing`, `suggestion`, `missingFields`。
 - `coreConclusion` 至少 180 字，直接回答问题，包含吉凶倾向、当前状态、阻力、转机和建议。
 - `plainSummary` 至少 300 字，用白话解释判断依据、关键点、下一步做法和风险。
+- `confidence` 只能取 `高`、`中等`、`低`；资料不足、规则冲突或只能类推时必须降为 `低` 或 `中等`。
+- `keyEvidence` 必须是 3-6 条字符串数组，每条写清“盘面事实 + 判断含义”，不能只写术语。
 - `timing` 必须是数组；只有能从大运、流年、流月或盘面触发推出明确窗口时才填写，否则返回 `[]`。
 - `detailedAnalysis` 至少包含：`basicChart`, `dayMasterStrength`, `tenGods`, `usefulGod`, `luckYear`, `questionFocus`, `caseReference`。
+- `missingFields` 必须是数组；没有缺失时返回 `[]`。
