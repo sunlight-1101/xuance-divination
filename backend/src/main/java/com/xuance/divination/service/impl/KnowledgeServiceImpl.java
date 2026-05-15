@@ -13,8 +13,8 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class KnowledgeServiceImpl implements KnowledgeService {
-    private static final int ANALYSIS_RULE_LIMIT = 5;
-    private static final int FALLBACK_RULE_LIMIT = 3;
+    private static final int ANALYSIS_RULE_LIMIT = 4;
+    private static final int FALLBACK_RULE_LIMIT = 2;
 
     private final KnowledgeRuleMapper mapper;
 
@@ -79,15 +79,6 @@ public class KnowledgeServiceImpl implements KnowledgeService {
                 .collect(Collectors.toList());
         includeBestMatchedCase(allRules, matched, question);
         if (!matched.isEmpty()) {
-            if (matched.size() >= ANALYSIS_RULE_LIMIT) {
-                return matched;
-            }
-            List<Long> matchedIds = matched.stream().map(KnowledgeRule::getId).collect(Collectors.toList());
-            List<KnowledgeRule> fallback = allRules.stream()
-                    .filter(rule -> !matchedIds.contains(rule.getId()))
-                    .limit(Math.max(0, ANALYSIS_RULE_LIMIT - matched.size()))
-                    .collect(Collectors.toList());
-            matched.addAll(fallback);
             return matched;
         }
         return allRules.stream().limit(FALLBACK_RULE_LIMIT).collect(Collectors.toList());

@@ -64,7 +64,7 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         quotaService.consumeForAnalysis(dto.getUserId(), TYPE);
         String referenceContext = dto.getQuestion() + " " + dto.getQuestionType() + " " + dto.getBaziDetails();
         List<KnowledgeRule> rules = knowledgeService.findForAnalysis(TYPE, referenceContext);
-        List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 3);
+        List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
         String prompt = buildPrompt(dto, rules, classicReferences);
         String resultJson = aiService.analyze(prompt);
 
@@ -116,30 +116,37 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
                 .map(this::formatKnowledgeRule)
                 .collect(Collectors.joining("\n"));
         String classicReferenceText = String.join("\n", classicReferences);
+        StringBuilder userInput = new StringBuilder();
+        append(userInput, "gender", dto.getGender());
+        append(userInput, "birthDate", dto.getBirthDate());
+        append(userInput, "birthTime", dto.getBirthTime());
+        append(userInput, "birthPlace", dto.getBirthPlace());
+        append(userInput, "yearPillar", dto.getYearPillar());
+        append(userInput, "monthPillar", dto.getMonthPillar());
+        append(userInput, "dayPillar", dto.getDayPillar());
+        append(userInput, "hourPillar", dto.getHourPillar());
+        append(userInput, "dayMaster", dto.getDayMaster());
+        append(userInput, "luckPillar", dto.getLuckPillar());
+        append(userInput, "currentYearPillar", dto.getCurrentYearPillar());
+        append(userInput, "baziDetails", compact(dto.getBaziDetails(), 1600));
+        append(userInput, "questionType", dto.getQuestionType());
+        append(userInput, "question", dto.getQuestion());
         return promptTemplateService.load("bazi-skill.md")
                 + "\n\n" + promptTemplateService.load("knowledge-policy.md")
-                + "\n\n[USER_INPUT]\n"
-                + "gender=" + safe(dto.getGender()) + "\n"
-                + "birthDate=" + safe(dto.getBirthDate()) + "\n"
-                + "birthTime=" + safe(dto.getBirthTime()) + "\n"
-                + "birthPlace=" + safe(dto.getBirthPlace()) + "\n"
-                + "yearPillar=" + safe(dto.getYearPillar()) + "\n"
-                + "monthPillar=" + safe(dto.getMonthPillar()) + "\n"
-                + "dayPillar=" + safe(dto.getDayPillar()) + "\n"
-                + "hourPillar=" + safe(dto.getHourPillar()) + "\n"
-                + "dayMaster=" + safe(dto.getDayMaster()) + "\n"
-                + "luckPillar=" + safe(dto.getLuckPillar()) + "\n"
-                + "currentYearPillar=" + safe(dto.getCurrentYearPillar()) + "\n"
-                + "baziDetails=" + safe(dto.getBaziDetails()) + "\n"
-                + "questionType=" + safe(dto.getQuestionType()) + "\n"
-                + "question=" + safe(dto.getQuestion()) + "\n\n"
+                + "\n\n[USER_INPUT]\n" + userInput + "\n"
                 + "[KNOWLEDGE_RULES]\n" + (StringUtils.hasText(knowledgeRules) ? knowledgeRules : "none") + "\n\n"
                 + "[CLASSIC_REFERENCES]\n" + (StringUtils.hasText(classicReferenceText) ? classicReferenceText : "none");
     }
 
     private String formatKnowledgeRule(KnowledgeRule rule) {
         return "[" + safe(rule.getCategory()) + "] " + safe(rule.getTitle()) + ": "
-                + compact(rule.getRuleContent(), 220);
+                + compact(rule.getRuleContent(), 140);
+    }
+
+    private void append(StringBuilder builder, String key, String value) {
+        if (StringUtils.hasText(value)) {
+            builder.append(key).append("=").append(value.trim()).append("\n");
+        }
     }
 
     private String compact(String value, int maxLength) {

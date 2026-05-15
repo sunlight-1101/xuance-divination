@@ -68,7 +68,7 @@ public class ClassicBookServiceImpl implements ClassicBookService {
                     .eq(ClassicChapter::getContentStatus, "FULL")
                     .notLike(ClassicChapter::getNotes, "OCR\u81ea\u52a8\u8bc6\u522b")
                     .orderByAsc(ClassicChapter::getChapterOrder)
-                    .last("LIMIT 80"));
+                    .last("LIMIT 40"));
             for (ClassicChapter chapter : chapters) {
                 int score = scoreChapter(chapter, context);
                 if (score > 0) {
@@ -136,7 +136,12 @@ public class ClassicBookServiceImpl implements ClassicBookService {
         int score = 0;
         for (String token : tokens) {
             if (token.length() >= 2 && haystack.contains(token)) {
-                score += token.length() >= 4 ? 3 : 1;
+                score += token.length() >= 4 ? 5 : 2;
+            }
+        }
+        for (String token : tokens) {
+            if (token.length() >= 2 && safe(chapter.getTitle()).contains(token)) {
+                score += 8;
             }
         }
         return score;
@@ -144,14 +149,13 @@ public class ClassicBookServiceImpl implements ClassicBookService {
 
     private List<String> tokens(String context) {
         List<String> result = new ArrayList<>();
-        String normalized = safe(context).replaceAll("[,锛屻€傦紱;锛?\\s]+", " ");
+        String normalized = safe(context).replaceAll("[,，、。；;：:\\s]+", " ");
         for (String part : normalized.split(" ")) {
             String token = part.trim();
             if (token.length() >= 2 && token.length() <= 12) {
                 result.add(token);
             }
         }
-        result.addAll(Arrays.asList("\u7528\u795e", "\u683c\u5c40", "\u65fa\u8870", "\u8d22", "\u5b98", "\u5370", "\u98df\u4f24", "\u7a7a\u4ea1", "\u4e16\u5e94", "\u52a8\u723b", "\u6708\u5efa", "\u65e5\u8fb0"));
         return result.stream().distinct().collect(Collectors.toList());
     }
 
@@ -166,7 +170,7 @@ public class ClassicBookServiceImpl implements ClassicBookService {
 
     private String formatReference(ReferenceCandidate item) {
         String text = StringUtils.hasText(item.chapter.getPlainText()) ? item.chapter.getPlainText() : item.chapter.getOriginalText();
-        return "\u300a" + item.book.getName() + "\u300b" + item.chapter.getTitle() + "\uff1a" + snippet(text, 180);
+        return "\u300a" + item.book.getName() + "\u300b" + item.chapter.getTitle() + "\uff1a" + snippet(text, 120);
     }
 
     private String snippet(String value, int maxLength) {

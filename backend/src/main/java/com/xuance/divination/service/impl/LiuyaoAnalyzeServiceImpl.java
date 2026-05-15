@@ -66,7 +66,7 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
         String referenceContext = dto.getQuestion() + " " + dto.getMainGua() + " " + dto.getChangedGua()
                 + " " + dto.getMonthBranch() + " " + dto.getDayBranch() + " " + dto.getEmptyBranches();
         List<KnowledgeRule> rules = knowledgeService.findForAnalysis(TYPE, referenceContext);
-        List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 3);
+        List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
         String prompt = buildPrompt(dto, rules, classicReferences);
         String resultJson = aiService.analyze(prompt);
         String inputJson = toJson(dto);
@@ -120,49 +120,65 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
                 .map(this::formatKnowledgeRule)
                 .collect(Collectors.joining("\n"));
         String classicReferenceText = String.join("\n", classicReferences);
+        StringBuilder userInput = new StringBuilder();
+        append(userInput, "question", dto.getQuestion());
+        append(userInput, "gender", dto.getGender());
+        append(userInput, "birthDate", dto.getBirthDate());
+        append(userInput, "birthTime", dto.getBirthTime());
+        append(userInput, "birthPlace", dto.getBirthPlace());
+        append(userInput, "birthDayGanZhi", dto.getBirthDayGanZhi());
+        append(userInput, "birthDayMaster", dto.getBirthDayMaster());
+        append(userInput, "divinationTime", dto.getTime());
+        append(userInput, "dayGanZhi", dto.getDayGanZhi());
+        append(userInput, "dayStem", dto.getDayStem());
+        append(userInput, "monthBranch", dto.getMonthBranch());
+        append(userInput, "dayBranch", dto.getDayBranch());
+        append(userInput, "emptyBranches", dto.getEmptyBranches());
+        append(userInput, "mainGua", dto.getMainGua());
+        append(userInput, "changedGua", dto.getChangedGua());
         return promptTemplateService.load("liuyao-skill.md")
                 + "\n\n" + promptTemplateService.load("knowledge-policy.md")
-                + "\n\n[USER_INPUT]\n"
-                + "question=" + safe(dto.getQuestion()) + "\n"
-                + "gender=" + safe(dto.getGender()) + "\n"
-                + "birthDate=" + safe(dto.getBirthDate()) + "\n"
-                + "birthTime=" + safe(dto.getBirthTime()) + "\n"
-                + "birthPlace=" + safe(dto.getBirthPlace()) + "\n"
-                + "birthDayGanZhi=" + safe(dto.getBirthDayGanZhi()) + "\n"
-                + "birthDayMaster=" + safe(dto.getBirthDayMaster()) + "\n"
-                + "divinationTime=" + safe(dto.getTime()) + "\n"
-                + "dayGanZhi=" + safe(dto.getDayGanZhi()) + "\n"
-                + "dayStem=" + safe(dto.getDayStem()) + "\n"
-                + "monthBranch=" + safe(dto.getMonthBranch()) + "\n"
-                + "dayBranch=" + safe(dto.getDayBranch()) + "\n"
-                + "emptyBranches=" + safe(dto.getEmptyBranches()) + "\n"
-                + "mainGua=" + safe(dto.getMainGua()) + "\n"
-                + "changedGua=" + safe(dto.getChangedGua()) + "\n"
+                + "\n\n[USER_INPUT]\n" + userInput
                 + "yaoList=\n" + yaoList + "\n\n"
                 + "[KNOWLEDGE_RULES]\n" + (StringUtils.hasText(knowledgeRules) ? knowledgeRules : "none") + "\n\n"
                 + "[CLASSIC_REFERENCES]\n" + (StringUtils.hasText(classicReferenceText) ? classicReferenceText : "none");
     }
 
     private String formatYao(LiuyaoYaoDTO yao) {
-        return safe(yao.getPosition())
-                + " sixGod=" + safe(yao.getSixGod())
-                + " sixRelative=" + safe(yao.getSixRelative())
-                + " lineType=" + safe(yao.getLineType())
-                + " branch=" + safe(yao.getBranch())
-                + " element=" + safe(yao.getElement())
-                + " coinValue=" + (yao.getCoinValue() == null ? "not_provided" : yao.getCoinValue())
-                + " shi=" + Boolean.TRUE.equals(yao.getShi())
-                + " ying=" + Boolean.TRUE.equals(yao.getYing())
-                + " moving=" + Boolean.TRUE.equals(yao.getMoving())
-                + " changedLineType=" + safe(yao.getChangedLineType())
-                + " changedRelative=" + safe(yao.getChangedRelative())
-                + " changedBranch=" + safe(yao.getChangedBranch())
-                + " hiddenSpirit=" + safe(yao.getHiddenSpirit());
+        StringBuilder builder = new StringBuilder(safe(yao.getPosition()));
+        appendInline(builder, "神", yao.getSixGod());
+        appendInline(builder, "亲", yao.getSixRelative());
+        appendInline(builder, "爻", yao.getLineType());
+        appendInline(builder, "支", yao.getBranch());
+        appendInline(builder, "行", yao.getElement());
+        if (yao.getCoinValue() != null) {
+            builder.append(" 值=").append(yao.getCoinValue());
+        }
+        if (Boolean.TRUE.equals(yao.getShi())) builder.append(" 世");
+        if (Boolean.TRUE.equals(yao.getYing())) builder.append(" 应");
+        if (Boolean.TRUE.equals(yao.getMoving())) builder.append(" 动");
+        appendInline(builder, "变爻", yao.getChangedLineType());
+        appendInline(builder, "变亲", yao.getChangedRelative());
+        appendInline(builder, "变支", yao.getChangedBranch());
+        appendInline(builder, "伏", yao.getHiddenSpirit());
+        return builder.toString();
     }
 
     private String formatKnowledgeRule(KnowledgeRule rule) {
         return "[" + safe(rule.getCategory()) + "] " + safe(rule.getTitle()) + ": "
-                + compact(rule.getRuleContent(), 220);
+                + compact(rule.getRuleContent(), 140);
+    }
+
+    private void append(StringBuilder builder, String key, String value) {
+        if (StringUtils.hasText(value)) {
+            builder.append(key).append("=").append(value.trim()).append("\n");
+        }
+    }
+
+    private void appendInline(StringBuilder builder, String key, String value) {
+        if (StringUtils.hasText(value)) {
+            builder.append(" ").append(key).append("=").append(value.trim());
+        }
     }
 
     private String compact(String value, int maxLength) {
