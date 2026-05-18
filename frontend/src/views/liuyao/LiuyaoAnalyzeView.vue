@@ -105,7 +105,7 @@
                 <span>02</span>
                 <div>
                   <h3>摇卦</h3>
-                  <p>新手直接点“一键摇完六爻”，系统会自动装卦。</p>
+                  <p>从初爻开始，一次摇一爻；六爻摇满后系统自动装卦。</p>
                 </div>
               </div>
             <div class="shake-card">
@@ -115,9 +115,6 @@
               </div>
               <div class="shake-actions">
                 <el-button @click="resetGua">重摇</el-button>
-                <el-button type="primary" size="large" :disabled="shakenCount >= 6" @click="shakeAll">
-                  {{ shakenCount >= 6 ? '已成卦' : '一键摇完六爻' }}
-                </el-button>
                 <el-button type="primary" size="large" :disabled="shakenCount >= 6" @click="shakeNext">
                   {{ shakenCount >= 6 ? '已成卦' : `摇第 ${shakenCount + 1} 爻` }}
                 </el-button>
@@ -132,6 +129,33 @@
               :percentage="Math.round((shakenCount / 6) * 100)"
               :format="() => `${shakenCount}/6`"
             />
+            <div class="live-yao-panel">
+              <div class="live-yao-title">
+                <strong>已摇出的爻象</strong>
+                <span>{{ shakenCount ? `已完成 ${shakenCount} 爻` : '从初爻开始摇' }}</span>
+              </div>
+              <div class="yao-cards live-yao-cards">
+                <div v-for="(row, index) in form.yaoList" :key="row.position" class="yao-card" :class="{ done: index < shakenCount }">
+                  <div class="yao-card-head">
+                    <strong>{{ row.position }}</strong>
+                    <el-tag v-if="row.moving" type="danger" size="small">动爻</el-tag>
+                    <el-button link type="primary" :disabled="index >= shakenCount" @click="reshakeYao(index)">重摇</el-button>
+                  </div>
+                  <div class="coins mobile-coins" v-if="row.coins?.length">
+                    <span v-for="(coin, coinIndex) in row.coins" :key="coinIndex" class="coin" :class="{ back: coin }">
+                      {{ coin ? '背' : '字' }}
+                    </span>
+                    <strong>{{ row.coinValue }}</strong>
+                    <span>{{ row.lineType }} → {{ row.changedLineType }}</span>
+                  </div>
+                  <div v-else class="muted">待摇</div>
+                  <div class="line-preview" v-if="row.lineType">
+                    <div class="line" :class="{ yang: row.yang, moving: row.moving }"></div>
+                    <em>{{ row.moving ? '会变' : '不变' }}</em>
+                  </div>
+                </div>
+              </div>
+            </div>
             <el-alert
               v-if="installInfo.palace"
               class="install-info"
@@ -404,14 +428,14 @@ const activeStep = computed(() => {
 
 const beginnerGuideTitle = computed(() => {
   if (!form.question.trim()) return '第一步：先写下你要问的事'
-  if (shakenCount.value < 6) return '第二步：直接一键摇完六爻'
+  if (shakenCount.value < 6) return `第二步：摇第 ${shakenCount.value + 1} 爻`
   if (!result.value) return '第三步：卦已生成，可以开始分析'
   return '报告已生成'
 })
 
 const beginnerGuideText = computed(() => {
   if (!form.question.trim()) return '不用懂六爻术语，把问题写具体一点即可，比如“这次面试能否通过”。'
-  if (shakenCount.value < 6) return '系统会自动完成铜钱摇卦、本卦、变卦、世应和六亲安装，新手不用手动填写。'
+  if (shakenCount.value < 6) return '每次点击只摇一爻，下面会实时显示铜钱、阴阳和动爻；摇满六爻后再自动装卦。'
   if (!result.value) return '高级校正可以先不管，确认问题没错后直接点“开始分析”。'
   return '你可以复制报告，也可以重新起卦再问另一个问题。'
 })
@@ -425,16 +449,6 @@ function shakeNext() {
   if (shakenCount.value === 6) {
     scrollToGua()
   }
-}
-
-function shakeAll() {
-  if (shakenCount.value >= 6) return
-  while (shakenCount.value < 6) {
-    Object.assign(form.yaoList[shakenCount.value], tossCoins())
-    shakenCount.value += 1
-  }
-  updateGuaNames()
-  scrollToGua()
 }
 
 function reshakeYao(index) {
@@ -706,6 +720,11 @@ onMounted(() => {
   align-items: center;
 }
 
+.shake-actions .el-button:last-child {
+  min-width: 150px;
+  font-weight: 800;
+}
+
 .beginner-guide {
   display: grid;
   gap: 4px;
@@ -818,7 +837,76 @@ onMounted(() => {
 }
 
 .yao-cards {
-  display: none;
+  display: grid;
+  gap: 10px;
+}
+
+.live-yao-panel {
+  margin: 10px 0 14px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.live-yao-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.live-yao-title strong {
+  color: #101828;
+  font-size: 15px;
+}
+
+.live-yao-title span {
+  color: #667085;
+  font-size: 13px;
+}
+
+.live-yao-cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.yao-card {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  min-width: 0;
+}
+
+.yao-card.done {
+  border-color: #d6a954;
+  background: #fffdf7;
+}
+
+.yao-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mobile-coins {
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+
+.line-preview {
+  display: grid;
+  grid-template-columns: 88px auto;
+  gap: 8px;
+  align-items: center;
+  color: #667085;
+  font-size: 13px;
+}
+
+.line-preview em {
+  font-style: normal;
 }
 
 .advanced-collapse {
@@ -970,20 +1058,14 @@ onMounted(() => {
 
   .shake-actions .el-button:nth-child(2) {
     grid-column: 2;
-    grid-row: 1 / span 2;
-    min-height: 74px;
+    min-height: 56px;
     white-space: normal;
     font-size: 16px;
     font-weight: 800;
   }
 
-  .shake-actions .el-button:nth-child(3) {
-    grid-column: 1;
-  }
-
-  .yao-cards {
-    display: grid;
-    gap: 10px;
+  .live-yao-cards {
+    grid-template-columns: 1fr;
   }
 
   .gua-summary {
@@ -998,29 +1080,6 @@ onMounted(() => {
 
   .gua-summary button {
     width: fit-content;
-  }
-
-  .yao-card {
-    padding: 10px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    background: #fff;
-  }
-
-  .yao-card.done {
-    border-color: #d6a954;
-  }
-
-  .yao-card-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .mobile-coins {
-    margin: 10px 0;
-    flex-wrap: wrap;
   }
 
   .yao-meta {
