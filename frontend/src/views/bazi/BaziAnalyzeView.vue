@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page bazi-page" :class="{ 'bamboo-pro-page': baziViewMode === 'professional' }">
     <div class="page-header">
       <h1 class="page-title">八字分析</h1>
       <p class="page-desc">输入出生日期、时间和问题，系统会先自动排出四柱，再结合知识库生成分析。</p>
@@ -10,10 +10,22 @@
       <button type="button" :class="{ active: analysisMode === 'compatibility' }" @click="switchAnalysisMode('compatibility')">合盘解析</button>
     </div>
 
+    <div v-if="analysisMode === 'single'" class="view-switch">
+      <button type="button" :class="{ active: baziViewMode === 'simple' }" @click="baziViewMode = 'simple'">简明版</button>
+      <button type="button" :class="{ active: baziViewMode === 'professional' }" @click="baziViewMode = 'professional'">竹影专业版</button>
+    </div>
+
     <el-row :gutter="16" class="mobile-stack">
       <el-col :xs="24" :lg="14">
-        <div v-if="analysisMode === 'single'" class="panel">
-          <h2 class="section-title">命盘信息</h2>
+        <div v-if="analysisMode === 'single'" class="panel bazi-workbench" :class="{ 'bamboo-panel': baziViewMode === 'professional' }">
+          <div class="bazi-panel-head">
+            <div>
+              <h2 class="section-title">命盘信息</h2>
+              <p v-if="baziViewMode === 'simple'" class="section-subtitle">选择资料、填写问题即可开始，专业排盘已自动处理。</p>
+              <p v-else class="section-subtitle">竹影青墨专业盘，展示四柱、藏干、神煞、空亡与大运细节。</p>
+            </div>
+            <div v-if="baziViewMode === 'professional'" class="bamboo-mark">竹影</div>
+          </div>
           <el-form :model="form" label-position="top">
             <div class="profile-picker">
               <el-select v-model="selectedProfileId" placeholder="选择已保存资料" clearable filterable @change="applySelectedProfileToSingle">
@@ -27,7 +39,7 @@
               <el-button @click="saveBirthProfile">保存当前</el-button>
               <el-button :disabled="!selectedProfileId" @click="deleteSelectedProfile">删除</el-button>
             </div>
-            <el-row :gutter="12">
+            <el-row v-if="baziViewMode === 'professional'" :gutter="12" class="professional-fields">
               <el-col :xs="12" :sm="8">
                 <el-form-item label="性别">
                   <el-select v-model="form.gender" placeholder="选择" @change="refreshLuckPillar">
@@ -78,6 +90,7 @@
             </el-row>
 
             <el-alert
+              v-if="baziViewMode === 'professional'"
               class="auto-note"
               title="四柱会自动填写；打开真太阳时后，系统会按出生地自动匹配经度，并结合均时差修正出生时间。月柱目前按常用节气日期近似换月，临近节气日可手动校正。"
               type="info"
@@ -85,7 +98,22 @@
               show-icon
             />
 
-            <div class="chart-preview">
+            <div v-if="baziViewMode === 'simple'" class="simple-chart-summary">
+              <div>
+                <span>出生资料</span>
+                <strong>{{ [form.birthDate, form.birthTime, form.birthPlace].filter(Boolean).join(' ') || '请选择或填写资料' }}</strong>
+              </div>
+              <div>
+                <span>已排四柱</span>
+                <strong>{{ [form.yearPillar, form.monthPillar, form.dayPillar, form.hourPillar].filter(Boolean).join(' / ') || '填写出生信息后自动排盘' }}</strong>
+              </div>
+              <div>
+                <span>真太阳时</span>
+                <strong>{{ trueSolarTimeText }}</strong>
+              </div>
+            </div>
+
+            <div v-if="baziViewMode === 'professional'" class="chart-preview bamboo-chart">
               <div class="chart-tabs">
                 <button
                   v-for="tab in chartTabs"
@@ -241,6 +269,20 @@
               <el-col :xs="12" :sm="6"><el-form-item label="当前大运"><el-input v-model="form.luckPillar" placeholder="可选" /></el-form-item></el-col>
               <el-col :xs="12" :sm="6"><el-form-item label="当前流年"><el-input v-model="form.currentYearPillar" placeholder="可选" /></el-form-item></el-col>
               <el-col :xs="12" :sm="6">
+                <el-form-item label="求测方向">
+                  <el-select v-model="form.questionType">
+                    <el-option label="综合" value="综合" />
+                    <el-option label="感情" value="感情" />
+                    <el-option label="事业" value="事业" />
+                    <el-option label="财运" value="财运" />
+                    <el-option label="学业" value="学业" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row v-if="baziViewMode === 'simple'" :gutter="12" class="simple-question-row">
+              <el-col :xs="24" :sm="10">
                 <el-form-item label="求测方向">
                   <el-select v-model="form.questionType">
                     <el-option label="综合" value="综合" />
@@ -444,6 +486,7 @@ const knowledgeRules = ref([])
 const classicReferences = ref([])
 const reportPanelRef = ref(null)
 const analysisMode = ref('single')
+const baziViewMode = ref('simple')
 const activeChartTab = ref('chart')
 const savedProfiles = ref([])
 const selectedProfileId = ref('')
@@ -1179,6 +1222,66 @@ onMounted(applyProfile)
   margin-top: 12px;
 }
 
+.bazi-page.bamboo-pro-page {
+  background:
+    linear-gradient(180deg, rgba(246, 250, 246, 0.95), rgba(250, 248, 241, 0.95)),
+    repeating-linear-gradient(100deg, transparent 0 38px, rgba(47, 111, 94, 0.035) 38px 40px);
+}
+
+.bazi-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.section-subtitle {
+  margin: -6px 0 0;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.bamboo-panel {
+  position: relative;
+  overflow: hidden;
+  border-color: #d8e2d7;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(251, 250, 246, 0.98)),
+    repeating-linear-gradient(90deg, transparent 0 72px, rgba(47, 111, 94, 0.035) 72px 74px);
+  box-shadow: 0 10px 26px rgba(23, 63, 53, 0.08);
+}
+
+.bamboo-panel::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -24px;
+  width: 150px;
+  height: 210px;
+  pointer-events: none;
+  opacity: 0.12;
+  background:
+    linear-gradient(90deg, transparent 48%, #2f6f5e 49% 51%, transparent 52%),
+    radial-gradient(ellipse at 58% 18%, transparent 0 30%, #2f6f5e 31% 34%, transparent 35%),
+    radial-gradient(ellipse at 42% 38%, transparent 0 30%, #2f6f5e 31% 34%, transparent 35%),
+    radial-gradient(ellipse at 58% 58%, transparent 0 30%, #2f6f5e 31% 34%, transparent 35%);
+  transform: rotate(12deg);
+}
+
+.bamboo-mark {
+  flex: 0 0 auto;
+  border: 1px solid rgba(176, 138, 60, 0.45);
+  border-radius: 999px;
+  padding: 5px 12px;
+  color: #806326;
+  background: rgba(255, 250, 235, 0.75);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
 .mode-switch {
   display: inline-flex;
   padding: 4px;
@@ -1205,6 +1308,67 @@ onMounted(applyProfile)
   background: #111;
   color: #fff;
   box-shadow: 0 6px 16px rgba(17, 17, 17, 0.12);
+}
+
+.view-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 0 0 14px 8px;
+  border: 1px solid #d8e2d7;
+  border-radius: 10px;
+  background: #fbfaf6;
+}
+
+.view-switch button {
+  min-width: 92px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #49645b;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 34px;
+  padding: 0 14px;
+}
+
+.view-switch button.active {
+  color: #fff;
+  background: #2f6f5e;
+  box-shadow: 0 6px 16px rgba(47, 111, 94, 0.16);
+}
+
+.simple-chart-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 4px 0 16px;
+}
+
+.simple-chart-summary div {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fbfbfb;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.simple-chart-summary span,
+.simple-chart-summary strong {
+  display: block;
+}
+
+.simple-chart-summary span {
+  color: #8b8b8b;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.simple-chart-summary strong {
+  color: #303133;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .compatibility-desc {
@@ -1304,6 +1468,11 @@ onMounted(applyProfile)
   overflow: hidden;
 }
 
+.bamboo-chart {
+  border-color: #d8e2d7;
+  background: #fbfaf6;
+}
+
 .chart-tabs {
   display: flex;
   background: #050505;
@@ -1324,6 +1493,20 @@ onMounted(applyProfile)
   color: #c5a563;
 }
 
+.bamboo-chart .chart-tabs {
+  background:
+    linear-gradient(90deg, #173f35, #2f6f5e),
+    repeating-linear-gradient(90deg, transparent 0 42px, rgba(255, 255, 255, 0.08) 42px 44px);
+}
+
+.bamboo-chart .chart-tabs button {
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.bamboo-chart .chart-tabs button.active {
+  color: #f6e7b8;
+}
+
 .chart-banner {
   min-height: 58px;
   padding: 10px 14px;
@@ -1335,6 +1518,17 @@ onMounted(applyProfile)
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.92), rgba(19, 18, 15, 0.88)),
     radial-gradient(circle at 16% 30%, rgba(190, 155, 80, 0.38), transparent 30%);
+}
+
+.bamboo-chart .chart-banner {
+  color: #f7f2dd;
+  background:
+    linear-gradient(90deg, rgba(23, 63, 53, 0.96), rgba(47, 111, 94, 0.9)),
+    radial-gradient(circle at 18% 40%, rgba(246, 231, 184, 0.22), transparent 32%);
+}
+
+.bamboo-chart .chart-banner small {
+  color: rgba(247, 242, 221, 0.78);
 }
 
 .chart-banner span {
@@ -1365,6 +1559,26 @@ onMounted(applyProfile)
 
 .board-row:nth-child(even) {
   background: #f7f7f7;
+}
+
+.bamboo-chart .board-row {
+  border-bottom-color: #dfe8e0;
+}
+
+.bamboo-chart .board-row:nth-child(even) {
+  background: #f4f8f4;
+}
+
+.bamboo-chart .header-row {
+  background: #fbfaf6;
+}
+
+.bamboo-chart .row-label {
+  color: #6b7f75;
+}
+
+.bamboo-chart .board-cell {
+  color: #283c35;
 }
 
 .header-row {
@@ -1462,6 +1676,10 @@ onMounted(applyProfile)
   font-size: 14px;
 }
 
+.bamboo-chart .shensha-cell {
+  color: #806326;
+}
+
 .shensha-cell span {
   display: block;
   width: 100%;
@@ -1545,6 +1763,18 @@ onMounted(applyProfile)
   background: #fff8e8;
 }
 
+.bamboo-panel .detail-card,
+.bamboo-panel .note-line,
+.bamboo-panel .luck-grid div {
+  border-color: #dfe8e0;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.bamboo-panel .luck-grid div.active {
+  border-color: #b08a3c;
+  background: #fff8e8;
+}
+
 .luck-grid strong,
 .luck-grid span,
 .luck-grid small {
@@ -1622,14 +1852,38 @@ onMounted(applyProfile)
     grid-template-columns: 1fr 1fr;
   }
 
+  .view-switch {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 0 0 12px;
+  }
+
   .mode-switch button {
     min-width: 0;
     width: 100%;
     font-size: 13px;
   }
 
+  .view-switch button {
+    min-width: 0;
+    width: 100%;
+    font-size: 13px;
+    padding: 0 8px;
+  }
+
+  .bazi-panel-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bamboo-mark {
+    display: none;
+  }
+
   .compatibility-people,
   .compatibility-preview,
+  .simple-chart-summary,
   .profile-picker,
   .compatibility-saved-picker {
     grid-template-columns: 1fr;
