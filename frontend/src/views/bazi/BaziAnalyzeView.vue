@@ -15,6 +15,15 @@
       <button type="button" :class="{ active: baziViewMode === 'professional' }" @click="baziViewMode = 'professional'">竹影专业版</button>
     </div>
 
+    <div v-if="analysisMode === 'single' && baziViewMode === 'professional'" class="bamboo-hero">
+      <div class="bamboo-hero-copy">
+        <span>竹影玄卷</span>
+        <h2>八字排盘</h2>
+        <p>四柱为纲，大运为势，流年为机。</p>
+      </div>
+      <div class="bamboo-hero-seal">哲玄</div>
+    </div>
+
     <el-row :gutter="16" class="mobile-stack">
       <el-col :xs="24" :lg="14">
         <div v-if="analysisMode === 'single'" class="panel bazi-workbench" :class="{ 'bamboo-panel': baziViewMode === 'professional' }">
@@ -97,6 +106,56 @@
               :closable="false"
               show-icon
             />
+
+            <div v-if="baziViewMode === 'professional'" class="bamboo-dashboard">
+              <section class="bamboo-main-chart">
+                <div class="vertical-title">四柱命盘</div>
+                <div class="pillar-scroll">
+                  <div v-for="pillar in pillarCards" :key="pillar.key" class="pillar-slip" :class="{ day: pillar.key === 'day' }">
+                    <span class="pillar-name">{{ pillar.label }}</span>
+                    <strong class="stem-char" :class="elementClass(pillar.stemElement)">{{ pillar.stem || '-' }}</strong>
+                    <strong class="branch-char" :class="elementClass(pillar.branchElement)">{{ pillar.branch || '-' }}</strong>
+                    <small>{{ pillar.naYin || '-' }}</small>
+                    <em>{{ pillar.tenGod || '-' }}</em>
+                  </div>
+                </div>
+                <div class="day-master-seal">
+                  <span>日主</span>
+                  <strong :class="elementClass(pillarCards[2]?.stemElement)">{{ form.dayMaster || '-' }}</strong>
+                  <small>{{ dayMasterElementText }}</small>
+                </div>
+              </section>
+
+              <section class="bamboo-overview-card">
+                <div class="bamboo-card-title">命局概览</div>
+                <p><strong>四柱：</strong>{{ [form.yearPillar, form.monthPillar, form.dayPillar, form.hourPillar].filter(Boolean).join(' / ') || '待排盘' }}</p>
+                <p><strong>五行偏向：</strong>{{ elementSummary }}</p>
+                <p><strong>当前阶段：</strong>{{ luckInfo.currentLuck ? `大运 ${luckInfo.currentLuck}` : '资料完整后自动推断大运' }}</p>
+                <p><strong>修正时间：</strong>{{ trueSolarTimeText }}</p>
+              </section>
+
+              <section class="bamboo-five-card">
+                <div class="bamboo-card-title">五行分布</div>
+                <div class="element-bars">
+                  <div v-for="item in elementStats" :key="item.name" class="element-bar">
+                    <span>{{ item.name }}</span>
+                    <div><i :style="{ width: `${item.percent}%` }" :class="item.className"></i></div>
+                    <strong>{{ item.value }}</strong>
+                  </div>
+                </div>
+              </section>
+
+              <section v-if="luckInfo.cycles.length" class="bamboo-luck-card">
+                <div class="bamboo-card-title">大运竹节</div>
+                <div class="luck-bamboo">
+                  <div v-for="luck in luckInfo.cycles.slice(0, 8)" :key="luck.index" :class="{ active: luck.active }">
+                    <strong>{{ luck.pillar }}</strong>
+                    <span>{{ luck.startAge }}-{{ luck.endAge }}岁</span>
+                    <small>{{ luck.startYear }}</small>
+                  </div>
+                </div>
+              </section>
+            </div>
 
             <div v-if="baziViewMode === 'simple'" class="simple-chart-summary">
               <div>
@@ -550,6 +609,36 @@ const baziDetails = computed(() => getBaziDetails({
   dayMaster: form.dayMaster,
   luck: luckInfo.value
 }))
+
+const elementStats = computed(() => {
+  const seed = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 }
+  pillarCards.value.forEach((pillar) => {
+    if (pillar.stemElement) seed[pillar.stemElement] += 1.2
+    if (pillar.branchElement) seed[pillar.branchElement] += 1
+    ;(pillar.hiddenStems || []).forEach(hidden => {
+      if (hidden.element) seed[hidden.element] += 0.35
+    })
+  })
+  const max = Math.max(...Object.values(seed), 1)
+  const classMap = { 木: 'wood-bg', 火: 'fire-bg', 土: 'earth-bg', 金: 'metal-bg', 水: 'water-bg' }
+  return Object.entries(seed).map(([name, value]) => ({
+    name,
+    value: Number(value.toFixed(1)),
+    percent: Math.max(8, Math.round((value / max) * 100)),
+    className: classMap[name]
+  }))
+})
+
+const elementSummary = computed(() => {
+  const sorted = [...elementStats.value].sort((a, b) => b.value - a.value)
+  if (!sorted[0]?.value) return '待排盘'
+  return `${sorted[0].name}较显，${sorted[1].name}次之，${sorted[4].name}偏弱`
+})
+
+const dayMasterElementText = computed(() => {
+  const element = pillarCards.value[2]?.stemElement
+  return element ? `${element}气` : '待定'
+})
 
 const luckInfo = computed(() => getLuckCycles({
   birthDate: form.birthDate,
@@ -1228,6 +1317,94 @@ onMounted(applyProfile)
     repeating-linear-gradient(100deg, transparent 0 38px, rgba(47, 111, 94, 0.035) 38px 40px);
 }
 
+.bamboo-hero {
+  position: relative;
+  min-height: 160px;
+  margin: 0 0 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 34px;
+  color: #f7f2dd;
+  border: 1px solid rgba(176, 138, 60, 0.45);
+  background:
+    linear-gradient(90deg, rgba(12, 48, 41, 0.92), rgba(30, 82, 68, 0.72)),
+    repeating-linear-gradient(105deg, transparent 0 34px, rgba(232, 214, 165, 0.08) 34px 36px),
+    radial-gradient(circle at 80% 20%, rgba(246, 231, 184, 0.2), transparent 32%);
+  box-shadow: 0 16px 36px rgba(23, 63, 53, 0.18);
+}
+
+.bamboo-hero::before,
+.bamboo-hero::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.22;
+}
+
+.bamboo-hero::before {
+  right: 56px;
+  top: -24px;
+  width: 160px;
+  height: 220px;
+  background:
+    linear-gradient(90deg, transparent 48%, #f4e6b8 49% 51%, transparent 52%),
+    radial-gradient(ellipse at 62% 20%, transparent 0 30%, #f4e6b8 31% 34%, transparent 35%),
+    radial-gradient(ellipse at 38% 42%, transparent 0 30%, #f4e6b8 31% 34%, transparent 35%),
+    radial-gradient(ellipse at 62% 64%, transparent 0 30%, #f4e6b8 31% 34%, transparent 35%);
+  transform: rotate(14deg);
+}
+
+.bamboo-hero::after {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 58px;
+  background: linear-gradient(180deg, transparent, rgba(5, 35, 30, 0.45));
+}
+
+.bamboo-hero-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.bamboo-hero-copy span {
+  color: #e8d6a5;
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.bamboo-hero-copy h2 {
+  margin: 6px 0 8px;
+  color: #fbf7e8;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.bamboo-hero-copy p {
+  margin: 0;
+  color: rgba(247, 242, 221, 0.84);
+  font-size: 15px;
+}
+
+.bamboo-hero-seal {
+  position: relative;
+  z-index: 1;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  border: 2px solid #e8d6a5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e8d6a5;
+  background: rgba(9, 44, 37, 0.62);
+  font-weight: 800;
+}
+
 .bazi-panel-head {
   display: flex;
   justify-content: space-between;
@@ -1369,6 +1546,229 @@ onMounted(applyProfile)
   font-size: 14px;
   line-height: 1.5;
   word-break: break-word;
+}
+
+.bamboo-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.85fr);
+  gap: 12px;
+  margin: 4px 0 16px;
+}
+
+.bamboo-main-chart,
+.bamboo-overview-card,
+.bamboo-five-card,
+.bamboo-luck-card {
+  border: 1px solid #d8c696;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 243, 0.96), rgba(248, 244, 230, 0.96)),
+    repeating-linear-gradient(0deg, transparent 0 34px, rgba(91, 112, 95, 0.035) 34px 36px);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.54);
+}
+
+.bamboo-main-chart {
+  grid-row: span 2;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 132px;
+  gap: 12px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.vertical-title {
+  border-radius: 8px;
+  background: linear-gradient(180deg, #173f35, #2f6f5e);
+  color: #f4e6b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  letter-spacing: 4px;
+  font-weight: 800;
+  min-height: 184px;
+}
+
+.pillar-scroll {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(82px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.pillar-slip {
+  position: relative;
+  border: 1px solid rgba(166, 146, 93, 0.45);
+  border-radius: 8px;
+  min-height: 184px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 253, 246, 0.72);
+}
+
+.pillar-slip.day {
+  border-color: #b08a3c;
+  box-shadow: 0 0 0 2px rgba(176, 138, 60, 0.12);
+}
+
+.pillar-name {
+  color: #6f654e;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stem-char,
+.branch-char {
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.pillar-slip small {
+  color: #5f695e;
+  font-size: 13px;
+}
+
+.pillar-slip em {
+  color: #806326;
+  font-size: 12px;
+  font-style: normal;
+}
+
+.day-master-seal {
+  border: 1px solid rgba(176, 138, 60, 0.42);
+  border-radius: 50%;
+  width: 118px;
+  height: 118px;
+  align-self: center;
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle, rgba(225, 239, 229, 0.88), rgba(255, 253, 246, 0.78)),
+    linear-gradient(135deg, transparent, rgba(47, 111, 94, 0.1));
+}
+
+.day-master-seal span {
+  color: #2f6f5e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.day-master-seal strong {
+  margin: 4px 0;
+  font-size: 40px;
+  line-height: 1;
+}
+
+.day-master-seal small {
+  color: #667085;
+  font-size: 12px;
+}
+
+.bamboo-overview-card,
+.bamboo-five-card,
+.bamboo-luck-card {
+  padding: 14px;
+}
+
+.bamboo-card-title {
+  margin-bottom: 10px;
+  color: #173f35;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.bamboo-overview-card p {
+  margin: 7px 0;
+  color: #3f4f49;
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+.bamboo-overview-card strong {
+  color: #173f35;
+}
+
+.element-bars {
+  display: grid;
+  gap: 8px;
+}
+
+.element-bar {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 34px;
+  gap: 8px;
+  align-items: center;
+  color: #3f4f49;
+  font-size: 13px;
+}
+
+.element-bar div {
+  height: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(23, 63, 53, 0.08);
+}
+
+.element-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.element-bar strong {
+  color: #806326;
+  text-align: right;
+}
+
+.wood-bg { background: #2f6f5e; }
+.fire-bg { background: #a64e3d; }
+.earth-bg { background: #b08a3c; }
+.metal-bg { background: #8f968c; }
+.water-bg { background: #1f5c73; }
+
+.luck-bamboo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.luck-bamboo div {
+  border-radius: 8px;
+  border: 1px solid rgba(47, 111, 94, 0.22);
+  background: rgba(255, 255, 255, 0.55);
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.luck-bamboo div.active {
+  color: #fff;
+  border-color: #2f6f5e;
+  background: linear-gradient(180deg, #2f6f5e, #173f35);
+}
+
+.luck-bamboo strong,
+.luck-bamboo span,
+.luck-bamboo small {
+  display: block;
+}
+
+.luck-bamboo strong {
+  font-size: 15px;
+}
+
+.luck-bamboo span,
+.luck-bamboo small {
+  margin-top: 3px;
+  font-size: 11px;
+  color: inherit;
+  opacity: 0.76;
 }
 
 .compatibility-desc {
@@ -1852,6 +2252,21 @@ onMounted(applyProfile)
     grid-template-columns: 1fr 1fr;
   }
 
+  .bamboo-hero {
+    min-height: 132px;
+    padding: 20px 18px;
+  }
+
+  .bamboo-hero-copy h2 {
+    font-size: 28px;
+  }
+
+  .bamboo-hero-seal {
+    width: 54px;
+    height: 54px;
+    font-size: 13px;
+  }
+
   .view-switch {
     width: 100%;
     display: grid;
@@ -1884,9 +2299,56 @@ onMounted(applyProfile)
   .compatibility-people,
   .compatibility-preview,
   .simple-chart-summary,
+  .bamboo-dashboard,
   .profile-picker,
   .compatibility-saved-picker {
     grid-template-columns: 1fr;
+  }
+
+  .bamboo-main-chart {
+    grid-template-columns: 42px minmax(0, 1fr);
+    padding: 10px;
+  }
+
+  .day-master-seal {
+    grid-column: 1 / -1;
+    width: 96px;
+    height: 96px;
+  }
+
+  .day-master-seal strong {
+    font-size: 34px;
+  }
+
+  .vertical-title {
+    min-height: 154px;
+    letter-spacing: 2px;
+    font-size: 13px;
+  }
+
+  .pillar-scroll {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .pillar-slip {
+    min-height: 154px;
+    padding: 8px 3px;
+  }
+
+  .pillar-name,
+  .pillar-slip small,
+  .pillar-slip em {
+    font-size: 11px;
+  }
+
+  .stem-char,
+  .branch-char {
+    font-size: 27px;
+  }
+
+  .luck-bamboo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .compatibility-person {
