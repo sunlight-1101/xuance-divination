@@ -14,7 +14,7 @@
         <el-menu-item index="/bazi"><CalendarDays :size="18" />八字</el-menu-item>
         <el-menu-item index="/liuyao"><ScrollText :size="18" />六爻</el-menu-item>
         <el-menu-item index="/ziwei"><Sparkles :size="18" />紫微</el-menu-item>
-        <el-menu-item index="/quota"><CreditCard :size="18" />额度</el-menu-item>
+        <el-menu-item index="/quota"><CreditCard :size="18" />支持开发</el-menu-item>
         <el-menu-item index="/knowledge"><BookOpen :size="18" />知识库</el-menu-item>
         <el-menu-item index="/records"><Clock3 :size="18" />历史</el-menu-item>
       </el-menu>
@@ -63,6 +63,10 @@
       <router-link to="/records" class="bottom-item">
         <Clock3 :size="20" />
         <span>历史</span>
+      </router-link>
+      <router-link to="/quota" class="bottom-item">
+        <CreditCard :size="20" />
+        <span>打赏</span>
       </router-link>
       <router-link to="/knowledge" class="bottom-item">
         <BookOpen :size="20" />
@@ -214,7 +218,7 @@ function handleLogout() {
     min-height: 58px;
     height: calc(58px + env(safe-area-inset-bottom));
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     background: #fff;
     border-top: 1px solid #e5e7eb;
     padding-bottom: env(safe-area-inset-bottom);
@@ -227,7 +231,18 @@ function handleLogout() {
     gap: 3px;
     color: #667085;
     text-decoration: none;
-    font-size: 11px;
+    font-size: 10px;
+    line-height: 1.1;
+    min-width: 0;
+  }
+
+  .bottom-item svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .bottom-item span {
+    white-space: nowrap;
   }
 
   .bottom-item.router-link-active {
