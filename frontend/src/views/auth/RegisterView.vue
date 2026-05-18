@@ -67,7 +67,7 @@ async function handleRegister() {
     const user = await register({ ...form, username: form.email })
     userStore.setUser(user)
     ElMessage.success('注册成功')
-    router.push('/bazi')
+    router.push('/home')
   } finally {
     loading.value = false
   }

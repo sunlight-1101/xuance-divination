@@ -37,7 +37,7 @@ async function handleLogin() {
     const user = await login(form)
     userStore.setUser(user)
     ElMessage.success('登录成功')
-    router.push(user.role === 'ADMIN' ? '/dashboard' : '/bazi')
+    router.push(user.role === 'ADMIN' ? '/dashboard' : '/home')
   } finally {
     loading.value = false
   }
@@ -45,7 +45,7 @@ async function handleLogin() {
 
 function guestLogin() {
   userStore.setUser({ id: null, username: 'guest', nickname: '游客', role: 'GUEST' })
-  router.push('/bazi')
+  router.push('/home')
 }
 </script>
 

@@ -9,7 +9,8 @@
         </div>
       </div>
       <el-menu router :default-active="$route.path" class="menu">
-        <el-menu-item v-if="userStore.isAdmin" index="/dashboard"><LayoutDashboard :size="18" />首页</el-menu-item>
+        <el-menu-item v-if="userStore.isAdmin" index="/dashboard"><LayoutDashboard :size="18" />管理首页</el-menu-item>
+        <el-menu-item index="/home"><Landmark :size="18" />首页</el-menu-item>
         <el-menu-item index="/bazi"><CalendarDays :size="18" />八字</el-menu-item>
         <el-menu-item index="/liuyao"><ScrollText :size="18" />六爻</el-menu-item>
         <el-menu-item index="/ziwei"><Sparkles :size="18" />紫微</el-menu-item>
@@ -43,6 +44,10 @@
     </el-container>
 
     <nav class="bottom-nav">
+      <router-link to="/home" class="bottom-item">
+        <Landmark :size="20" />
+        <span>首页</span>
+      </router-link>
       <router-link to="/bazi" class="bottom-item">
         <CalendarDays :size="20" />
         <span>八字</span>
@@ -59,10 +64,6 @@
         <Clock3 :size="20" />
         <span>历史</span>
       </router-link>
-      <router-link to="/quota" class="bottom-item">
-        <CreditCard :size="20" />
-        <span>额度</span>
-      </router-link>
       <router-link to="/knowledge" class="bottom-item">
         <BookOpen :size="20" />
         <span>知识</span>
@@ -73,7 +74,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { BookOpen, CalendarDays, Clock3, CreditCard, LayoutDashboard, ScrollText, Sparkles, UserRound } from 'lucide-vue-next'
+import { BookOpen, CalendarDays, Clock3, CreditCard, Landmark, LayoutDashboard, ScrollText, Sparkles, UserRound } from 'lucide-vue-next'
 import { useUserStore } from '../stores/user'
 
 const router = useRouter()

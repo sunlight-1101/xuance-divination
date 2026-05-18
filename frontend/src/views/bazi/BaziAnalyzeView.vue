@@ -1,5 +1,5 @@
 <template>
-  <div class="page bazi-page" :class="{ 'bamboo-pro-page': baziViewMode === 'professional' }">
+  <div class="page bazi-page">
     <div class="page-header">
       <h1 class="page-title">八字分析</h1>
       <p class="page-desc">输入出生日期、时间和问题，系统会先自动排出四柱，再结合知识库生成分析。</p>
@@ -10,30 +10,14 @@
       <button type="button" :class="{ active: analysisMode === 'compatibility' }" @click="switchAnalysisMode('compatibility')">合盘解析</button>
     </div>
 
-    <div v-if="analysisMode === 'single'" class="view-switch">
-      <button type="button" :class="{ active: baziViewMode === 'simple' }" @click="baziViewMode = 'simple'">简明版</button>
-      <button type="button" :class="{ active: baziViewMode === 'professional' }" @click="baziViewMode = 'professional'">竹影专业版</button>
-    </div>
-
-    <div v-if="analysisMode === 'single' && baziViewMode === 'professional'" class="bamboo-hero">
-      <div class="bamboo-hero-copy">
-        <span>竹影玄卷</span>
-        <h2>八字排盘</h2>
-        <p>四柱为纲，大运为势，流年为机。</p>
-      </div>
-      <div class="bamboo-hero-seal">哲玄</div>
-    </div>
-
     <el-row :gutter="16" class="mobile-stack">
       <el-col :xs="24" :lg="14">
-        <div v-if="analysisMode === 'single'" class="panel bazi-workbench" :class="{ 'bamboo-panel': baziViewMode === 'professional' }">
+        <div v-if="analysisMode === 'single'" class="panel bazi-workbench">
           <div class="bazi-panel-head">
             <div>
               <h2 class="section-title">命盘信息</h2>
-              <p v-if="baziViewMode === 'simple'" class="section-subtitle">选择资料、填写问题即可开始，专业排盘已自动处理。</p>
-              <p v-else class="section-subtitle">竹影青墨专业盘，展示四柱、藏干、神煞、空亡与大运细节。</p>
+              <p class="section-subtitle">选择资料、填写问题即可开始，排盘细节会自动参与分析。</p>
             </div>
-            <div v-if="baziViewMode === 'professional'" class="bamboo-mark">竹影</div>
           </div>
           <el-form :model="form" label-position="top">
             <div class="profile-picker">
@@ -48,7 +32,7 @@
               <el-button @click="saveBirthProfile">保存当前</el-button>
               <el-button :disabled="!selectedProfileId" @click="deleteSelectedProfile">删除</el-button>
             </div>
-            <el-row v-if="baziViewMode === 'professional'" :gutter="12" class="professional-fields">
+            <el-row :gutter="12" class="professional-fields">
               <el-col :xs="12" :sm="8">
                 <el-form-item label="性别">
                   <el-select v-model="form.gender" placeholder="选择" @change="refreshLuckPillar">
@@ -99,7 +83,6 @@
             </el-row>
 
             <el-alert
-              v-if="baziViewMode === 'professional'"
               class="auto-note"
               title="四柱会自动填写；打开真太阳时后，系统会按出生地自动匹配经度，并结合均时差修正出生时间。月柱目前按常用节气日期近似换月，临近节气日可手动校正。"
               type="info"
@@ -157,7 +140,7 @@
               </section>
             </div>
 
-            <div v-if="baziViewMode === 'simple'" class="simple-chart-summary">
+            <div class="simple-chart-summary">
               <div>
                 <span>出生资料</span>
                 <strong>{{ [form.birthDate, form.birthTime, form.birthPlace].filter(Boolean).join(' ') || '请选择或填写资料' }}</strong>
@@ -340,7 +323,7 @@
               </el-col>
             </el-row>
 
-            <el-row v-if="baziViewMode === 'simple'" :gutter="12" class="simple-question-row">
+            <el-row :gutter="12" class="simple-question-row">
               <el-col :xs="24" :sm="10">
                 <el-form-item label="求测方向">
                   <el-select v-model="form.questionType">

@@ -3,6 +3,7 @@ import { useUserStore } from '../stores/user'
 import LoginView from '../views/auth/LoginView.vue'
 import RegisterView from '../views/auth/RegisterView.vue'
 import MainLayout from '../components/MainLayout.vue'
+import HomeView from '../views/home/HomeView.vue'
 import DashboardView from '../views/dashboard/DashboardView.vue'
 import BaziAnalyzeView from '../views/bazi/BaziAnalyzeView.vue'
 import LiuyaoAnalyzeView from '../views/liuyao/LiuyaoAnalyzeView.vue'
@@ -21,9 +22,10 @@ const router = createRouter({
       component: MainLayout,
       redirect: () => {
         const userStore = useUserStore()
-        return userStore.isAdmin ? '/dashboard' : '/bazi'
+        return userStore.isAdmin ? '/dashboard' : '/home'
       },
       children: [
+        { path: 'home', component: HomeView },
         { path: 'dashboard', component: DashboardView, meta: { adminOnly: true } },
         { path: 'bazi', component: BaziAnalyzeView },
         { path: 'liuyao', component: LiuyaoAnalyzeView },
@@ -42,7 +44,7 @@ router.beforeEach(to => {
     return '/login'
   }
   if (to.meta.adminOnly && !userStore.isAdmin) {
-    return '/bazi'
+    return '/home'
   }
 })
 
