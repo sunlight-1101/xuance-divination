@@ -200,37 +200,100 @@
               </div>
 
               <div v-else-if="activeChartTab === 'detail'" class="tab-pane detail-pane">
-                <div class="detail-card">
-                  <span>天干十神</span>
-                  <strong>{{ baziDetails.summary.tenGods }}</strong>
-                </div>
-                <div class="detail-card">
-                  <span>地支藏干</span>
-                  <strong>{{ baziDetails.summary.hiddenStems }}</strong>
-                </div>
-                <div class="detail-card">
-                  <span>旬空</span>
-                  <strong>{{ baziDetails.summary.empty }}</strong>
-                </div>
-                <div class="detail-card">
-                  <span>大运</span>
-                  <strong>{{ baziDetails.summary.luck }}</strong>
-                </div>
-                <div class="detail-card">
-                  <span>神煞</span>
-                  <strong>{{ baziDetails.summary.shenSha }}</strong>
-                </div>
-                <div v-if="luckInfo.cycles.length" class="luck-grid">
-                  <div
-                    v-for="luck in luckInfo.cycles"
-                    :key="luck.index"
-                    :class="{ active: luck.active }"
-                  >
-                    <strong>{{ luck.pillar }}</strong>
-                    <span>{{ luck.startAge }}-{{ luck.endAge }}岁</span>
-                    <small>{{ luck.startYear }}-{{ luck.endYear }}</small>
+                <section class="fine-summary">
+                  <div>
+                    <span>日主</span>
+                    <strong :class="elementClass(pillarCards[2]?.stemElement)">{{ form.dayMaster || '-' }}</strong>
+                    <small>{{ dayMasterElementText }}</small>
                   </div>
-                </div>
+                  <div>
+                    <span>起运</span>
+                    <strong>{{ luckInfo.startAge || '待排' }}</strong>
+                    <small>{{ luckInfo.direction || '需填写性别和出生信息' }}</small>
+                  </div>
+                  <div>
+                    <span>当前大运</span>
+                    <strong>{{ currentLuckDetail.pillar || form.luckPillar || '-' }}</strong>
+                    <small>{{ currentLuckDetail.rangeText || '资料完整后自动推断' }}</small>
+                  </div>
+                  <div>
+                    <span>当前流年</span>
+                    <strong>{{ currentYearDetail.pillar || '-' }}</strong>
+                    <small>{{ currentYearDetail.tenGod || '自动按当前年份' }}</small>
+                  </div>
+                </section>
+
+                <section class="fine-section">
+                  <div class="fine-title">
+                    <strong>大运流转</strong>
+                    <span>{{ luckInfo.direction || '未定方向' }} · {{ luckInfo.startAge || '未起运' }}</span>
+                  </div>
+                  <div v-if="luckInfo.cycles.length" class="luck-timeline">
+                    <div
+                      v-for="luck in luckInfo.cycles"
+                      :key="luck.index"
+                      :class="{ active: luck.active }"
+                    >
+                      <i>{{ luck.index }}</i>
+                      <strong>{{ luck.pillar }}</strong>
+                      <span>{{ luck.startAge }}-{{ luck.endAge }}岁</span>
+                      <small>{{ luck.startYear }}-{{ luck.endYear }}</small>
+                      <em>{{ luck.stemTenGod || '十神待定' }}</em>
+                    </div>
+                  </div>
+                  <div v-else class="empty-fine">填写出生日期、时间、性别后自动推断大运。</div>
+                </section>
+
+                <section class="fine-section">
+                  <div class="fine-title">
+                    <strong>流年提示</strong>
+                    <span>{{ currentYearDetail.year }}年</span>
+                  </div>
+                  <div class="annual-grid">
+                    <div>
+                      <span>流年干支</span>
+                      <strong>{{ currentYearDetail.pillar || '-' }}</strong>
+                    </div>
+                    <div>
+                      <span>流年天干十神</span>
+                      <strong>{{ currentYearDetail.tenGod || '-' }}</strong>
+                    </div>
+                    <div>
+                      <span>流年地支</span>
+                      <strong>{{ currentYearDetail.branch || '-' }}</strong>
+                    </div>
+                    <div>
+                      <span>与当前大运</span>
+                      <strong>{{ currentLuckDetail.pillar ? `${currentLuckDetail.pillar}运中` : '待排大运' }}</strong>
+                    </div>
+                  </div>
+                  <p class="fine-note">目前节气换月和起运时间采用前端近似算法，临近节气日建议用权威万年历核对后在“手动校正四柱”中修正。</p>
+                </section>
+
+                <section class="fine-section">
+                  <div class="fine-title">
+                    <strong>命盘细项</strong>
+                    <span>十神 · 藏干 · 空亡 · 神煞</span>
+                  </div>
+                  <div class="detail-grid">
+                    <div class="detail-card">
+                      <span>天干十神</span>
+                      <strong>{{ baziDetails.summary.tenGods }}</strong>
+                    </div>
+                    <div class="detail-card">
+                      <span>地支藏干</span>
+                      <strong>{{ baziDetails.summary.hiddenStems }}</strong>
+                    </div>
+                    <div class="detail-card">
+                      <span>旬空</span>
+                      <strong>{{ baziDetails.summary.empty }}</strong>
+                    </div>
+                    <div class="detail-card">
+                      <span>神煞</span>
+                      <strong>{{ baziDetails.summary.shenSha }}</strong>
+                    </div>
+                  </div>
+                </section>
               </div>
 
               <div v-else class="tab-pane note-pane">
@@ -460,7 +523,7 @@ import { analyzeBazi, analyzeBaziCompatibility } from '../../api/bazi'
 import KnowledgeReferences from '../../components/KnowledgeReferences.vue'
 import ResultReport from '../../components/ResultReport.vue'
 import { useUserStore } from '../../stores/user'
-import { getBaziDetails, getFourPillars, getLuckCycles, getYearGanZhi } from '../../utils/ganzhi'
+import { getBaziDetails, getFourPillars, getLuckCycles, getTenGod, getYearGanZhi } from '../../utils/ganzhi'
 import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
 import { provinceOptions } from '../../utils/chinaCities'
 
@@ -566,14 +629,46 @@ const dayMasterElementText = computed(() => {
   return element ? `${element}气` : '待定'
 })
 
-const luckInfo = computed(() => getLuckCycles({
-  birthDate: form.birthDate,
-  birthTime: effectiveBirthTime.value || normalizeBirthTime(form.birthTime),
-  gender: form.gender,
-  yearPillar: form.yearPillar,
-  monthPillar: form.monthPillar,
-  currentDate: new Date()
-}))
+const luckInfo = computed(() => {
+  const info = getLuckCycles({
+    birthDate: form.birthDate,
+    birthTime: effectiveBirthTime.value || normalizeBirthTime(form.birthTime),
+    gender: form.gender,
+    yearPillar: form.yearPillar,
+    monthPillar: form.monthPillar,
+    currentDate: new Date()
+  })
+  return {
+    ...info,
+    cycles: (info.cycles || []).map(luck => ({
+      ...luck,
+      stemTenGod: getTenGod(form.dayMaster, luck.pillar?.slice(0, 1))
+    }))
+  }
+})
+
+const currentLuckDetail = computed(() => {
+  const active = luckInfo.value.cycles.find(item => item.active)
+  if (!active) return { pillar: form.luckPillar || '', rangeText: '' }
+  return {
+    ...active,
+    rangeText: `${active.startAge}-${active.endAge}岁 · ${active.startYear}-${active.endYear}`
+  }
+})
+
+const currentYearDetail = computed(() => {
+  const year = new Date().getFullYear()
+  const pillar = form.currentYearPillar || getYearGanZhi(new Date())
+  const stem = pillar.slice(0, 1)
+  const branch = pillar.slice(1, 2)
+  return {
+    year,
+    pillar,
+    stem,
+    branch,
+    tenGod: getTenGod(form.dayMaster, stem)
+  }
+})
 
 const selectedCity = computed(() => getCityLocation(form.birthPlace))
 const trueSolarInfo = computed(() => getTrueSolarTimeInfo())
@@ -2101,7 +2196,157 @@ onMounted(applyProfile)
 
 .detail-pane {
   display: grid;
+  gap: 12px;
+}
+
+.fine-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+}
+
+.fine-summary div,
+.annual-grid div {
+  border: 1px solid #dfe8e0;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fffdf8, #f7fbf6);
+  padding: 12px;
+  min-width: 0;
+}
+
+.fine-summary span,
+.annual-grid span {
+  display: block;
+  color: #6b7f75;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.fine-summary strong,
+.annual-grid strong {
+  display: block;
+  color: #173f35;
+  font-size: 20px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.fine-summary small {
+  display: block;
+  margin-top: 6px;
+  color: #806326;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.fine-section {
+  border: 1px solid #dfe8e0;
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+}
+
+.fine-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fine-title strong {
+  color: #173f35;
+  font-size: 17px;
+}
+
+.fine-title span {
+  color: #806326;
+  font-size: 13px;
+  text-align: right;
+}
+
+.luck-timeline {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.luck-timeline div {
+  position: relative;
+  border: 1px solid #edf0ea;
+  border-radius: 8px;
+  background: #fbfaf6;
+  padding: 10px 8px;
+  min-height: 116px;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+
+.luck-timeline div.active {
+  border-color: #2f6f5e;
+  background: linear-gradient(180deg, #2f6f5e, #173f35);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(23, 63, 53, 0.18);
+}
+
+.luck-timeline i {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: inherit;
+  opacity: 0.45;
+  font-style: normal;
+  font-size: 12px;
+}
+
+.luck-timeline strong {
+  color: inherit;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.luck-timeline span,
+.luck-timeline small,
+.luck-timeline em {
+  display: block;
+  color: inherit;
+  opacity: 0.74;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.luck-timeline em {
+  margin-top: 3px;
+  opacity: 0.92;
+  color: #806326;
+}
+
+.luck-timeline div.active em {
+  color: #f6e7b8;
+}
+
+.annual-grid,
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fine-note,
+.empty-fine {
+  margin: 10px 0 0;
+  color: #8a6b2d;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.empty-fine {
+  margin: 0;
+  border-radius: 8px;
+  background: #fbfaf6;
+  padding: 12px;
 }
 
 .luck-grid {
@@ -2452,6 +2697,41 @@ onMounted(applyProfile)
   .info-grid {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .fine-summary,
+  .annual-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fine-summary div,
+  .annual-grid div,
+  .fine-section {
+    padding: 10px;
+  }
+
+  .fine-summary strong,
+  .annual-grid strong {
+    font-size: 18px;
+  }
+
+  .fine-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .fine-title span {
+    text-align: left;
+  }
+
+  .luck-timeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .luck-timeline div {
+    min-height: 104px;
   }
 
   .luck-grid {

@@ -229,13 +229,15 @@ export function getLuckCycles({ birthDate, birthTime, gender, yearPillar, monthP
     const pillarIndex = mod(monthIndex + (forward ? index + 1 : -(index + 1)), 60)
     const start = startAgeNumber + index * 10
     const end = start + 10
+    const displayStartAge = Math.max(0, Math.round(start))
+    const displayEndAge = Math.max(displayStartAge, Math.round(end))
     return {
       index: index + 1,
       pillar: JIAZI[pillarIndex],
-      startAge: Math.floor(start),
-      endAge: Math.floor(end),
-      startYear: birthYear + Math.floor(start),
-      endYear: birthYear + Math.floor(end) - 1,
+      startAge: displayStartAge,
+      endAge: displayEndAge,
+      startYear: birthYear + displayStartAge,
+      endYear: birthYear + displayEndAge,
       active: currentAge >= start && currentAge < end
     }
   })
