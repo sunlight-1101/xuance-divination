@@ -15,8 +15,8 @@
 输出要求：
 - 只返回合法 JSON，不要 Markdown、代码块或 JSON 外文字。
 - 字段：`coreConclusion`, `plainSummary`, `confidence`, `keyEvidence`, `detailedAnalysis`, `timing`, `suggestion`, `missingFields`。
-- `coreConclusion` 至少 180 字，直接回答问题，包含成败倾向、当前状态、阻力、转机和建议。
-- `plainSummary` 至少 300 字，用白话解释为什么这样判断、哪些爻位/用神关键、接下来怎么做、避开什么风险。
+- `coreConclusion` 至少 180 字，必须写给完全不懂六爻的普通用户看。只能用日常白话直接回答问题，说明“这件事成的可能性、现在卡在哪里、对方或环境是什么状态、接下来怎么做”。不要出现世爻、应爻、用神、原神、忌神、动爻、变爻、空亡、月破、入墓、六合六冲等专业术语；这些专业依据放到 `keyEvidence` 或 `detailedAnalysis`。
+- `plainSummary` 至少 300 字，用白话解释为什么这样判断、哪些爻位/用神关键、接下来怎么做、避开什么风险；出现术语时要顺手翻译成普通人能懂的话。
 - `confidence` 只能取 `高`、`中等`、`低`；用神不明、动爻过多、空破伏藏冲突时必须说明不确定性。
 - `keyEvidence` 必须是 3-6 条字符串数组，每条写清“爻位/用神事实 + 判断含义”，不能只写术语。
 - `timing` 必须是数组；只有能从用神、动爻、冲合、空亡、墓绝、月日触发推出明确窗口时才填写，否则返回 `[]`。

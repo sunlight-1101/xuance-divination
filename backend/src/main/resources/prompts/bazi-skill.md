@@ -13,8 +13,8 @@
 输出要求：
 - 只返回合法 JSON，不要 Markdown、代码块或 JSON 外文字。
 - 字段：`coreConclusion`, `plainSummary`, `confidence`, `keyEvidence`, `detailedAnalysis`, `timing`, `suggestion`, `missingFields`。
-- `coreConclusion` 至少 180 字，直接回答问题，包含吉凶倾向、当前状态、阻力、转机和建议。
-- `plainSummary` 至少 300 字，用白话解释判断依据、关键点、下一步做法和风险。
+- `coreConclusion` 至少 180 字，必须写给完全不懂八字的普通用户看。只能用日常白话直接回答问题，说明“现在大概是什么情况、好在哪里、卡在哪里、接下来怎么做”。不要出现十神、日主、用神、格局、冲合刑害、空亡、神煞、纳音、旺衰等专业术语；如果必须提专业依据，放到 `keyEvidence` 或 `detailedAnalysis`。
+- `plainSummary` 至少 300 字，用白话解释判断依据、关键点、下一步做法和风险；可以少量解释专业术语，但必须先翻译成普通人能懂的话。
 - `confidence` 只能取 `高`、`中等`、`低`；资料不足、规则冲突或只能类推时必须降为 `低` 或 `中等`。
 - `keyEvidence` 必须是 3-6 条字符串数组，每条写清“盘面事实 + 判断含义”，不能只写术语。
 - `timing` 必须是数组；只有能从大运、流年、流月或盘面触发推出明确窗口时才填写，否则返回 `[]`。

@@ -29,6 +29,7 @@ import org.springframework.util.StringUtils;
 @Service
 public class ZiweiAnalyzeServiceImpl implements ZiweiAnalyzeService {
     private static final String TYPE = "ZIWEI";
+    private static final String REPORT_STYLE_VERSION = "plain-core-v2";
 
     private final KnowledgeService knowledgeService;
     private final ClassicBookService classicBookService;
@@ -128,6 +129,7 @@ public class ZiweiAnalyzeServiceImpl implements ZiweiAnalyzeService {
     private String ziweiCacheKey(ZiweiAnalyzeDTO dto) {
         return cacheSupport.fingerprint(
                 TYPE,
+                REPORT_STYLE_VERSION,
                 dto.getQuestionType(),
                 dto.getQuestion(),
                 dto.getGender(),

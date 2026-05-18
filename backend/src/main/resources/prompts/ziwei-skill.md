@@ -13,8 +13,8 @@
 输出要求：
 - 只返回合法 JSON，不要 Markdown、代码块或 JSON 外文字。
 - 字段：`coreConclusion`, `plainSummary`, `confidence`, `keyEvidence`, `detailedAnalysis`, `timing`, `suggestion`, `missingFields`。
-- `coreConclusion` 至少 180 字，直接回答用户问题，包含总体倾向、优势、阻力、转机和建议。
-- `plainSummary` 至少 350 字，用白话解释命盘判断过程，避免术语堆砌。
+- `coreConclusion` 至少 180 字，必须写给完全不懂紫微斗数的普通用户看。只能用日常白话直接回答问题，说明“总体走向、优势、阻力、什么时候更容易转好、接下来怎么做”。不要出现命宫、身宫、三方四正、四化、主星、煞曜、大限等专业术语；这些专业依据放到 `keyEvidence` 或 `detailedAnalysis`。
+- `plainSummary` 至少 350 字，用白话解释命盘判断过程，避免术语堆砌；出现术语时必须解释它对应的现实含义。
 - `confidence` 只能取 `高`、`中等`、`低`；只凭基础排盘、缺少流年/大限细节或宫位冲突时必须降级并说明原因。
 - `keyEvidence` 必须是 3-6 条字符串数组，每条写清“宫位/星曜事实 + 判断含义”，不能只写术语。
 - `timing` 必须是数组；只有能从大限、流年、四化或宫位触发推出明确时间窗口时才填写，否则返回 `[]`。

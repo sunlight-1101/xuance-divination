@@ -88,7 +88,7 @@ public class MockAIServiceImpl implements AIService {
                         + "案例只能类比，不能替代真实盘面；"
                         + "必须只输出合法 JSON 对象，不输出 Markdown；"
                         + "JSON 必须包含 coreConclusion、plainSummary、confidence、keyEvidence、detailedAnalysis、timing、suggestion、missingFields；"
-                        + "coreConclusion 直接给结论，plainSummary 用白话展开，keyEvidence 必须是数组，timing 和 missingFields 必须是数组；"
+                        + "coreConclusion 必须用普通人能懂的白话直接给结论，不要放专业术语；专业依据放进 keyEvidence 和 detailedAnalysis；plainSummary 用白话展开，keyEvidence 必须是数组，timing 和 missingFields 必须是数组；"
                         + "禁止绝对化、恐吓式、宿命论表达；"
                         + "健康、法律、投资和重大财务问题只能给风险提示，不能替代专业意见。");
         messages.add(system);
@@ -121,7 +121,7 @@ public class MockAIServiceImpl implements AIService {
             compact = compact.substring(0, limit) + "\n【提示】原提示词较长，已截断非关键上下文；请依据已给盘面直接输出 JSON。";
         }
         return "上一次模型返回了空正文。请不要输出思考过程，不要输出 Markdown，只直接输出合法 JSON 对象。\n"
-                + "必须包含字段：coreConclusion, plainSummary, confidence, keyEvidence, detailedAnalysis, timing, suggestion, missingFields。\n\n"
+                + "必须包含字段：coreConclusion, plainSummary, confidence, keyEvidence, detailedAnalysis, timing, suggestion, missingFields。coreConclusion 必须是白话，不要堆专业术语。\n\n"
                 + compact;
     }
 

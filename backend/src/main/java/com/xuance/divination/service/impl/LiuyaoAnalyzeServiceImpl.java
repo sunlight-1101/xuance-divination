@@ -28,6 +28,7 @@ import org.springframework.util.StringUtils;
 @Service
 public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
     private static final String TYPE = "LIUYAO";
+    private static final String REPORT_STYLE_VERSION = "plain-core-v2";
 
     private final KnowledgeService knowledgeService;
     private final ClassicBookService classicBookService;
@@ -129,6 +130,7 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
         String yaoKey = dto.getYaoList().stream().map(this::formatYao).collect(Collectors.joining(";"));
         return cacheSupport.fingerprint(
                 TYPE,
+                REPORT_STYLE_VERSION,
                 dto.getQuestion(),
                 dto.getGender(),
                 dto.getBirthDate(),

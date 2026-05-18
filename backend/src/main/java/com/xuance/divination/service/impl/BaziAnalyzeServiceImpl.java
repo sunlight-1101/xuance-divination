@@ -29,6 +29,7 @@ import org.springframework.util.StringUtils;
 public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
     private static final String TYPE = "BAZI";
     private static final String COMPATIBILITY_TYPE = "BAZI_COMPATIBILITY";
+    private static final String REPORT_STYLE_VERSION = "plain-core-v2";
 
     private final KnowledgeService knowledgeService;
     private final ClassicBookService classicBookService;
@@ -184,6 +185,7 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
     private String baziCacheKey(BaziAnalyzeDTO dto) {
         return cacheSupport.fingerprint(
                 TYPE,
+                REPORT_STYLE_VERSION,
                 dto.getQuestionType(),
                 dto.getQuestion(),
                 dto.getGender(),
@@ -203,6 +205,7 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
     private String compatibilityCacheKey(BaziCompatibilityDTO dto) {
         return cacheSupport.fingerprint(
                 COMPATIBILITY_TYPE,
+                REPORT_STYLE_VERSION,
                 dto.getRelationshipType(),
                 dto.getQuestion(),
                 dto.getPersonAName(),
