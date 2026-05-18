@@ -140,7 +140,7 @@
               </section>
             </div>
 
-            <div class="simple-chart-summary">
+            <div v-if="baziViewMode !== 'professional'" class="simple-chart-summary">
               <div>
                 <span>出生资料</span>
                 <strong>{{ [form.birthDate, form.birthTime, form.birthPlace].filter(Boolean).join(' ') || '请选择或填写资料' }}</strong>
@@ -528,7 +528,7 @@ const knowledgeRules = ref([])
 const classicReferences = ref([])
 const reportPanelRef = ref(null)
 const analysisMode = ref('single')
-const baziViewMode = ref('simple')
+const baziViewMode = ref('professional')
 const activeChartTab = ref('chart')
 const savedProfiles = ref([])
 const selectedProfileId = ref('')
