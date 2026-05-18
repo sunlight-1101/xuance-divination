@@ -16,6 +16,9 @@
         <span class="leaf-mark">竹</span>
         <h2>今日概览</h2>
         <small>{{ todayText }}</small>
+        <button class="expand-button" type="button" @click="almanacExpanded = !almanacExpanded">
+          {{ almanacExpanded ? '收起' : '展开' }}
+        </button>
       </div>
       <div class="almanac-layout">
         <div class="almanac-main">
@@ -47,6 +50,33 @@
           <div class="avoid">
             <span>忌</span>
             <strong>{{ dailyAdvice.avoid.join('、') }}</strong>
+          </div>
+        </div>
+      </div>
+      <div v-if="almanacExpanded" class="almanac-expanded">
+        <div class="expanded-grid">
+          <div>
+            <span>时柱</span>
+            <strong>{{ todayPillars.hourPillar || '-' }}</strong>
+          </div>
+          <div>
+            <span>日主</span>
+            <strong>{{ todayPillars.dayMaster || '-' }}</strong>
+          </div>
+          <div>
+            <span>宜事取象</span>
+            <strong>{{ dailyAdvice.goodText }}</strong>
+          </div>
+          <div>
+            <span>忌事提醒</span>
+            <strong>{{ dailyAdvice.avoidText }}</strong>
+          </div>
+        </div>
+        <div class="next-days">
+          <div class="next-days-title">近三日</div>
+          <div class="next-day-row" v-for="item in nextDays" :key="item.date">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.pillars.yearPillar }}年 {{ item.pillars.monthPillar }}月 {{ item.pillars.dayPillar }}日</strong>
           </div>
         </div>
       </div>
@@ -88,30 +118,41 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { CalendarDays, ScrollText, Sparkles } from 'lucide-vue-next'
 import { getFourPillars } from '../../utils/ganzhi'
 
 const todayText = computed(() => new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }))
 const todayPillars = computed(() => getFourPillars(new Date()))
+const almanacExpanded = ref(false)
 const dailyAdvice = computed(() => {
   const branch = todayPillars.value.dayPillar?.slice(1, 2) || ''
   const adviceMap = {
-    子: { good: ['求学', '整理', '沟通'], avoid: ['冲动决策', '熬夜'] },
-    丑: { good: ['储蓄', '修整', '复盘'], avoid: ['急进', '争执'] },
-    寅: { good: ['开局', '拜访', '学习'], avoid: ['拖延', '过劳'] },
-    卯: { good: ['协商', '创作', '养护'], avoid: ['口舌', '散漫'] },
-    辰: { good: ['规划', '签订', '整理资料'], avoid: ['冒进', '借贷'] },
-    巳: { good: ['表达', '学习', '求财'], avoid: ['急躁', '隐瞒'] },
-    午: { good: ['行动', '见人', '推进'], avoid: ['冲突', '贪快'] },
-    未: { good: ['安顿', '修补', '储备'], avoid: ['犹豫', '过度承诺'] },
-    申: { good: ['执行', '谈判', '检查'], avoid: ['轻信', '分心'] },
-    酉: { good: ['收尾', '审美', '理财'], avoid: ['固执', '冷战'] },
-    戌: { good: ['守成', '复核', '定计划'], avoid: ['争强', '冒险'] },
-    亥: { good: ['休养', '学习', '内省'], avoid: ['拖泥带水', '夜行'] }
+    子: { good: ['求学', '整理', '沟通'], avoid: ['冲动决策', '熬夜'], goodText: '适合学习、整理信息、沟通确认。', avoidText: '不宜临时冲动拍板，晚上少熬夜。' },
+    丑: { good: ['储蓄', '修整', '复盘'], avoid: ['急进', '争执'], goodText: '适合盘点账目、修补细节、做复盘。', avoidText: '不宜强行推进，少卷入口舌。' },
+    寅: { good: ['开局', '拜访', '学习'], avoid: ['拖延', '过劳'], goodText: '适合启动新计划、拜访沟通、吸收新知识。', avoidText: '不宜拖延，也别把日程塞太满。' },
+    卯: { good: ['协商', '创作', '养护'], avoid: ['口舌', '散漫'], goodText: '适合协商关系、创作表达、照顾身心。', avoidText: '不宜争辩细枝末节，注意专注。' },
+    辰: { good: ['规划', '签订', '整理资料'], avoid: ['冒进', '借贷'], goodText: '适合定计划、整理材料、推进文书事项。', avoidText: '不宜冒险投资或随意借贷。' },
+    巳: { good: ['表达', '学习', '求财'], avoid: ['急躁', '隐瞒'], goodText: '适合表达观点、学习技能、处理收益相关事项。', avoidText: '不宜急躁催促，也别藏着关键问题。' },
+    午: { good: ['行动', '见人', '推进'], avoid: ['冲突', '贪快'], goodText: '适合见人、执行、把事情向前推。', avoidText: '不宜硬碰硬，速度快也要留余地。' },
+    未: { good: ['安顿', '修补', '储备'], avoid: ['犹豫', '过度承诺'], goodText: '适合安顿事务、修补关系、储备资源。', avoidText: '不宜犹豫太久，承诺前先看能力。' },
+    申: { good: ['执行', '谈判', '检查'], avoid: ['轻信', '分心'], goodText: '适合执行落地、谈判沟通、检查漏洞。', avoidText: '不宜轻信口头承诺，注意别分心。' },
+    酉: { good: ['收尾', '审美', '理财'], avoid: ['固执', '冷战'], goodText: '适合收尾、整理形象、处理财务细节。', avoidText: '不宜过于固执，关系中别冷处理。' },
+    戌: { good: ['守成', '复核', '定计划'], avoid: ['争强', '冒险'], goodText: '适合守住成果、复核方案、制定稳妥计划。', avoidText: '不宜争强好胜或做高风险尝试。' },
+    亥: { good: ['休养', '学习', '内省'], avoid: ['拖泥带水', '夜行'], goodText: '适合休养、学习、独处思考。', avoidText: '不宜拖泥带水，夜间出行多留意。' }
   }
-  return adviceMap[branch] || { good: ['整理', '学习', '复盘'], avoid: ['冲动', '争执'] }
+  return adviceMap[branch] || { good: ['整理', '学习', '复盘'], avoid: ['冲动', '争执'], goodText: '适合整理、学习、复盘。', avoidText: '不宜冲动争执。' }
 })
+
+const nextDays = computed(() => Array.from({ length: 3 }, (_, index) => {
+  const date = new Date()
+  date.setDate(date.getDate() + index + 1)
+  return {
+    date: date.toISOString().slice(0, 10),
+    label: date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' }),
+    pillars: getFourPillars(date)
+  }
+}))
 </script>
 
 <style scoped>
@@ -219,6 +260,17 @@ const dailyAdvice = computed(() => {
   margin-left: auto;
   color: #806326;
   font-size: 13px;
+}
+
+.expand-button {
+  border: 1px solid rgba(128, 99, 38, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 253, 246, 0.7);
+  color: #806326;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 28px;
+  padding: 0 12px;
 }
 
 .leaf-mark {
@@ -343,6 +395,71 @@ const dailyAdvice = computed(() => {
   word-break: break-word;
 }
 
+.almanac-expanded {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(176, 138, 60, 0.32);
+}
+
+.expanded-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.expanded-grid div,
+.next-days {
+  border: 1px solid rgba(176, 138, 60, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 253, 246, 0.62);
+  padding: 10px 12px;
+}
+
+.expanded-grid span,
+.next-day-row span {
+  display: block;
+  color: #806326;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.expanded-grid strong,
+.next-day-row strong {
+  display: block;
+  color: #173f35;
+  font-size: 14px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.next-days {
+  margin-top: 10px;
+}
+
+.next-days-title {
+  color: #173f35;
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.next-day-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 8px 0;
+  border-top: 1px solid rgba(176, 138, 60, 0.18);
+}
+
+.next-day-row:first-of-type {
+  border-top: 0;
+}
+
+.next-day-row span {
+  margin-bottom: 0;
+}
+
 .entry-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -437,8 +554,23 @@ const dailyAdvice = computed(() => {
   }
 
   .almanac-layout,
+  .expanded-grid,
   .entry-grid {
     grid-template-columns: 1fr;
+  }
+
+  .card-title {
+    flex-wrap: wrap;
+  }
+
+  .card-title small {
+    order: 4;
+    width: 100%;
+    margin-left: 44px;
+  }
+
+  .expand-button {
+    margin-left: auto;
   }
 
   .almanac-date strong {
@@ -447,6 +579,11 @@ const dailyAdvice = computed(() => {
 
   .almanac-pillars strong {
     font-size: 22px;
+  }
+
+  .next-day-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .feature-card {
