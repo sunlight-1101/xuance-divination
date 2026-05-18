@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 
 const STORAGE_KEY = 'xuance_user'
 const BIRTH_PROFILE_KEY = 'zhexuan_birth_profile'
+const BIRTH_PROFILES_KEY = 'zhexuan_birth_profiles'
 const APP_VERSION_KEY = 'zhexuan_app_version'
 const APP_VERSION = '2026-05-14-permission-v2'
 
@@ -29,7 +30,8 @@ export const useUserStore = defineStore('user', {
       localStorage.removeItem(STORAGE_KEY)
     },
     getBirthProfile() {
-      const localProfile = JSON.parse(localStorage.getItem(BIRTH_PROFILE_KEY) || 'null')
+      const profiles = this.getBirthProfiles()
+      const localProfile = profiles[0] || JSON.parse(localStorage.getItem(BIRTH_PROFILE_KEY) || 'null')
       if (localProfile) return localProfile
       if (!this.user) return null
       return {
@@ -41,8 +43,24 @@ export const useUserStore = defineStore('user', {
         birthDayMaster: this.user.birthDayMaster || ''
       }
     },
+    getBirthProfiles() {
+      const profiles = JSON.parse(localStorage.getItem(BIRTH_PROFILES_KEY) || '[]')
+      if (profiles.length) return profiles
+      const legacy = JSON.parse(localStorage.getItem(BIRTH_PROFILE_KEY) || 'null')
+      if (!legacy) return []
+      const migrated = [{ ...legacy, id: legacy.id || `profile_${Date.now()}`, name: legacy.name || '我的资料' }]
+      localStorage.setItem(BIRTH_PROFILES_KEY, JSON.stringify(migrated))
+      return migrated
+    },
     saveBirthProfile(profile) {
+      return this.saveBirthProfileItem(profile, { setPrimary: true })
+    },
+    saveBirthProfileItem(profile, options = {}) {
+      const profiles = this.getBirthProfiles()
+      const id = profile.id || `profile_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`
       const cleanProfile = {
+        id,
+        name: profile.name || profile.profileName || profile.birthName || '未命名',
         gender: profile.gender || '',
         birthDate: profile.birthDate || '',
         birthTime: profile.birthTime || '',
@@ -58,12 +76,29 @@ export const useUserStore = defineStore('user', {
         birthDayMaster: profile.birthDayMaster || profile.dayMaster || '',
         savedAt: new Date().toISOString()
       }
-      localStorage.setItem(BIRTH_PROFILE_KEY, JSON.stringify(cleanProfile))
-      if (this.user) {
+      const nextProfiles = [cleanProfile, ...profiles.filter(item => item.id !== id)]
+      localStorage.setItem(BIRTH_PROFILES_KEY, JSON.stringify(nextProfiles))
+      if (options.setPrimary !== false) {
+        localStorage.setItem(BIRTH_PROFILE_KEY, JSON.stringify(cleanProfile))
+      }
+      if (this.user && options.syncUser !== false) {
         this.user = { ...this.user, ...cleanProfile }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.user))
       }
       return cleanProfile
+    },
+    deleteBirthProfile(id) {
+      const nextProfiles = this.getBirthProfiles().filter(item => item.id !== id)
+      localStorage.setItem(BIRTH_PROFILES_KEY, JSON.stringify(nextProfiles))
+      const primary = JSON.parse(localStorage.getItem(BIRTH_PROFILE_KEY) || 'null')
+      if (primary?.id === id) {
+        if (nextProfiles[0]) {
+          localStorage.setItem(BIRTH_PROFILE_KEY, JSON.stringify(nextProfiles[0]))
+        } else {
+          localStorage.removeItem(BIRTH_PROFILE_KEY)
+        }
+      }
+      return nextProfiles
     }
   }
 })

@@ -15,6 +15,18 @@
         <div v-if="analysisMode === 'single'" class="panel">
           <h2 class="section-title">命盘信息</h2>
           <el-form :model="form" label-position="top">
+            <div class="profile-picker">
+              <el-select v-model="selectedProfileId" placeholder="选择已保存资料" clearable filterable @change="applySelectedProfileToSingle">
+                <el-option
+                  v-for="profile in savedProfiles"
+                  :key="profile.id"
+                  :label="profileLabel(profile)"
+                  :value="profile.id"
+                />
+              </el-select>
+              <el-button @click="saveBirthProfile">保存当前</el-button>
+              <el-button :disabled="!selectedProfileId" @click="deleteSelectedProfile">删除</el-button>
+            </div>
             <el-row :gutter="12">
               <el-col :xs="12" :sm="8">
                 <el-form-item label="性别">
@@ -262,6 +274,14 @@
           <h2 class="section-title">合盘解析</h2>
           <p class="compatibility-desc">分别填写两个人的出生信息，系统会自动排出四柱，再从日柱、夫妻宫、五行、十神、大运流年角度做关系分析。</p>
           <el-form :model="compatForm" label-position="top">
+            <div class="compatibility-saved-picker">
+              <el-select v-model="compatSelectedA" placeholder="选择甲方资料" clearable filterable @change="applySelectedProfileToCompatibility('A')">
+                <el-option v-for="profile in savedProfiles" :key="profile.id" :label="profileLabel(profile)" :value="profile.id" />
+              </el-select>
+              <el-select v-model="compatSelectedB" placeholder="选择乙方资料" clearable filterable @change="applySelectedProfileToCompatibility('B')">
+                <el-option v-for="profile in savedProfiles" :key="profile.id" :label="profileLabel(profile)" :value="profile.id" />
+              </el-select>
+            </div>
             <div class="compatibility-people">
               <div class="compatibility-person">
                 <div class="person-title">
@@ -370,6 +390,7 @@
 
             <div class="actions">
               <el-button size="large" @click="copySingleProfileToPersonA">用我的出生资料填甲方</el-button>
+              <el-button size="large" @click="saveCompatibilityPeople">保存甲乙方资料</el-button>
               <el-button type="primary" size="large" :loading="loading" @click="submitCompatibility">开始合盘解析</el-button>
             </div>
             <el-alert
@@ -406,7 +427,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { updateProfile } from '../../api/auth'
 import { analyzeBazi, analyzeBaziCompatibility } from '../../api/bazi'
 import KnowledgeReferences from '../../components/KnowledgeReferences.vue'
@@ -424,6 +445,10 @@ const classicReferences = ref([])
 const reportPanelRef = ref(null)
 const analysisMode = ref('single')
 const activeChartTab = ref('chart')
+const savedProfiles = ref([])
+const selectedProfileId = ref('')
+const compatSelectedA = ref('')
+const compatSelectedB = ref('')
 const chartTabs = [
   { key: 'info', label: '基本信息' },
   { key: 'chart', label: '基本排盘' },
@@ -577,30 +602,106 @@ const caseRules = computed(() => knowledgeRules.value.filter(rule => rule.catego
 const caseRuleCount = computed(() => caseRules.value.length)
 const reportTitle = computed(() => analysisMode.value === 'compatibility' ? '八字合盘解析报告' : '八字分析报告')
 
+function refreshSavedProfiles() {
+  savedProfiles.value = userStore.getBirthProfiles()
+}
+
 function applyProfile() {
+  refreshSavedProfiles()
   const profile = userStore.getBirthProfile()
   if (!profile) return
-  form.gender = profile.gender || ''
-  form.birthDate = profile.birthDate || ''
-  form.birthTime = profile.birthTime || ''
-  form.birthPlace = profile.birthPlace || ''
-  form.birthProvince = profile.birthProvince || ''
-  form.useTrueSolarTime = Boolean(profile.useTrueSolarTime)
-  const matchedProvince = findProvinceByCity(form.birthPlace)
-  form.birthProvince = form.birthProvince || matchedProvince?.name || ''
-  form.yearPillar = profile.yearPillar || ''
-  form.monthPillar = profile.monthPillar || ''
-  form.dayPillar = profile.dayPillar || profile.birthDayGanZhi || ''
-  form.hourPillar = profile.hourPillar || ''
-  form.dayMaster = profile.dayMaster || profile.birthDayMaster || ''
-  fillPillarsFromBirth({ preserveExisting: true })
+  selectedProfileId.value = profile.id || ''
+  applyProfileToForm(profile, form)
   copySingleProfileToPersonA({ silent: true })
+}
+
+function profileLabel(profile) {
+  return [profile.name || '未命名', profile.birthDate, profile.birthTime, profile.birthPlace].filter(Boolean).join(' · ')
+}
+
+function profileFromForm(source, fallbackName = '') {
+  return {
+    name: source.name || fallbackName || source.birthName || source.profileName || '',
+    gender: source.gender,
+    birthDate: source.birthDate,
+    birthTime: source.birthTime,
+    birthProvince: source.birthProvince,
+    birthPlace: source.birthPlace,
+    useTrueSolarTime: source.useTrueSolarTime,
+    yearPillar: source.yearPillar,
+    monthPillar: source.monthPillar,
+    dayPillar: source.dayPillar,
+    hourPillar: source.hourPillar,
+    dayMaster: source.dayMaster,
+    birthDayGanZhi: source.dayPillar,
+    birthDayMaster: source.dayMaster
+  }
+}
+
+function findMatchingProfile(source) {
+  return savedProfiles.value.find(item =>
+    item.birthDate === source.birthDate
+    && item.birthTime === source.birthTime
+    && item.birthPlace === source.birthPlace
+    && item.dayPillar === source.dayPillar
+  )
+}
+
+function applyProfileToForm(profile, target) {
+  target.name = profile.name || target.name || ''
+  target.gender = profile.gender || ''
+  target.birthDate = profile.birthDate || ''
+  target.birthTime = profile.birthTime || ''
+  target.birthPlace = profile.birthPlace || ''
+  target.birthProvince = profile.birthProvince || findProvinceByCity(profile.birthPlace)?.name || ''
+  target.useTrueSolarTime = Boolean(profile.useTrueSolarTime)
+  target.yearPillar = profile.yearPillar || ''
+  target.monthPillar = profile.monthPillar || ''
+  target.dayPillar = profile.dayPillar || profile.birthDayGanZhi || ''
+  target.hourPillar = profile.hourPillar || ''
+  target.dayMaster = profile.dayMaster || profile.birthDayMaster || ''
+  if (target === form) {
+    fillPillarsFromBirth({ preserveExisting: true })
+  } else {
+    fillCompatibilityPillars(target, { preserveExisting: true })
+  }
+}
+
+function applySelectedProfileToSingle(id) {
+  const profile = savedProfiles.value.find(item => item.id === id)
+  if (!profile) return
+  applyProfileToForm(profile, form)
+}
+
+function applySelectedProfileToCompatibility(slot) {
+  const id = slot === 'A' ? compatSelectedA.value : compatSelectedB.value
+  const profile = savedProfiles.value.find(item => item.id === id)
+  if (!profile) return
+  applyProfileToForm(profile, slot === 'A' ? compatForm.personA : compatForm.personB)
+}
+
+async function promptProfileName(defaultName) {
+  const { value } = await ElMessageBox.prompt('给这份出生资料取个名字，方便下次选择', '保存资料', {
+    confirmButtonText: '保存',
+    cancelButtonText: '取消',
+    inputValue: defaultName || '未命名',
+    inputPattern: /\S+/,
+    inputErrorMessage: '请填写名称'
+  })
+  return value
 }
 
 async function saveBirthProfile(options = {}) {
   fillPillarsFromBirth({ preserveExisting: true })
   syncDayMaster()
+  if (!selectedProfileId.value) {
+    selectedProfileId.value = findMatchingProfile(form)?.id || ''
+  }
+  const name = options.name
+    || (options.silent ? (savedProfiles.value.find(item => item.id === selectedProfileId.value)?.name || '我的资料') : await promptProfileName(savedProfiles.value.find(item => item.id === selectedProfileId.value)?.name || '我的资料'))
   const profile = userStore.saveBirthProfile({
+    id: selectedProfileId.value || undefined,
+    name,
     gender: form.gender,
     birthDate: form.birthDate,
     birthTime: form.birthTime,
@@ -615,6 +716,8 @@ async function saveBirthProfile(options = {}) {
     birthDayGanZhi: form.dayPillar,
     birthDayMaster: form.dayMaster
   })
+  selectedProfileId.value = profile.id
+  refreshSavedProfiles()
   if (userStore.userId) {
     const user = await updateProfile({
       userId: userStore.userId,
@@ -629,8 +732,42 @@ async function saveBirthProfile(options = {}) {
     userStore.saveBirthProfile(profile)
   }
   if (!options.silent) {
-    ElMessage.success(userStore.userId ? '出生资料已保存到账号' : '出生资料已保存到本机')
+    ElMessage.success('出生资料已保存')
   }
+}
+
+async function saveCompatibilityPeople() {
+  fillCompatibilityPillars(compatForm.personA, { preserveExisting: true })
+  fillCompatibilityPillars(compatForm.personB, { preserveExisting: true })
+  syncCompatibilityDayMaster(compatForm.personA)
+  syncCompatibilityDayMaster(compatForm.personB)
+  const saved = []
+  if (compatForm.personA.birthDate || compatForm.personA.dayPillar) {
+    const nameA = await promptProfileName(compatForm.personA.name || '甲方')
+    const profileA = userStore.saveBirthProfileItem(profileFromForm(compatForm.personA, nameA), { setPrimary: false, syncUser: false })
+    compatForm.personA.name = profileA.name
+    compatSelectedA.value = profileA.id
+    saved.push(profileA.name)
+  }
+  if (compatForm.personB.birthDate || compatForm.personB.dayPillar) {
+    const nameB = await promptProfileName(compatForm.personB.name || '乙方')
+    const profileB = userStore.saveBirthProfileItem(profileFromForm(compatForm.personB, nameB), { setPrimary: false, syncUser: false })
+    compatForm.personB.name = profileB.name
+    compatSelectedB.value = profileB.id
+    saved.push(profileB.name)
+  }
+  refreshSavedProfiles()
+  ElMessage.success(saved.length ? `已保存：${saved.join('、')}` : '没有可保存的资料')
+}
+
+async function deleteSelectedProfile() {
+  const profile = savedProfiles.value.find(item => item.id === selectedProfileId.value)
+  if (!profile) return
+  await ElMessageBox.confirm(`确定删除「${profile.name || '未命名'}」吗？`, '删除资料')
+  userStore.deleteBirthProfile(profile.id)
+  selectedProfileId.value = ''
+  refreshSavedProfiles()
+  ElMessage.success('已删除')
 }
 
 function onProvinceChange() {
@@ -1074,6 +1211,19 @@ onMounted(applyProfile)
   font-size: 14px;
 }
 
+.profile-picker,
+.compatibility-saved-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.compatibility-saved-picker {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .compatibility-people {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1476,7 +1626,9 @@ onMounted(applyProfile)
   }
 
   .compatibility-people,
-  .compatibility-preview {
+  .compatibility-preview,
+  .profile-picker,
+  .compatibility-saved-picker {
     grid-template-columns: 1fr;
   }
 
