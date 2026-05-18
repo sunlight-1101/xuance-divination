@@ -697,6 +697,7 @@ async function saveBirthProfile(options = {}) {
   if (!selectedProfileId.value) {
     selectedProfileId.value = findMatchingProfile(form)?.id || ''
   }
+  const accountUserId = userStore.userId
   const name = options.name
     || (options.silent ? (savedProfiles.value.find(item => item.id === selectedProfileId.value)?.name || '我的资料') : await promptProfileName(savedProfiles.value.find(item => item.id === selectedProfileId.value)?.name || '我的资料'))
   const profile = userStore.saveBirthProfile({
@@ -718,9 +719,9 @@ async function saveBirthProfile(options = {}) {
   })
   selectedProfileId.value = profile.id
   refreshSavedProfiles()
-  if (userStore.userId) {
+  if (accountUserId) {
     const user = await updateProfile({
-      userId: userStore.userId,
+      userId: accountUserId,
       gender: profile.gender,
       birthDate: profile.birthDate,
       birthTime: profile.birthTime,
@@ -1080,6 +1081,7 @@ async function submit() {
   loading.value = true
   try {
     await saveBirthProfile({ silent: true })
+    const accountUserId = userStore.userId
     const data = await analyzeBazi({
       ...form,
       baziDetails: JSON.stringify({
@@ -1093,7 +1095,7 @@ async function submit() {
           corrected: trueSolarInfo.value
         }
       }),
-      userId: userStore.userId
+      userId: accountUserId
     })
     result.value = data.resultJson
     knowledgeRules.value = data.knowledgeRules || []
@@ -1125,8 +1127,9 @@ async function submitCompatibility() {
   }
   loading.value = true
   try {
+    const accountUserId = userStore.userId
     const data = await analyzeBaziCompatibility({
-      userId: userStore.userId,
+      userId: accountUserId,
       relationshipType: compatForm.relationshipType,
       question: compatForm.question,
       ...flattenCompatibilityPerson('personA', compatForm.personA),

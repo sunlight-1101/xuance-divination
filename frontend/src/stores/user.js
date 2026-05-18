@@ -6,6 +6,15 @@ const BIRTH_PROFILES_KEY = 'zhexuan_birth_profiles'
 const APP_VERSION_KEY = 'zhexuan_app_version'
 const APP_VERSION = '2026-05-14-permission-v2'
 
+function readStoredUser() {
+  const user = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+  if (user?.id && !/^\d+$/.test(String(user.id))) {
+    localStorage.removeItem(STORAGE_KEY)
+    return null
+  }
+  return user
+}
+
 if (localStorage.getItem(APP_VERSION_KEY) !== APP_VERSION) {
   localStorage.removeItem(STORAGE_KEY)
   localStorage.setItem(APP_VERSION_KEY, APP_VERSION)
@@ -13,11 +22,14 @@ if (localStorage.getItem(APP_VERSION_KEY) !== APP_VERSION) {
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    user: JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+    user: readStoredUser()
   }),
   getters: {
     isLogin: state => Boolean(state.user),
-    userId: state => state.user?.id,
+    userId: state => {
+      const id = state.user?.id
+      return typeof id === 'number' || /^\d+$/.test(String(id || '')) ? Number(id) : null
+    },
     isAdmin: state => state.user?.role === 'ADMIN'
   },
   actions: {
@@ -82,7 +94,8 @@ export const useUserStore = defineStore('user', {
         localStorage.setItem(BIRTH_PROFILE_KEY, JSON.stringify(cleanProfile))
       }
       if (this.user && options.syncUser !== false) {
-        this.user = { ...this.user, ...cleanProfile }
+        const { id: profileId, name: profileName, ...profileFields } = cleanProfile
+        this.user = { ...this.user, ...profileFields, birthProfileId: profileId, birthProfileName: profileName }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.user))
       }
       return cleanProfile
