@@ -63,6 +63,10 @@ services:
       ALIPAY_PUBLIC_KEY: ${ALIPAY_PUBLIC_KEY:-}
       ALIPAY_NOTIFY_URL: ${ALIPAY_NOTIFY_URL:-}
       ALIPAY_RETURN_URL: ${ALIPAY_RETURN_URL:-}
+      ALMANAC_ENABLED: ${ALMANAC_ENABLED:-true}
+      ALMANAC_BASE_URL: ${ALMANAC_BASE_URL:-https://cn.apihz.cn/api/time/getzdday.php}
+      ALMANAC_ID: ${ALMANAC_ID:-88888888}
+      ALMANAC_KEY: ${ALMANAC_KEY:-88888888}
       TZ: Asia/Shanghai
 
   frontend:

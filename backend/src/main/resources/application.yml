@@ -49,3 +49,9 @@ alipay:
   return-url: ${ALIPAY_RETURN_URL:}
   sign-type: RSA2
   charset: utf-8
+
+almanac:
+  enabled: ${ALMANAC_ENABLED:true}
+  base-url: ${ALMANAC_BASE_URL:https://cn.apihz.cn/api/time/getzdday.php}
+  id: ${ALMANAC_ID:88888888}
+  key: ${ALMANAC_KEY:88888888}

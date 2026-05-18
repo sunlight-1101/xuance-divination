@@ -56,27 +56,75 @@
       <div v-if="almanacExpanded" class="almanac-expanded">
         <div class="expanded-grid">
           <div>
-            <span>时柱</span>
-            <strong>{{ todayPillars.hourPillar || '-' }}</strong>
+            <span>查看日期</span>
+            <strong>{{ selectedDateText }}</strong>
+          </div>
+          <div>
+            <span>农历</span>
+            <strong>{{ selectedDisplay.lunar || '接口加载中' }}</strong>
+          </div>
+          <div>
+            <span>节气</span>
+            <strong>{{ selectedDisplay.jieqi || '暂无' }}</strong>
+          </div>
+          <div>
+            <span>时柱（午时）</span>
+            <strong>{{ selectedPillars.hourPillar || '-' }}</strong>
           </div>
           <div>
             <span>日主</span>
-            <strong>{{ todayPillars.dayMaster || '-' }}</strong>
+            <strong>{{ selectedPillars.dayMaster || '-' }}</strong>
           </div>
           <div>
-            <span>宜事取象</span>
-            <strong>{{ dailyAdvice.goodText }}</strong>
+            <span>冲煞</span>
+            <strong>{{ selectedDisplay.chong || '暂无' }}</strong>
           </div>
           <div>
-            <span>忌事提醒</span>
-            <strong>{{ dailyAdvice.avoidText }}</strong>
+            <span>黄黑道</span>
+            <strong>{{ [selectedDisplay.tianShen, selectedDisplay.tianShenType].filter(Boolean).join(' · ') || '暂无' }}</strong>
+          </div>
+          <div>
+            <span>彭祖百忌</span>
+            <strong>{{ selectedDisplay.pengzu || '暂无' }}</strong>
+          </div>
+          <div>
+            <span>宜</span>
+            <strong>{{ selectedAdvice.goodText }}</strong>
+          </div>
+          <div>
+            <span>忌</span>
+            <strong>{{ selectedAdvice.avoidText }}</strong>
+          </div>
+          <div>
+            <span>旬空 / 纳音</span>
+            <strong>{{ [selectedDisplay.xunKong, selectedDisplay.naYin].filter(Boolean).join(' · ') || '暂无' }}</strong>
           </div>
         </div>
-        <div class="next-days">
-          <div class="next-days-title">近三日</div>
-          <div class="next-day-row" v-for="item in nextDays" :key="item.date">
-            <span>{{ item.label }}</span>
-            <strong>{{ item.pillars.yearPillar }}年 {{ item.pillars.monthPillar }}月 {{ item.pillars.dayPillar }}日</strong>
+        <div v-if="almanacLoading || almanacError || remoteAlmanac?.available === false" class="almanac-status">
+          {{ almanacLoading ? '正在读取万年历接口...' : (almanacError || remoteAlmanac?.message || '万年历接口暂时不可用，已显示本地干支。') }}
+        </div>
+        <div class="month-calendar">
+          <div class="calendar-head">
+            <button type="button" @click="shiftCalendarMonth(-1)">‹</button>
+            <strong>{{ calendarTitle }}</strong>
+            <button type="button" class="today-link" @click="resetCalendarToToday">今</button>
+            <button type="button" @click="shiftCalendarMonth(1)">›</button>
+          </div>
+          <div class="weekday-row">
+            <span v-for="day in weekdays" :key="day">{{ day }}</span>
+          </div>
+          <div class="calendar-grid">
+            <button
+              v-for="cell in calendarCells"
+              :key="cell.key"
+              type="button"
+              :class="{ muted: !cell.inMonth, today: cell.isToday, selected: cell.isSelected }"
+              @click="selectAlmanacDate(cell.date)"
+            >
+              <span>{{ cell.day }}</span>
+              <strong>{{ cell.pillars.dayPillar || '-' }}</strong>
+              <small>{{ cell.advice.good[0] }}</small>
+            </button>
           </div>
         </div>
       </div>
@@ -118,15 +166,60 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { CalendarDays, ScrollText, Sparkles } from 'lucide-vue-next'
+import { getAlmanacDay } from '../../api/almanac'
 import { getFourPillars } from '../../utils/ganzhi'
 
 const todayText = computed(() => new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }))
 const todayPillars = computed(() => getFourPillars(new Date()))
 const almanacExpanded = ref(false)
-const dailyAdvice = computed(() => {
-  const branch = todayPillars.value.dayPillar?.slice(1, 2) || ''
+const selectedAlmanacDate = ref(toDateKey(new Date()))
+const calendarMonth = ref(toMonthKey(new Date()))
+const remoteAlmanac = ref(null)
+const almanacLoading = ref(false)
+const almanacError = ref('')
+const weekdays = ['一', '二', '三', '四', '五', '六', '日']
+
+const dailyAdvice = computed(() => getDailyAdvice(todayPillars.value.dayPillar))
+const selectedPillars = computed(() => getFourPillars(`${selectedAlmanacDate.value}T12:00:00`))
+const selectedAdvice = computed(() => {
+  if (remoteAlmanac.value?.yi || remoteAlmanac.value?.ji) {
+    return {
+      good: splitAlmanacList(remoteAlmanac.value.yi),
+      avoid: splitAlmanacList(remoteAlmanac.value.ji),
+      goodText: splitAlmanacList(remoteAlmanac.value.yi).join('、') || '接口暂未返回宜事。',
+      avoidText: splitAlmanacList(remoteAlmanac.value.ji).join('、') || '接口暂未返回忌事。'
+    }
+  }
+  return getDailyAdvice(selectedPillars.value.dayPillar)
+})
+const selectedDisplay = computed(() => remoteAlmanac.value || {
+  lunar: '',
+  jieqi: '',
+  chong: '',
+  pengzu: '',
+  tianShen: '',
+  tianShenType: '',
+  xiu: '',
+  xunKong: '',
+  naYin: '',
+  yearGanzhi: selectedPillars.value.yearPillar,
+  monthGanzhi: selectedPillars.value.monthPillar,
+  dayGanzhi: selectedPillars.value.dayPillar
+})
+const selectedDateText = computed(() => {
+  const date = new Date(`${selectedAlmanacDate.value}T12:00:00`)
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
+})
+const calendarTitle = computed(() => {
+  const [year, month] = calendarMonth.value.split('-').map(Number)
+  return `${year}年${month}月`
+})
+const calendarCells = computed(() => buildCalendarCells(calendarMonth.value, selectedAlmanacDate.value))
+
+function getDailyAdvice(dayPillar) {
+  const branch = dayPillar?.slice(1, 2) || ''
   const adviceMap = {
     子: { good: ['求学', '整理', '沟通'], avoid: ['冲动决策', '熬夜'], goodText: '适合学习、整理信息、沟通确认。', avoidText: '不宜临时冲动拍板，晚上少熬夜。' },
     丑: { good: ['储蓄', '修整', '复盘'], avoid: ['急进', '争执'], goodText: '适合盘点账目、修补细节、做复盘。', avoidText: '不宜强行推进，少卷入口舌。' },
@@ -142,17 +235,86 @@ const dailyAdvice = computed(() => {
     亥: { good: ['休养', '学习', '内省'], avoid: ['拖泥带水', '夜行'], goodText: '适合休养、学习、独处思考。', avoidText: '不宜拖泥带水，夜间出行多留意。' }
   }
   return adviceMap[branch] || { good: ['整理', '学习', '复盘'], avoid: ['冲动', '争执'], goodText: '适合整理、学习、复盘。', avoidText: '不宜冲动争执。' }
-})
+}
 
-const nextDays = computed(() => Array.from({ length: 3 }, (_, index) => {
-  const date = new Date()
-  date.setDate(date.getDate() + index + 1)
-  return {
-    date: date.toISOString().slice(0, 10),
-    label: date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' }),
-    pillars: getFourPillars(date)
+function buildCalendarCells(monthKey, selectedKey) {
+  const [year, month] = monthKey.split('-').map(Number)
+  const first = new Date(year, month - 1, 1)
+  const startOffset = (first.getDay() + 6) % 7
+  const start = new Date(year, month - 1, 1 - startOffset)
+  const todayKey = toDateKey(new Date())
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(start)
+    date.setDate(start.getDate() + index)
+    const key = toDateKey(date)
+    const pillars = getFourPillars(`${key}T12:00:00`)
+    return {
+      key,
+      date,
+      day: date.getDate(),
+      inMonth: date.getMonth() === month - 1,
+      isToday: key === todayKey,
+      isSelected: key === selectedKey,
+      pillars,
+      advice: getDailyAdvice(pillars.dayPillar)
+    }
+  })
+}
+
+function selectAlmanacDate(date) {
+  selectedAlmanacDate.value = toDateKey(date)
+}
+
+function shiftCalendarMonth(offset) {
+  const [year, month] = calendarMonth.value.split('-').map(Number)
+  const next = new Date(year, month - 1 + offset, 1)
+  calendarMonth.value = toMonthKey(next)
+}
+
+function toDateKey(value) {
+  const date = new Date(value)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function toMonthKey(value) {
+  const date = new Date(value)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
+}
+
+function resetCalendarToToday() {
+  const today = new Date()
+  selectedAlmanacDate.value = toDateKey(today)
+  calendarMonth.value = toMonthKey(today)
+}
+
+function splitAlmanacList(value) {
+  return String(value || '')
+    .split(/[|、,，\s]+/)
+    .map(item => item.trim())
+    .filter(Boolean)
+}
+
+async function loadRemoteAlmanac(dateKey) {
+  almanacLoading.value = true
+  almanacError.value = ''
+  try {
+    remoteAlmanac.value = await getAlmanacDay(dateKey)
+  } catch (error) {
+    remoteAlmanac.value = null
+    almanacError.value = '万年历接口暂时不可用，已显示本地干支。'
+  } finally {
+    almanacLoading.value = false
   }
-}))
+}
+
+watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
+  if (expanded) loadRemoteAlmanac(dateKey)
+}, { immediate: true })
 </script>
 
 <style scoped>
@@ -403,28 +565,26 @@ const nextDays = computed(() => Array.from({ length: 3 }, (_, index) => {
 
 .expanded-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
 .expanded-grid div,
-.next-days {
+.month-calendar {
   border: 1px solid rgba(176, 138, 60, 0.24);
   border-radius: 8px;
   background: rgba(255, 253, 246, 0.62);
   padding: 10px 12px;
 }
 
-.expanded-grid span,
-.next-day-row span {
+.expanded-grid span {
   display: block;
   color: #806326;
   font-size: 12px;
   margin-bottom: 5px;
 }
 
-.expanded-grid strong,
-.next-day-row strong {
+.expanded-grid strong {
   display: block;
   color: #173f35;
   font-size: 14px;
@@ -432,32 +592,108 @@ const nextDays = computed(() => Array.from({ length: 3 }, (_, index) => {
   word-break: break-word;
 }
 
-.next-days {
+.almanac-status {
+  margin-top: 10px;
+  border-radius: 8px;
+  background: rgba(128, 99, 38, 0.08);
+  color: #806326;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 10px;
+}
+
+.month-calendar {
   margin-top: 10px;
 }
 
-.next-days-title {
-  color: #173f35;
-  font-size: 15px;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-
-.next-day-row {
+.calendar-head {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
-  padding: 8px 0;
-  border-top: 1px solid rgba(176, 138, 60, 0.18);
+  grid-template-columns: 36px minmax(0, 1fr) 36px 36px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-.next-day-row:first-of-type {
-  border-top: 0;
+.calendar-head strong {
+  color: #173f35;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
 }
 
-.next-day-row span {
-  margin-bottom: 0;
+.calendar-head button {
+  height: 34px;
+  border: 1px solid rgba(128, 99, 38, 0.24);
+  border-radius: 8px;
+  background: #fffdf6;
+  color: #806326;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.calendar-head .today-link {
+  font-size: 13px;
+}
+
+.weekday-row,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.weekday-row {
+  margin-bottom: 6px;
+}
+
+.weekday-row span {
+  color: #806326;
+  font-size: 12px;
+  text-align: center;
+}
+
+.calendar-grid button {
+  min-height: 72px;
+  border: 1px solid rgba(176, 138, 60, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
+  color: #173f35;
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  padding: 7px 4px;
+  text-align: center;
+}
+
+.calendar-grid button.muted {
+  opacity: 0.38;
+}
+
+.calendar-grid button.today {
+  border-color: #2f6f5e;
+}
+
+.calendar-grid button.selected {
+  color: #fff;
+  border-color: #173f35;
+  background: linear-gradient(180deg, #2f6f5e, #173f35);
+}
+
+.calendar-grid button span {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.calendar-grid button strong {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.calendar-grid button small {
+  color: inherit;
+  opacity: 0.72;
+  font-size: 11px;
+  line-height: 1.2;
 }
 
 .entry-grid {
@@ -519,7 +755,7 @@ const nextDays = computed(() => Array.from({ length: 3 }, (_, index) => {
   padding: 16px;
 }
 
-.card-title button {
+.advice-card .card-title button {
   margin-left: auto;
   border: 0;
   background: transparent;
@@ -581,9 +817,22 @@ const nextDays = computed(() => Array.from({ length: 3 }, (_, index) => {
     font-size: 22px;
   }
 
-  .next-day-row {
-    grid-template-columns: 1fr;
+  .month-calendar {
+    padding: 8px;
+  }
+
+  .calendar-grid {
     gap: 4px;
+  }
+
+  .calendar-grid button {
+    min-height: 64px;
+    padding: 6px 2px;
+  }
+
+  .calendar-grid button strong,
+  .calendar-grid button small {
+    font-size: 10px;
   }
 
   .feature-card {
