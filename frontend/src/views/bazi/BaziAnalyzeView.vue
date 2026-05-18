@@ -5,9 +5,14 @@
       <p class="page-desc">输入出生日期、时间和问题，系统会先自动排出四柱，再结合知识库生成分析。</p>
     </div>
 
+    <div class="mode-switch">
+      <button type="button" :class="{ active: analysisMode === 'single' }" @click="switchAnalysisMode('single')">个人分析</button>
+      <button type="button" :class="{ active: analysisMode === 'compatibility' }" @click="switchAnalysisMode('compatibility')">合盘解析</button>
+    </div>
+
     <el-row :gutter="16" class="mobile-stack">
       <el-col :xs="24" :lg="14">
-        <div class="panel">
+        <div v-if="analysisMode === 'single'" class="panel">
           <h2 class="section-title">命盘信息</h2>
           <el-form :model="form" label-position="top">
             <el-row :gutter="12">
@@ -253,6 +258,129 @@
             />
           </el-form>
         </div>
+        <div v-else class="panel compatibility-panel">
+          <h2 class="section-title">合盘解析</h2>
+          <p class="compatibility-desc">分别填写两个人的出生信息，系统会自动排出四柱，再从日柱、夫妻宫、五行、十神、大运流年角度做关系分析。</p>
+          <el-form :model="compatForm" label-position="top">
+            <div class="compatibility-people">
+              <div class="compatibility-person">
+                <div class="person-title">
+                  <strong>甲方</strong>
+                  <span>{{ compatibilityPillarSummary(compatForm.personA) }}</span>
+                </div>
+                <el-row :gutter="10">
+                  <el-col :xs="12" :sm="8"><el-form-item label="姓名"><el-input v-model="compatForm.personA.name" placeholder="可选" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8">
+                    <el-form-item label="性别">
+                      <el-select v-model="compatForm.personA.gender" placeholder="选择" @change="fillCompatibilityPillars(compatForm.personA)">
+                        <el-option label="男" value="男" />
+                        <el-option label="女" value="女" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8"><el-form-item label="出生日期"><el-input v-model="compatForm.personA.birthDate" placeholder="YYYY-MM-DD" @input="fillCompatibilityPillars(compatForm.personA)" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8"><el-form-item label="出生时间"><el-input v-model="compatForm.personA.birthTime" placeholder="00:30 / 子时" @input="fillCompatibilityPillars(compatForm.personA)" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8">
+                    <el-form-item label="出生省份">
+                      <el-select v-model="compatForm.personA.birthProvince" filterable placeholder="选择省份" @change="onCompatibilityProvinceChange(compatForm.personA)">
+                        <el-option v-for="province in provinceOptions" :key="province.name" :label="province.name" :value="province.name" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8">
+                    <el-form-item label="出生城市">
+                      <el-select v-model="compatForm.personA.birthPlace" filterable placeholder="选择城市" :disabled="!compatForm.personA.birthProvince" @change="onCompatibilityBirthPlaceChange(compatForm.personA)">
+                        <el-option v-for="city in getCompatibilityCityOptions(compatForm.personA.birthProvince)" :key="city.name" :label="city.name" :value="city.name" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8"><el-form-item label="真太阳时"><el-switch v-model="compatForm.personA.useTrueSolarTime" @change="fillCompatibilityPillars(compatForm.personA)" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8"><el-form-item label="日柱"><el-input v-model="compatForm.personA.dayPillar" placeholder="自动排出" @change="syncCompatibilityDayMaster(compatForm.personA)" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8"><el-form-item label="四柱"><el-input :model-value="compatibilityPillarSummary(compatForm.personA)" readonly /></el-form-item></el-col>
+                </el-row>
+              </div>
+
+              <div class="compatibility-person">
+                <div class="person-title">
+                  <strong>乙方</strong>
+                  <span>{{ compatibilityPillarSummary(compatForm.personB) }}</span>
+                </div>
+                <el-row :gutter="10">
+                  <el-col :xs="12" :sm="8"><el-form-item label="姓名"><el-input v-model="compatForm.personB.name" placeholder="可选" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8">
+                    <el-form-item label="性别">
+                      <el-select v-model="compatForm.personB.gender" placeholder="选择" @change="fillCompatibilityPillars(compatForm.personB)">
+                        <el-option label="男" value="男" />
+                        <el-option label="女" value="女" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8"><el-form-item label="出生日期"><el-input v-model="compatForm.personB.birthDate" placeholder="YYYY-MM-DD" @input="fillCompatibilityPillars(compatForm.personB)" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8"><el-form-item label="出生时间"><el-input v-model="compatForm.personB.birthTime" placeholder="00:30 / 子时" @input="fillCompatibilityPillars(compatForm.personB)" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8">
+                    <el-form-item label="出生省份">
+                      <el-select v-model="compatForm.personB.birthProvince" filterable placeholder="选择省份" @change="onCompatibilityProvinceChange(compatForm.personB)">
+                        <el-option v-for="province in provinceOptions" :key="province.name" :label="province.name" :value="province.name" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8">
+                    <el-form-item label="出生城市">
+                      <el-select v-model="compatForm.personB.birthPlace" filterable placeholder="选择城市" :disabled="!compatForm.personB.birthProvince" @change="onCompatibilityBirthPlaceChange(compatForm.personB)">
+                        <el-option v-for="city in getCompatibilityCityOptions(compatForm.personB.birthProvince)" :key="city.name" :label="city.name" :value="city.name" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8"><el-form-item label="真太阳时"><el-switch v-model="compatForm.personB.useTrueSolarTime" @change="fillCompatibilityPillars(compatForm.personB)" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8"><el-form-item label="日柱"><el-input v-model="compatForm.personB.dayPillar" placeholder="自动排出" @change="syncCompatibilityDayMaster(compatForm.personB)" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8"><el-form-item label="四柱"><el-input :model-value="compatibilityPillarSummary(compatForm.personB)" readonly /></el-form-item></el-col>
+                </el-row>
+              </div>
+            </div>
+
+            <el-row :gutter="12">
+              <el-col :xs="24" :sm="8">
+                <el-form-item label="关系类型">
+                  <el-select v-model="compatForm.relationshipType">
+                    <el-option label="恋爱婚姻" value="恋爱婚姻" />
+                    <el-option label="合作事业" value="合作事业" />
+                    <el-option label="亲子家人" value="亲子家人" />
+                    <el-option label="朋友同事" value="朋友同事" />
+                    <el-option label="综合关系" value="综合关系" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="16">
+                <el-form-item label="想问的问题">
+                  <el-input v-model="compatForm.question" type="textarea" :rows="3" placeholder="例如：我们适不适合长期发展？未来一年关系需要注意什么？" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <div class="compatibility-preview">
+              <div>
+                <span>甲方真太阳时</span>
+                <strong>{{ compatibilityTrueSolarText(compatForm.personA) }}</strong>
+              </div>
+              <div>
+                <span>乙方真太阳时</span>
+                <strong>{{ compatibilityTrueSolarText(compatForm.personB) }}</strong>
+              </div>
+            </div>
+
+            <div class="actions">
+              <el-button size="large" @click="copySingleProfileToPersonA">用我的出生资料填甲方</el-button>
+              <el-button type="primary" size="large" :loading="loading" @click="submitCompatibility">开始合盘解析</el-button>
+            </div>
+            <el-alert
+              v-if="loading"
+              class="estimate-note"
+              type="warning"
+              :closable="false"
+              title="正在调用 AI 合盘细断，预计 60-120 秒，请不要重复点击。"
+            />
+          </el-form>
+        </div>
       </el-col>
 
       <el-col v-if="result || loading" :xs="24" :lg="10">
@@ -280,7 +408,7 @@
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { updateProfile } from '../../api/auth'
-import { analyzeBazi } from '../../api/bazi'
+import { analyzeBazi, analyzeBaziCompatibility } from '../../api/bazi'
 import KnowledgeReferences from '../../components/KnowledgeReferences.vue'
 import ResultReport from '../../components/ResultReport.vue'
 import { useUserStore } from '../../stores/user'
@@ -294,6 +422,7 @@ const result = ref('')
 const knowledgeRules = ref([])
 const classicReferences = ref([])
 const reportPanelRef = ref(null)
+const analysisMode = ref('single')
 const activeChartTab = ref('chart')
 const chartTabs = [
   { key: 'info', label: '基本信息' },
@@ -321,6 +450,13 @@ const form = reactive({
   currentYearPillar: '',
   questionType: '综合',
   question: ''
+})
+
+const compatForm = reactive({
+  relationshipType: '恋爱婚姻',
+  question: '',
+  personA: createCompatibilityPerson('甲方', ''),
+  personB: createCompatibilityPerson('乙方', '')
 })
 
 const parsedResult = computed(() => {
@@ -389,6 +525,30 @@ function buildPillarCard(key, label, value) {
   }
 }
 
+function createCompatibilityPerson(name, gender) {
+  return {
+    name,
+    gender,
+    birthDate: '',
+    birthTime: '',
+    birthProvince: '',
+    birthPlace: '',
+    useTrueSolarTime: false,
+    yearPillar: '',
+    monthPillar: '',
+    dayPillar: '',
+    hourPillar: '',
+    dayMaster: ''
+  }
+}
+
+function switchAnalysisMode(mode) {
+  analysisMode.value = mode
+  result.value = ''
+  knowledgeRules.value = []
+  classicReferences.value = []
+}
+
 const solarText = computed(() => {
   if (!form.birthDate) return '未填写'
   const base = `${form.birthDate}${form.birthTime ? ` ${form.birthTime}` : ''}`
@@ -415,6 +575,7 @@ const chartStatus = computed(() => {
 
 const caseRules = computed(() => knowledgeRules.value.filter(rule => rule.category?.includes('案例')))
 const caseRuleCount = computed(() => caseRules.value.length)
+const reportTitle = computed(() => analysisMode.value === 'compatibility' ? '八字合盘解析报告' : '八字分析报告')
 
 function applyProfile() {
   const profile = userStore.getBirthProfile()
@@ -433,6 +594,7 @@ function applyProfile() {
   form.hourPillar = profile.hourPillar || ''
   form.dayMaster = profile.dayMaster || profile.birthDayMaster || ''
   fillPillarsFromBirth({ preserveExisting: true })
+  copySingleProfileToPersonA({ silent: true })
 }
 
 async function saveBirthProfile(options = {}) {
@@ -538,8 +700,12 @@ function refreshLuckPillar() {
 function getTrueSolarTimeInfo() {
   const normalizedTime = normalizeBirthTime(form.birthTime)
   const city = selectedCity.value
-  if (!form.useTrueSolarTime || !form.birthDate || !normalizedTime || !city) return null
-  const date = new Date(`${form.birthDate}T${normalizedTime}`)
+  return getTrueSolarTimeInfoFor(form.birthDate, normalizedTime, form.useTrueSolarTime, city)
+}
+
+function getTrueSolarTimeInfoFor(birthDate, normalizedTime, enabled, city) {
+  if (!enabled || !birthDate || !normalizedTime || !city) return null
+  const date = new Date(`${birthDate}T${normalizedTime}`)
   if (Number.isNaN(date.getTime())) return null
   const offsetMinutes = Math.round((city.longitude - 120) * 4 + getEquationOfTimeMinutes(date))
   const corrected = new Date(date.getTime() + offsetMinutes * 60 * 1000)
@@ -571,6 +737,148 @@ function getCityLocation(place) {
 function findProvinceByCity(place) {
   const value = String(place || '')
   return provinceOptions.find(province => province.cities.some(city => city.name === value || value.includes(city.name))) || null
+}
+
+function getCompatibilityCityOptions(provinceName) {
+  return provinceOptions.find(item => item.name === provinceName)?.cities || []
+}
+
+function getCompatibilityCity(person) {
+  const value = String(person.birthPlace || '')
+  return provinceOptions
+    .flatMap(province => province.cities)
+    .find(city => city.name === value || value.includes(city.name)) || null
+}
+
+function getCompatibilityTrueSolarInfo(person) {
+  return getTrueSolarTimeInfoFor(
+    person.birthDate,
+    normalizeBirthTime(person.birthTime),
+    person.useTrueSolarTime,
+    getCompatibilityCity(person)
+  )
+}
+
+function compatibilityTrueSolarText(person) {
+  if (!person.useTrueSolarTime) return '未启用'
+  if (!normalizeBirthTime(person.birthTime)) return '待填写时间'
+  const city = getCompatibilityCity(person)
+  if (!city) return '请选择出生省市'
+  const info = getCompatibilityTrueSolarInfo(person)
+  if (!info) return '无法修正'
+  const sign = info.offsetMinutes >= 0 ? '+' : '-'
+  return `${info.date} ${info.time}（${city.name}，${sign}${Math.abs(info.offsetMinutes)}分钟）`
+}
+
+function compatibilityPillarSummary(person) {
+  const pillars = [person.yearPillar, person.monthPillar, person.dayPillar, person.hourPillar].filter(Boolean)
+  return pillars.length ? pillars.join(' ') : '待排盘'
+}
+
+function onCompatibilityProvinceChange(person) {
+  const cities = getCompatibilityCityOptions(person.birthProvince)
+  if (!cities.some(city => city.name === person.birthPlace)) {
+    person.birthPlace = cities[0]?.name || ''
+  }
+  if (person.birthPlace) person.useTrueSolarTime = true
+  fillCompatibilityPillars(person)
+}
+
+function onCompatibilityBirthPlaceChange(person) {
+  if (person.birthPlace) person.useTrueSolarTime = true
+  fillCompatibilityPillars(person)
+}
+
+function fillCompatibilityPillars(person, options = {}) {
+  if (!person.birthDate) return
+  const normalizedTime = normalizeBirthTime(person.birthTime)
+  const hasBirthTime = Boolean(normalizedTime)
+  const trueSolar = getCompatibilityTrueSolarInfo(person)
+  const effectiveDate = hasBirthTime && trueSolar ? trueSolar.date : person.birthDate
+  const effectiveTime = hasBirthTime && trueSolar ? trueSolar.time : normalizedTime
+  const birthDateTime = hasBirthTime ? `${effectiveDate}T${effectiveTime}` : person.birthDate
+  const pillars = getFourPillars(birthDateTime)
+  const shouldWrite = (field) => !options.preserveExisting || !person[field]
+  if (pillars.yearPillar && shouldWrite('yearPillar')) person.yearPillar = pillars.yearPillar
+  if (pillars.monthPillar && shouldWrite('monthPillar')) person.monthPillar = pillars.monthPillar
+  if (pillars.dayPillar && shouldWrite('dayPillar')) person.dayPillar = pillars.dayPillar
+  if (pillars.dayMaster && shouldWrite('dayMaster')) person.dayMaster = pillars.dayMaster
+  if (hasBirthTime && pillars.hourPillar && shouldWrite('hourPillar')) {
+    person.hourPillar = pillars.hourPillar
+  } else if (!hasBirthTime && !options.preserveExisting) {
+    person.hourPillar = ''
+  }
+}
+
+function syncCompatibilityDayMaster(person) {
+  person.dayMaster = person.dayPillar ? person.dayPillar.slice(0, 1) : ''
+}
+
+function buildCompatibilityDetails(person) {
+  const trueSolar = getCompatibilityTrueSolarInfo(person)
+  const details = getBaziDetails({
+    yearPillar: person.yearPillar,
+    monthPillar: person.monthPillar,
+    dayPillar: person.dayPillar,
+    hourPillar: person.hourPillar,
+    dayMaster: person.dayMaster,
+    luck: getLuckCycles({
+      birthDate: person.birthDate,
+      birthTime: trueSolar?.time || normalizeBirthTime(person.birthTime),
+      gender: person.gender,
+      yearPillar: person.yearPillar,
+      monthPillar: person.monthPillar,
+      currentDate: new Date()
+    })
+  })
+  return JSON.stringify({
+    ...details,
+    trueSolarTime: {
+      enabled: person.useTrueSolarTime,
+      province: person.birthProvince,
+      city: getCompatibilityCity(person)?.name || person.birthPlace,
+      display: compatibilityTrueSolarText(person),
+      corrected: trueSolar
+    }
+  })
+}
+
+function flattenCompatibilityPerson(prefix, person) {
+  return {
+    [`${prefix}Name`]: person.name,
+    [`${prefix}Gender`]: person.gender,
+    [`${prefix}BirthDate`]: person.birthDate,
+    [`${prefix}BirthTime`]: person.birthTime,
+    [`${prefix}BirthPlace`]: person.birthPlace,
+    [`${prefix}YearPillar`]: person.yearPillar,
+    [`${prefix}MonthPillar`]: person.monthPillar,
+    [`${prefix}DayPillar`]: person.dayPillar,
+    [`${prefix}HourPillar`]: person.hourPillar,
+    [`${prefix}DayMaster`]: person.dayMaster,
+    [`${prefix}BaziDetails`]: buildCompatibilityDetails(person)
+  }
+}
+
+function copySingleProfileToPersonA(options = {}) {
+  fillPillarsFromBirth({ preserveExisting: true })
+  Object.assign(compatForm.personA, {
+    name: compatForm.personA.name || '甲方',
+    gender: form.gender,
+    birthDate: form.birthDate,
+    birthTime: form.birthTime,
+    birthProvince: form.birthProvince,
+    birthPlace: form.birthPlace,
+    useTrueSolarTime: form.useTrueSolarTime,
+    yearPillar: form.yearPillar,
+    monthPillar: form.monthPillar,
+    dayPillar: form.dayPillar,
+    hourPillar: form.hourPillar,
+    dayMaster: form.dayMaster
+  })
+  fillCompatibilityPillars(compatForm.personA, { preserveExisting: true })
+  if (!options.silent) {
+    ElMessage.success('已填入甲方资料')
+  }
 }
 
 function normalizeBirthTime(value) {
@@ -661,17 +969,54 @@ async function submit() {
   }
 }
 
+async function submitCompatibility() {
+  fillCompatibilityPillars(compatForm.personA, { preserveExisting: true })
+  fillCompatibilityPillars(compatForm.personB, { preserveExisting: true })
+  syncCompatibilityDayMaster(compatForm.personA)
+  syncCompatibilityDayMaster(compatForm.personB)
+  if (!compatForm.question.trim()) {
+    ElMessage.warning('请先填写合盘问题')
+    return
+  }
+  if (!compatForm.personA.birthDate && !compatForm.personA.dayPillar) {
+    ElMessage.warning('请补充甲方出生日期或日柱')
+    return
+  }
+  if (!compatForm.personB.birthDate && !compatForm.personB.dayPillar) {
+    ElMessage.warning('请补充乙方出生日期或日柱')
+    return
+  }
+  loading.value = true
+  try {
+    const data = await analyzeBaziCompatibility({
+      userId: userStore.userId,
+      relationshipType: compatForm.relationshipType,
+      question: compatForm.question,
+      ...flattenCompatibilityPerson('personA', compatForm.personA),
+      ...flattenCompatibilityPerson('personB', compatForm.personB)
+    })
+    result.value = data.resultJson
+    knowledgeRules.value = data.knowledgeRules || []
+    classicReferences.value = data.classicReferences || []
+    ElMessage.success('合盘解析完成')
+    await nextTick()
+    reportPanelRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } finally {
+    loading.value = false
+  }
+}
+
 async function copyCurrentReport() {
   await copyText(buildReportMarkdown(parsedResult.value, knowledgeRules.value, {
-    title: '八字分析报告',
+    title: reportTitle.value,
     classicReferences: classicReferences.value
   }))
   ElMessage.success('报告已复制')
 }
 
 function exportCurrentReport() {
-  downloadMarkdown(`八字分析报告-${Date.now()}.md`, buildReportMarkdown(parsedResult.value, knowledgeRules.value, {
-    title: '八字分析报告',
+  downloadMarkdown(`${reportTitle.value}-${Date.now()}.md`, buildReportMarkdown(parsedResult.value, knowledgeRules.value, {
+    title: reportTitle.value,
     classicReferences: classicReferences.value
   }))
 }
@@ -692,6 +1037,109 @@ onMounted(applyProfile)
 
 .estimate-note {
   margin-top: 12px;
+}
+
+.mode-switch {
+  display: inline-flex;
+  padding: 4px;
+  margin: 0 0 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+  gap: 4px;
+}
+
+.mode-switch button {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #606266;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 34px;
+  min-width: 96px;
+  padding: 0 14px;
+}
+
+.mode-switch button.active {
+  background: #111;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(17, 17, 17, 0.12);
+}
+
+.compatibility-desc {
+  margin: -4px 0 16px;
+  color: #606266;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.compatibility-people {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.compatibility-person {
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+  background: #fbfbfb;
+  padding: 12px;
+  min-width: 0;
+}
+
+.person-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.person-title strong {
+  color: #111827;
+  font-size: 16px;
+}
+
+.person-title span {
+  color: #8a6b2d;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+  word-break: keep-all;
+}
+
+.compatibility-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.compatibility-preview div {
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px 12px;
+}
+
+.compatibility-preview span,
+.compatibility-preview strong {
+  display: block;
+}
+
+.compatibility-preview span {
+  color: #909399;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.compatibility-preview strong {
+  color: #303133;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .chart-preview {
@@ -1013,6 +1461,37 @@ onMounted(applyProfile)
 
   .panel {
     padding: 10px;
+  }
+
+  .mode-switch {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mode-switch button {
+    min-width: 0;
+    width: 100%;
+    font-size: 13px;
+  }
+
+  .compatibility-people,
+  .compatibility-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .compatibility-person {
+    padding: 10px;
+  }
+
+  .person-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .person-title span {
+    text-align: left;
+    word-break: break-word;
   }
 
   .result-head {

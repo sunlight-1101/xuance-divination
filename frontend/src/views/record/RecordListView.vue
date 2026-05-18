@@ -18,6 +18,7 @@
       <el-select v-model="query.type" placeholder="术数类型" style="width: 160px" clearable>
         <el-option label="六爻" value="LIUYAO" />
         <el-option label="八字" value="BAZI" />
+        <el-option label="八字合盘" value="BAZI_COMPATIBILITY" />
         <el-option label="奇门" value="QIMEN" />
       </el-select>
       <el-input v-model="query.keyword" placeholder="搜索问题" style="width: 260px" clearable />
@@ -26,7 +27,9 @@
 
     <div class="panel desktop-records">
       <el-table :data="records" border class="record-table">
-        <el-table-column prop="type" label="类型" width="100" />
+        <el-table-column label="类型" width="110">
+          <template #default="{ row }">{{ typeLabel(row.type) }}</template>
+        </el-table-column>
         <el-table-column prop="question" label="问题" min-width="260" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="150" fixed="right">
@@ -128,6 +131,15 @@ const inputSummary = computed(() => {
       { label: '方向', value: data.questionType }
     ]
   }
+  if (current.value.type === 'BAZI_COMPATIBILITY') {
+    return [
+      { label: '关系类型', value: data.relationshipType },
+      { label: '甲方', value: [data.personAName, data.personABirthDate, data.personABirthTime, data.personABirthPlace].filter(Boolean).join(' ') },
+      { label: '甲方四柱', value: [data.personAYearPillar, data.personAMonthPillar, data.personADayPillar, data.personAHourPillar].filter(Boolean).join(' / ') },
+      { label: '乙方', value: [data.personBName, data.personBBirthDate, data.personBBirthTime, data.personBBirthPlace].filter(Boolean).join(' ') },
+      { label: '乙方四柱', value: [data.personBYearPillar, data.personBMonthPillar, data.personBDayPillar, data.personBHourPillar].filter(Boolean).join(' / ') }
+    ]
+  }
   if (current.value.type === 'LIUYAO') {
     return [
       { label: '起卦时间', value: data.time },
@@ -174,7 +186,7 @@ function exportCurrentReport() {
 }
 
 function typeLabel(type) {
-  return { LIUYAO: '六爻', BAZI: '八字', ZIWEI: '紫微', QIMEN: '奇门' }[type] || type || '记录'
+  return { LIUYAO: '六爻', BAZI: '八字', BAZI_COMPATIBILITY: '八字合盘', ZIWEI: '紫微', QIMEN: '奇门' }[type] || type || '记录'
 }
 
 function formatTime(value) {

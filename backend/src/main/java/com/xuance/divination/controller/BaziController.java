@@ -2,6 +2,7 @@ package com.xuance.divination.controller;
 
 import com.xuance.divination.common.Result;
 import com.xuance.divination.dto.BaziAnalyzeDTO;
+import com.xuance.divination.dto.BaziCompatibilityDTO;
 import com.xuance.divination.service.BaziAnalyzeService;
 import com.xuance.divination.vo.BaziAnalyzeVO;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,5 +23,9 @@ public class BaziController {
     public Result<BaziAnalyzeVO> analyze(@RequestBody BaziAnalyzeDTO dto) {
         return Result.ok(service.analyze(dto));
     }
-}
 
+    @PostMapping("/compatibility")
+    public Result<BaziAnalyzeVO> analyzeCompatibility(@RequestBody BaziCompatibilityDTO dto) {
+        return Result.ok(service.analyzeCompatibility(dto));
+    }
+}

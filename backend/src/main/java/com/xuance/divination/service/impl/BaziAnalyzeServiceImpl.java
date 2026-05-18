@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xuance.divination.common.BizException;
 import com.xuance.divination.dto.BaziAnalyzeDTO;
+import com.xuance.divination.dto.BaziCompatibilityDTO;
 import com.xuance.divination.entity.AiCallLog;
 import com.xuance.divination.entity.DivinationRecord;
 import com.xuance.divination.entity.KnowledgeRule;
@@ -27,6 +28,7 @@ import org.springframework.util.StringUtils;
 @Service
 public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
     private static final String TYPE = "BAZI";
+    private static final String COMPATIBILITY_TYPE = "BAZI_COMPATIBILITY";
 
     private final KnowledgeService knowledgeService;
     private final ClassicBookService classicBookService;
@@ -112,6 +114,63 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         return vo;
     }
 
+    @Override
+    public BaziAnalyzeVO analyzeCompatibility(BaziCompatibilityDTO dto) {
+        validateCompatibility(dto);
+        String cacheKey = compatibilityCacheKey(dto);
+        DivinationRecord cached = cacheSupport.findRecent(COMPATIBILITY_TYPE, dto.getUserId(), cacheKey);
+        if (cached != null) {
+            return cachedVO(cached);
+        }
+        dto.setCacheKey(cacheKey);
+        quotaService.consumeForAnalysis(dto.getUserId(), COMPATIBILITY_TYPE);
+        String referenceContext = String.join(" ",
+                safe(dto.getRelationshipType()),
+                safe(dto.getQuestion()),
+                "合盘 关系 感情 婚姻 日柱 日支 夫妻宫 配偶星 冲合 刑害 互补",
+                safe(dto.getPersonADayPillar()),
+                safe(dto.getPersonBDayPillar()),
+                compact(dto.getPersonABaziDetails(), 500),
+                compact(dto.getPersonBBaziDetails(), 500));
+        List<KnowledgeRule> rules = knowledgeService.findForAnalysis(TYPE, referenceContext);
+        List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
+        String prompt = buildCompatibilityPrompt(dto, rules, classicReferences);
+        String resultJson = aiService.analyze(prompt);
+
+        DivinationRecord record = new DivinationRecord();
+        record.setUserId(dto.getUserId());
+        record.setType(COMPATIBILITY_TYPE);
+        record.setQuestion("合盘：" + dto.getQuestion());
+        record.setInputJson(toJson(dto));
+        record.setResultJson(resultJson);
+        record.setResultText(resultJson);
+        record.setKnowledgeRuleIds(rules.stream()
+                .map(KnowledgeRule::getId)
+                .map(String::valueOf)
+                .collect(Collectors.joining(",")));
+        record.setCreateTime(LocalDateTime.now());
+        record.setUpdateTime(LocalDateTime.now());
+        recordMapper.insert(record);
+
+        AiCallLog log = new AiCallLog();
+        log.setUserId(dto.getUserId());
+        log.setRecordId(record.getId());
+        log.setModelName(modelName);
+        log.setPrompt(prompt);
+        log.setResponse(resultJson);
+        log.setStatus("SUCCESS");
+        log.setCreateTime(LocalDateTime.now());
+        aiCallLogMapper.insert(log);
+
+        BaziAnalyzeVO vo = new BaziAnalyzeVO();
+        vo.setRecordId(record.getId());
+        vo.setResultJson(resultJson);
+        vo.setResultText(resultJson);
+        vo.setKnowledgeRules(rules);
+        vo.setClassicReferences(classicReferences);
+        return vo;
+    }
+
     private BaziAnalyzeVO cachedVO(DivinationRecord record) {
         BaziAnalyzeVO vo = new BaziAnalyzeVO();
         vo.setRecordId(record.getId());
@@ -141,12 +200,53 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
                 dto.getBaziDetails());
     }
 
+    private String compatibilityCacheKey(BaziCompatibilityDTO dto) {
+        return cacheSupport.fingerprint(
+                COMPATIBILITY_TYPE,
+                dto.getRelationshipType(),
+                dto.getQuestion(),
+                dto.getPersonAName(),
+                dto.getPersonAGender(),
+                dto.getPersonABirthDate(),
+                dto.getPersonABirthTime(),
+                dto.getPersonABirthPlace(),
+                dto.getPersonAYearPillar(),
+                dto.getPersonAMonthPillar(),
+                dto.getPersonADayPillar(),
+                dto.getPersonAHourPillar(),
+                dto.getPersonADayMaster(),
+                dto.getPersonABaziDetails(),
+                dto.getPersonBName(),
+                dto.getPersonBGender(),
+                dto.getPersonBBirthDate(),
+                dto.getPersonBBirthTime(),
+                dto.getPersonBBirthPlace(),
+                dto.getPersonBYearPillar(),
+                dto.getPersonBMonthPillar(),
+                dto.getPersonBDayPillar(),
+                dto.getPersonBHourPillar(),
+                dto.getPersonBDayMaster(),
+                dto.getPersonBBaziDetails());
+    }
+
     private void validate(BaziAnalyzeDTO dto) {
         if (!StringUtils.hasText(dto.getQuestion())) {
             throw new BizException("Question is required");
         }
         if (!StringUtils.hasText(dto.getDayPillar()) && !StringUtils.hasText(dto.getDayMaster())) {
             throw new BizException("Day pillar or day master is required");
+        }
+    }
+
+    private void validateCompatibility(BaziCompatibilityDTO dto) {
+        if (!StringUtils.hasText(dto.getQuestion())) {
+            throw new BizException("Question is required");
+        }
+        if (!StringUtils.hasText(dto.getPersonADayPillar()) && !StringUtils.hasText(dto.getPersonADayMaster())) {
+            throw new BizException("Person A day pillar or day master is required");
+        }
+        if (!StringUtils.hasText(dto.getPersonBDayPillar()) && !StringUtils.hasText(dto.getPersonBDayMaster())) {
+            throw new BizException("Person B day pillar or day master is required");
         }
     }
 
@@ -171,6 +271,43 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         append(userInput, "questionType", dto.getQuestionType());
         append(userInput, "question", dto.getQuestion());
         return promptTemplateService.load("bazi-skill.md")
+                + "\n\n" + promptTemplateService.load("knowledge-policy.md")
+                + "\n\n[USER_INPUT]\n" + userInput + "\n"
+                + "[KNOWLEDGE_RULES]\n" + (StringUtils.hasText(knowledgeRules) ? knowledgeRules : "none") + "\n\n"
+                + "[CLASSIC_REFERENCES]\n" + (StringUtils.hasText(classicReferenceText) ? classicReferenceText : "none");
+    }
+
+    private String buildCompatibilityPrompt(BaziCompatibilityDTO dto, List<KnowledgeRule> rules, List<String> classicReferences) {
+        String knowledgeRules = rules.stream()
+                .map(this::formatKnowledgeRule)
+                .collect(Collectors.joining("\n"));
+        String classicReferenceText = String.join("\n", classicReferences);
+        StringBuilder userInput = new StringBuilder();
+        append(userInput, "relationshipType", dto.getRelationshipType());
+        append(userInput, "question", dto.getQuestion());
+        append(userInput, "personAName", dto.getPersonAName());
+        append(userInput, "personAGender", dto.getPersonAGender());
+        append(userInput, "personABirthDate", dto.getPersonABirthDate());
+        append(userInput, "personABirthTime", dto.getPersonABirthTime());
+        append(userInput, "personABirthPlace", dto.getPersonABirthPlace());
+        append(userInput, "personAYearPillar", dto.getPersonAYearPillar());
+        append(userInput, "personAMonthPillar", dto.getPersonAMonthPillar());
+        append(userInput, "personADayPillar", dto.getPersonADayPillar());
+        append(userInput, "personAHourPillar", dto.getPersonAHourPillar());
+        append(userInput, "personADayMaster", dto.getPersonADayMaster());
+        append(userInput, "personABaziDetails", compact(dto.getPersonABaziDetails(), 1300));
+        append(userInput, "personBName", dto.getPersonBName());
+        append(userInput, "personBGender", dto.getPersonBGender());
+        append(userInput, "personBBirthDate", dto.getPersonBBirthDate());
+        append(userInput, "personBBirthTime", dto.getPersonBBirthTime());
+        append(userInput, "personBBirthPlace", dto.getPersonBBirthPlace());
+        append(userInput, "personBYearPillar", dto.getPersonBYearPillar());
+        append(userInput, "personBMonthPillar", dto.getPersonBMonthPillar());
+        append(userInput, "personBDayPillar", dto.getPersonBDayPillar());
+        append(userInput, "personBHourPillar", dto.getPersonBHourPillar());
+        append(userInput, "personBDayMaster", dto.getPersonBDayMaster());
+        append(userInput, "personBBaziDetails", compact(dto.getPersonBBaziDetails(), 1300));
+        return promptTemplateService.load("bazi-compatibility-skill.md")
                 + "\n\n" + promptTemplateService.load("knowledge-policy.md")
                 + "\n\n[USER_INPUT]\n" + userInput + "\n"
                 + "[KNOWLEDGE_RULES]\n" + (StringUtils.hasText(knowledgeRules) ? knowledgeRules : "none") + "\n\n"
