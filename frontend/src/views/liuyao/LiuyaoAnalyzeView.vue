@@ -42,12 +42,14 @@
                   </el-col>
                   <el-col :xs="12" :sm="8">
                     <el-form-item label="出生日期">
-                      <el-input v-model="form.birthDate" placeholder="YYYY-MM-DD" @change="updateBirthDayMaster" />
+                      <el-date-picker v-model="form.birthDate" type="date" value-format="YYYY-MM-DD" placeholder="选择年月日" @change="updateBirthDayMaster" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="12" :sm="8">
                     <el-form-item label="出生时间">
-                      <el-input v-model="form.birthTime" placeholder="如 08:30" />
+                      <el-select v-model="form.birthTime" filterable clearable placeholder="选择时辰">
+                        <el-option v-for="item in birthTimeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                      </el-select>
                     </el-form-item>
                   </el-col>
                   <el-col :xs="12" :sm="8">
@@ -362,6 +364,7 @@ import { useUserStore } from '../../stores/user'
 import { buildHexagram, installHexagram, tossCoins } from '../../utils/liuyao'
 import { getDayGanZhi } from '../../utils/ganzhi'
 import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
+import { buildBirthTimeOptions, normalizeToOptionTime } from '../../utils/timeOptions'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -372,6 +375,7 @@ const guaPanelRef = ref(null)
 const reportPanelRef = ref(null)
 const showDetailHint = ref(false)
 const positions = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻']
+const birthTimeOptions = buildBirthTimeOptions()
 const shakenCount = ref(0)
 const installInfo = reactive({ palace: '', palaceElement: '', shiPosition: 0, yingPosition: 0 })
 const form = reactive({
@@ -540,7 +544,7 @@ function applyUserProfile() {
   if (!profile) return
   form.gender = profile.gender || ''
   form.birthDate = profile.birthDate || ''
-  form.birthTime = profile.birthTime || ''
+  form.birthTime = normalizeToOptionTime(profile.birthTime || '')
   form.birthPlace = profile.birthPlace || ''
   form.birthDayGanZhi = profile.birthDayGanZhi || profile.dayPillar || ''
   form.birthDayMaster = profile.birthDayMaster || profile.dayMaster || ''

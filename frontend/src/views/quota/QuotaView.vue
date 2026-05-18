@@ -14,7 +14,7 @@
           <small>感谢每一次支持，也感谢你愿意把这个工具继续用下去。</small>
         </div>
         <div class="qr-box">
-          <img src="/wechat-pay.jpg" alt="自愿打赏收款码" />
+          <img src="/wechat-pay-qr.jpg" alt="自愿打赏收款码" />
           <strong>微信 / 支付宝收款码</strong>
           <span>请按实际页面显示付款</span>
         </div>

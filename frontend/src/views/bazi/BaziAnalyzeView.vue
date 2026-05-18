@@ -41,8 +41,18 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="12" :sm="8"><el-form-item label="出生日期"><el-input v-model="form.birthDate" placeholder="YYYY-MM-DD" @input="fillPillarsFromBirth" @change="fillPillarsFromBirth" /></el-form-item></el-col>
-              <el-col :xs="12" :sm="8"><el-form-item label="出生时间"><el-input v-model="form.birthTime" placeholder="08:30 / 辰时 / 8点" @input="fillPillarsFromBirth" @change="fillPillarsFromBirth" /></el-form-item></el-col>
+              <el-col :xs="12" :sm="8">
+                <el-form-item label="出生日期">
+                  <el-date-picker v-model="form.birthDate" type="date" value-format="YYYY-MM-DD" placeholder="选择年月日" @change="fillPillarsFromBirth" />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8">
+                <el-form-item label="出生时间">
+                  <el-select v-model="form.birthTime" filterable clearable placeholder="选择时辰" @change="fillPillarsFromBirth">
+                    <el-option v-for="item in birthTimeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
               <el-col :xs="12" :sm="8">
                 <el-form-item label="出生省份">
                   <el-select
@@ -388,8 +398,18 @@
                       </el-select>
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="12" :sm="8"><el-form-item label="出生日期"><el-input v-model="compatForm.personA.birthDate" placeholder="YYYY-MM-DD" @input="fillCompatibilityPillars(compatForm.personA)" /></el-form-item></el-col>
-                  <el-col :xs="12" :sm="8"><el-form-item label="出生时间"><el-input v-model="compatForm.personA.birthTime" placeholder="00:30 / 子时" @input="fillCompatibilityPillars(compatForm.personA)" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8">
+                    <el-form-item label="出生日期">
+                      <el-date-picker v-model="compatForm.personA.birthDate" type="date" value-format="YYYY-MM-DD" placeholder="选择年月日" @change="fillCompatibilityPillars(compatForm.personA)" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8">
+                    <el-form-item label="出生时间">
+                      <el-select v-model="compatForm.personA.birthTime" filterable clearable placeholder="选择时辰" @change="fillCompatibilityPillars(compatForm.personA)">
+                        <el-option v-for="item in birthTimeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
                   <el-col :xs="12" :sm="8">
                     <el-form-item label="出生省份">
                       <el-select v-model="compatForm.personA.birthProvince" filterable placeholder="选择省份" @change="onCompatibilityProvinceChange(compatForm.personA)">
@@ -425,8 +445,18 @@
                       </el-select>
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="12" :sm="8"><el-form-item label="出生日期"><el-input v-model="compatForm.personB.birthDate" placeholder="YYYY-MM-DD" @input="fillCompatibilityPillars(compatForm.personB)" /></el-form-item></el-col>
-                  <el-col :xs="12" :sm="8"><el-form-item label="出生时间"><el-input v-model="compatForm.personB.birthTime" placeholder="00:30 / 子时" @input="fillCompatibilityPillars(compatForm.personB)" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="8">
+                    <el-form-item label="出生日期">
+                      <el-date-picker v-model="compatForm.personB.birthDate" type="date" value-format="YYYY-MM-DD" placeholder="选择年月日" @change="fillCompatibilityPillars(compatForm.personB)" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8">
+                    <el-form-item label="出生时间">
+                      <el-select v-model="compatForm.personB.birthTime" filterable clearable placeholder="选择时辰" @change="fillCompatibilityPillars(compatForm.personB)">
+                        <el-option v-for="item in birthTimeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
                   <el-col :xs="12" :sm="8">
                     <el-form-item label="出生省份">
                       <el-select v-model="compatForm.personB.birthProvince" filterable placeholder="选择省份" @change="onCompatibilityProvinceChange(compatForm.personB)">
@@ -526,6 +556,7 @@ import { useUserStore } from '../../stores/user'
 import { getBaziDetails, getFourPillars, getLuckCycles, getTenGod, getYearGanZhi } from '../../utils/ganzhi'
 import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
 import { provinceOptions } from '../../utils/chinaCities'
+import { buildBirthTimeOptions, normalizeToOptionTime } from '../../utils/timeOptions'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -540,6 +571,7 @@ const savedProfiles = ref([])
 const selectedProfileId = ref('')
 const compatSelectedA = ref('')
 const compatSelectedB = ref('')
+const birthTimeOptions = buildBirthTimeOptions()
 const chartTabs = [
   { key: 'info', label: '基本信息' },
   { key: 'chart', label: '基本排盘' },
@@ -747,7 +779,7 @@ const chartStatus = computed(() => {
   if (!form.birthDate) return '先填写出生日期'
   if (!form.birthTime) return '已排年/月/日，填写出生时间后可排时柱'
   if (form.useTrueSolarTime && !selectedCity.value) return '已启用真太阳时，请选择出生省市'
-  if (!form.hourPillar) return '出生时间格式未识别，可填 08:30、8点、辰时'
+  if (!form.hourPillar) return '请选择出生时间'
   return `日主 ${form.dayMaster || '待定'}，流年 ${form.currentYearPillar || '待定'}`
 })
 
@@ -804,7 +836,7 @@ function applyProfileToForm(profile, target) {
   target.name = profile.name || target.name || ''
   target.gender = profile.gender || ''
   target.birthDate = profile.birthDate || ''
-  target.birthTime = profile.birthTime || ''
+  target.birthTime = normalizeToOptionTime(profile.birthTime || '')
   target.birthPlace = profile.birthPlace || ''
   target.birthProvince = profile.birthProvince || findProvinceByCity(profile.birthPlace)?.name || ''
   target.useTrueSolarTime = Boolean(profile.useTrueSolarTime)

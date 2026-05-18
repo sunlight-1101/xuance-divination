@@ -33,7 +33,7 @@
                 <button type="button" :class="{ active: form.calendarType === 'SOLAR' }" @click="form.calendarType = 'SOLAR'">阳历</button>
                 <button type="button" :class="{ active: form.calendarType === 'LUNAR' }" @click="form.calendarType = 'LUNAR'">农历</button>
               </div>
-              <el-input v-model="form.birthDate" placeholder="2004-11-01" />
+              <el-date-picker v-model="form.birthDate" type="date" value-format="YYYY-MM-DD" placeholder="选择年月日" />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="6" v-if="form.calendarType === 'LUNAR'">
