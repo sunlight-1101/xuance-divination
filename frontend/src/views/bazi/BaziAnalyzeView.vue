@@ -90,56 +90,6 @@
               show-icon
             />
 
-            <div v-if="baziViewMode === 'professional'" class="bamboo-dashboard">
-              <section class="bamboo-main-chart">
-                <div class="vertical-title">四柱命盘</div>
-                <div class="pillar-scroll">
-                  <div v-for="pillar in pillarCards" :key="pillar.key" class="pillar-slip" :class="{ day: pillar.key === 'day' }">
-                    <span class="pillar-name">{{ pillar.label }}</span>
-                    <strong class="stem-char" :class="elementClass(pillar.stemElement)">{{ pillar.stem || '-' }}</strong>
-                    <strong class="branch-char" :class="elementClass(pillar.branchElement)">{{ pillar.branch || '-' }}</strong>
-                    <small>{{ pillar.naYin || '-' }}</small>
-                    <em>{{ pillar.tenGod || '-' }}</em>
-                  </div>
-                </div>
-                <div class="day-master-seal">
-                  <span>日主</span>
-                  <strong :class="elementClass(pillarCards[2]?.stemElement)">{{ form.dayMaster || '-' }}</strong>
-                  <small>{{ dayMasterElementText }}</small>
-                </div>
-              </section>
-
-              <section class="bamboo-overview-card">
-                <div class="bamboo-card-title">命局概览</div>
-                <p><strong>四柱：</strong>{{ [form.yearPillar, form.monthPillar, form.dayPillar, form.hourPillar].filter(Boolean).join(' / ') || '待排盘' }}</p>
-                <p><strong>五行偏向：</strong>{{ elementSummary }}</p>
-                <p><strong>当前阶段：</strong>{{ luckInfo.currentLuck ? `大运 ${luckInfo.currentLuck}` : '资料完整后自动推断大运' }}</p>
-                <p><strong>修正时间：</strong>{{ trueSolarTimeText }}</p>
-              </section>
-
-              <section class="bamboo-five-card">
-                <div class="bamboo-card-title">五行分布</div>
-                <div class="element-bars">
-                  <div v-for="item in elementStats" :key="item.name" class="element-bar">
-                    <span>{{ item.name }}</span>
-                    <div><i :style="{ width: `${item.percent}%` }" :class="item.className"></i></div>
-                    <strong>{{ item.value }}</strong>
-                  </div>
-                </div>
-              </section>
-
-              <section v-if="luckInfo.cycles.length" class="bamboo-luck-card">
-                <div class="bamboo-card-title">大运竹节</div>
-                <div class="luck-bamboo">
-                  <div v-for="luck in luckInfo.cycles.slice(0, 8)" :key="luck.index" :class="{ active: luck.active }">
-                    <strong>{{ luck.pillar }}</strong>
-                    <span>{{ luck.startAge }}-{{ luck.endAge }}岁</span>
-                    <small>{{ luck.startYear }}</small>
-                  </div>
-                </div>
-              </section>
-            </div>
-
             <div v-if="baziViewMode !== 'professional'" class="simple-chart-summary">
               <div>
                 <span>出生资料</span>
@@ -302,26 +252,19 @@
               </div>
             </div>
 
-            <el-row :gutter="12">
-              <el-col :xs="12" :sm="6"><el-form-item label="年柱"><el-input v-model="form.yearPillar" placeholder="如 庚午" @change="refreshLuckPillar" /></el-form-item></el-col>
-              <el-col :xs="12" :sm="6"><el-form-item label="月柱"><el-input v-model="form.monthPillar" placeholder="如 己丑" @change="refreshLuckPillar" /></el-form-item></el-col>
-              <el-col :xs="12" :sm="6"><el-form-item label="日柱"><el-input v-model="form.dayPillar" placeholder="自动或手填" @change="syncDayMaster" /></el-form-item></el-col>
-              <el-col :xs="12" :sm="6"><el-form-item label="时柱"><el-input v-model="form.hourPillar" placeholder="如 壬辰" /></el-form-item></el-col>
-              <el-col :xs="12" :sm="6"><el-form-item label="日主"><el-input v-model="form.dayMaster" readonly /></el-form-item></el-col>
-              <el-col :xs="12" :sm="6"><el-form-item label="当前大运"><el-input v-model="form.luckPillar" placeholder="可选" /></el-form-item></el-col>
-              <el-col :xs="12" :sm="6"><el-form-item label="当前流年"><el-input v-model="form.currentYearPillar" placeholder="可选" /></el-form-item></el-col>
-              <el-col :xs="12" :sm="6">
-                <el-form-item label="求测方向">
-                  <el-select v-model="form.questionType">
-                    <el-option label="综合" value="综合" />
-                    <el-option label="感情" value="感情" />
-                    <el-option label="事业" value="事业" />
-                    <el-option label="财运" value="财运" />
-                    <el-option label="学业" value="学业" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-            </el-row>
+            <el-collapse class="manual-collapse">
+              <el-collapse-item title="手动校正四柱（可选）" name="manual-pillars">
+                <el-row :gutter="12">
+                  <el-col :xs="12" :sm="6"><el-form-item label="年柱"><el-input v-model="form.yearPillar" placeholder="如 庚午" @change="refreshLuckPillar" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="6"><el-form-item label="月柱"><el-input v-model="form.monthPillar" placeholder="如 己丑" @change="refreshLuckPillar" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="6"><el-form-item label="日柱"><el-input v-model="form.dayPillar" placeholder="自动或手填" @change="syncDayMaster" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="6"><el-form-item label="时柱"><el-input v-model="form.hourPillar" placeholder="如 壬辰" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="6"><el-form-item label="日主"><el-input v-model="form.dayMaster" readonly /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="6"><el-form-item label="当前大运"><el-input v-model="form.luckPillar" placeholder="可选" /></el-form-item></el-col>
+                  <el-col :xs="12" :sm="6"><el-form-item label="当前流年"><el-input v-model="form.currentYearPillar" placeholder="可选" /></el-form-item></el-col>
+                </el-row>
+              </el-collapse-item>
+            </el-collapse>
 
             <el-row :gutter="12" class="simple-question-row">
               <el-col :xs="24" :sm="10">
@@ -1767,7 +1710,15 @@ onMounted(applyProfile)
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.professional-fields {
+  padding: 12px 12px 0;
+  margin: 0 0 12px;
+  border: 1px solid #edf0ea;
+  border-radius: 8px;
+  background: #fcfbf5;
 }
 
 .compatibility-saved-picker {
@@ -1846,9 +1797,35 @@ onMounted(applyProfile)
   border: 1px solid #e8e8e8;
   border-radius: 8px;
   padding: 0;
-  margin-bottom: 16px;
+  margin: 14px 0 12px;
   background: #fff;
   overflow: hidden;
+}
+
+.manual-collapse {
+  margin: 0 0 14px;
+  border: 1px solid #edf0ea;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fffdf8;
+}
+
+.manual-collapse :deep(.el-collapse-item__header) {
+  height: 44px;
+  padding: 0 14px;
+  border-bottom: 0;
+  background: #fbfaf6;
+  color: #49645b;
+  font-weight: 700;
+}
+
+.manual-collapse :deep(.el-collapse-item__wrap) {
+  border-bottom: 0;
+  background: #fff;
+}
+
+.manual-collapse :deep(.el-collapse-item__content) {
+  padding: 12px 12px 0;
 }
 
 .bamboo-chart {
