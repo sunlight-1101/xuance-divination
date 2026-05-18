@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,10 @@ import org.springframework.util.StringUtils;
 public class ClassicBookServiceImpl implements ClassicBookService {
     private final ClassicBookMapper bookMapper;
     private final ClassicChapterMapper chapterMapper;
+    private static final Set<String> STOP_TOKENS = Set.of(
+            "八字", "六爻", "紫微", "斗数", "命盘", "命理", "分析", "综合", "判断", "问题", "断事",
+            "渊海子平", "子平真诠", "滴天髓", "滴天髓阐微", "穷通宝鉴", "三命通会", "神峰通考",
+            "千里命稿", "命理探原", "卜筮正宗", "增删卜易", "卜筮全书", "断易天机", "黄金策");
 
     public ClassicBookServiceImpl(ClassicBookMapper bookMapper, ClassicChapterMapper chapterMapper) {
         this.bookMapper = bookMapper;
@@ -68,8 +73,11 @@ public class ClassicBookServiceImpl implements ClassicBookService {
                     .eq(ClassicChapter::getContentStatus, "FULL")
                     .notLike(ClassicChapter::getNotes, "OCR\u81ea\u52a8\u8bc6\u522b")
                     .orderByAsc(ClassicChapter::getChapterOrder)
-                    .last("LIMIT 40"));
+                    .last("LIMIT 120"));
             for (ClassicChapter chapter : chapters) {
+                if (!isUsefulReference(chapter)) {
+                    continue;
+                }
                 int score = scoreChapter(chapter, context);
                 if (score > 0) {
                     candidates.add(new ReferenceCandidate(book, chapter, score));
@@ -152,11 +160,39 @@ public class ClassicBookServiceImpl implements ClassicBookService {
         String normalized = safe(context).replaceAll("[,，、。；;：:\\s]+", " ");
         for (String part : normalized.split(" ")) {
             String token = part.trim();
-            if (token.length() >= 2 && token.length() <= 12) {
+            if (token.length() >= 2 && token.length() <= 12 && !STOP_TOKENS.contains(token)) {
                 result.add(token);
             }
         }
         return result.stream().distinct().collect(Collectors.toList());
+    }
+
+    private boolean isUsefulReference(ClassicChapter chapter) {
+        String title = safe(chapter.getTitle());
+        String notes = safe(chapter.getNotes());
+        String text = safe(StringUtils.hasText(chapter.getPlainText()) ? chapter.getPlainText() : chapter.getOriginalText());
+        String compact = text.replaceAll("\\s+", "");
+        if (containsAny(title + notes, Arrays.asList("目录", "总目", "卷目", "索引", "提要", "导读", "校勘说明"))) {
+            return false;
+        }
+        if (containsAny(compact.substring(0, Math.min(compact.length(), 80)), Arrays.asList("目录", "总目录", "卷目"))) {
+            return false;
+        }
+        if (compact.length() < 40) {
+            return false;
+        }
+        int chapterMarkerCount = countContains(compact, Arrays.asList("卷一", "卷二", "卷三", "卷四", "上卷", "下卷", "目录", "篇目"));
+        return chapterMarkerCount < 3;
+    }
+
+    private int countContains(String value, List<String> words) {
+        int count = 0;
+        for (String word : words) {
+            if (value.contains(word)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private boolean containsAny(String value, List<String> words) {

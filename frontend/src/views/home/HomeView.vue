@@ -161,6 +161,11 @@
         <p><strong>先存资料：</strong>常用出生信息可以保存多人，八字和合盘都能直接调用。</p>
         <p><strong>再问问题：</strong>问题越具体，报告越容易给出清楚判断和行动建议。</p>
       </div>
+      <button class="support-strip" type="button" @click="$router.push('/quota')">
+        <span>支持开发</span>
+        <strong>制作不易，觉得好用可以随缘打赏一下</strong>
+        <i>›</i>
+      </button>
     </section>
   </div>
 </template>
@@ -772,6 +777,38 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   margin: 0;
   color: #3f4f49;
   line-height: 1.7;
+}
+
+.support-strip {
+  width: 100%;
+  margin-top: 14px;
+  border: 1px solid rgba(176, 138, 60, 0.28);
+  border-radius: 8px;
+  background: rgba(47, 111, 94, 0.07);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  color: #173f35;
+  text-align: left;
+}
+
+.support-strip span {
+  color: #806326;
+  font-weight: 800;
+}
+
+.support-strip strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.support-strip i {
+  font-style: normal;
+  color: #806326;
+  font-size: 20px;
 }
 
 @media (max-width: 700px) {
