@@ -2,7 +2,6 @@
   <div class="home-page">
     <section class="home-hero">
       <div class="hero-copy">
-        <img class="hero-logo" src="/icons/zhexuan-logo.png" alt="哲玄" />
         <h1>哲玄</h1>
         <p>八字 · 六爻 · 紫微</p>
       </div>
@@ -18,20 +17,37 @@
         <h2>今日概览</h2>
         <small>{{ todayText }}</small>
       </div>
-      <div class="overview-grid">
-        <div class="mini-chart">
-          <div class="mini-label">八字四柱</div>
-          <div class="mini-pillars">
-            <div v-for="pillar in pillarPreview" :key="pillar.label">
-              <span>{{ pillar.label }}</span>
-              <strong>{{ pillar.value || '-' }}</strong>
+      <div class="almanac-layout">
+        <div class="almanac-main">
+          <div class="almanac-date">
+            <span>今日干支</span>
+            <strong>{{ todayPillars.yearPillar }}年 {{ todayPillars.monthPillar }}月 {{ todayPillars.dayPillar }}日</strong>
+            <small>月柱按常用节气近似换月，临近节气日可参考万年历校验。</small>
+          </div>
+          <div class="almanac-pillars">
+            <div>
+              <span>年</span>
+              <strong>{{ todayPillars.yearPillar || '-' }}</strong>
+            </div>
+            <div>
+              <span>月</span>
+              <strong>{{ todayPillars.monthPillar || '-' }}</strong>
+            </div>
+            <div>
+              <span>日</span>
+              <strong>{{ todayPillars.dayPillar || '-' }}</strong>
             </div>
           </div>
         </div>
-        <div class="day-master">
-          <span>日主</span>
-          <strong>{{ dayMaster || '未排' }}</strong>
-          <small>{{ birthSummary }}</small>
+        <div class="almanac-advice">
+          <div class="good">
+            <span>宜</span>
+            <strong>{{ dailyAdvice.good.join('、') }}</strong>
+          </div>
+          <div class="avoid">
+            <span>忌</span>
+            <strong>{{ dailyAdvice.avoid.join('、') }}</strong>
+          </div>
         </div>
       </div>
     </section>
@@ -74,28 +90,27 @@
 <script setup>
 import { computed } from 'vue'
 import { CalendarDays, ScrollText, Sparkles } from 'lucide-vue-next'
-import { useUserStore } from '../../stores/user'
 import { getFourPillars } from '../../utils/ganzhi'
 
-const userStore = useUserStore()
-const profile = computed(() => userStore.getBirthProfile())
 const todayText = computed(() => new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }))
-const pillars = computed(() => {
-  const item = profile.value
-  if (!item?.birthDate) return {}
-  const normalizedTime = item.birthTime || '00:00'
-  return getFourPillars(`${item.birthDate}T${normalizedTime}`) || {}
-})
-const pillarPreview = computed(() => [
-  { label: '年柱', value: profile.value?.yearPillar || pillars.value.yearPillar },
-  { label: '月柱', value: profile.value?.monthPillar || pillars.value.monthPillar },
-  { label: '日柱', value: profile.value?.dayPillar || pillars.value.dayPillar || profile.value?.birthDayGanZhi },
-  { label: '时柱', value: profile.value?.hourPillar || pillars.value.hourPillar }
-])
-const dayMaster = computed(() => profile.value?.dayMaster || profile.value?.birthDayMaster || pillars.value.dayMaster || '')
-const birthSummary = computed(() => {
-  const item = profile.value
-  return item ? [item.birthDate, item.birthTime, item.birthPlace].filter(Boolean).join(' ') : '先到八字页保存出生资料'
+const todayPillars = computed(() => getFourPillars(new Date()))
+const dailyAdvice = computed(() => {
+  const branch = todayPillars.value.dayPillar?.slice(1, 2) || ''
+  const adviceMap = {
+    子: { good: ['求学', '整理', '沟通'], avoid: ['冲动决策', '熬夜'] },
+    丑: { good: ['储蓄', '修整', '复盘'], avoid: ['急进', '争执'] },
+    寅: { good: ['开局', '拜访', '学习'], avoid: ['拖延', '过劳'] },
+    卯: { good: ['协商', '创作', '养护'], avoid: ['口舌', '散漫'] },
+    辰: { good: ['规划', '签订', '整理资料'], avoid: ['冒进', '借贷'] },
+    巳: { good: ['表达', '学习', '求财'], avoid: ['急躁', '隐瞒'] },
+    午: { good: ['行动', '见人', '推进'], avoid: ['冲突', '贪快'] },
+    未: { good: ['安顿', '修补', '储备'], avoid: ['犹豫', '过度承诺'] },
+    申: { good: ['执行', '谈判', '检查'], avoid: ['轻信', '分心'] },
+    酉: { good: ['收尾', '审美', '理财'], avoid: ['固执', '冷战'] },
+    戌: { good: ['守成', '复核', '定计划'], avoid: ['争强', '冒险'] },
+    亥: { good: ['休养', '学习', '内省'], avoid: ['拖泥带水', '夜行'] }
+  }
+  return adviceMap[branch] || { good: ['整理', '学习', '复盘'], avoid: ['冲动', '争执'] }
 })
 </script>
 
@@ -138,14 +153,6 @@ const birthSummary = computed(() => {
 .hero-copy {
   position: relative;
   z-index: 1;
-}
-
-.hero-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  object-fit: cover;
-  margin-bottom: 12px;
 }
 
 .hero-copy h1 {
@@ -225,29 +232,55 @@ const birthSummary = computed(() => {
   font-weight: 800;
 }
 
-.overview-grid {
+.almanac-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 128px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.7fr);
   gap: 14px;
   align-items: stretch;
 }
 
-.mini-label {
-  color: #806326;
-  font-size: 13px;
-  margin-bottom: 8px;
+.almanac-main,
+.almanac-advice {
+  min-width: 0;
 }
 
-.mini-pillars {
+.almanac-date {
+  margin-bottom: 10px;
+}
+
+.almanac-date span {
+  display: block;
+  color: #806326;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.almanac-date strong {
+  display: block;
+  color: #173f35;
+  font-size: 22px;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.almanac-date small {
+  display: block;
+  margin-top: 6px;
+  color: #6f654e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.almanac-pillars {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   border: 1px solid rgba(176, 138, 60, 0.28);
   border-radius: 8px;
   overflow: hidden;
 }
 
-.mini-pillars div {
-  min-height: 86px;
+.almanac-pillars div {
+  min-height: 82px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -255,45 +288,59 @@ const birthSummary = computed(() => {
   border-right: 1px solid rgba(176, 138, 60, 0.22);
 }
 
-.mini-pillars div:last-child {
+.almanac-pillars div:last-child {
   border-right: 0;
 }
 
-.mini-pillars span {
+.almanac-pillars span {
   color: #6f654e;
   font-size: 13px;
 }
 
-.mini-pillars strong {
+.almanac-pillars strong {
   color: #173f35;
   font-size: 24px;
 }
 
-.day-master {
+.almanac-advice {
   border-radius: 8px;
   background: rgba(47, 111, 94, 0.08);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.almanac-advice div {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.almanac-advice span {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  align-content: center;
-  text-align: center;
-  padding: 12px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
 }
 
-.day-master span {
-  color: #2f6f5e;
-  font-size: 13px;
-  font-weight: 700;
+.almanac-advice .good span {
+  background: #2f6f5e;
 }
 
-.day-master strong {
-  margin: 4px 0;
+.almanac-advice .avoid span {
+  background: #a64e3d;
+}
+
+.almanac-advice strong {
   color: #173f35;
-  font-size: 36px;
-}
-
-.day-master small {
-  color: #6f654e;
+  font-size: 15px;
   line-height: 1.5;
+  word-break: break-word;
 }
 
 .entry-grid {
@@ -389,12 +436,16 @@ const birthSummary = computed(() => {
     font-size: 52px;
   }
 
-  .overview-grid,
+  .almanac-layout,
   .entry-grid {
     grid-template-columns: 1fr;
   }
 
-  .mini-pillars strong {
+  .almanac-date strong {
+    font-size: 18px;
+  }
+
+  .almanac-pillars strong {
     font-size: 22px;
   }
 
