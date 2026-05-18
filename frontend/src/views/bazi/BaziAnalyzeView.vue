@@ -48,9 +48,14 @@
               </el-col>
               <el-col :xs="12" :sm="8">
                 <el-form-item label="出生时间">
-                  <el-select v-model="form.birthTime" filterable clearable placeholder="选择时辰" @change="fillPillarsFromBirth">
-                    <el-option v-for="item in birthTimeOptions" :key="item.value" :label="item.label" :value="item.value" />
-                  </el-select>
+                  <div class="time-pair">
+                    <el-select v-model="form.birthHour" filterable clearable placeholder="小时" @change="onSingleTimePartChange">
+                      <el-option v-for="item in birthHourOptions" :key="item.value" :label="item.label" :value="item.value" />
+                    </el-select>
+                    <el-select v-model="form.birthMinute" filterable placeholder="分钟" :disabled="!form.birthHour" @change="onSingleTimePartChange">
+                      <el-option v-for="item in birthMinuteOptions" :key="item.value" :label="item.label" :value="item.value" />
+                    </el-select>
+                  </div>
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8">
@@ -405,9 +410,14 @@
                   </el-col>
                   <el-col :xs="12" :sm="8">
                     <el-form-item label="出生时间">
-                      <el-select v-model="compatForm.personA.birthTime" filterable clearable placeholder="选择时辰" @change="fillCompatibilityPillars(compatForm.personA)">
-                        <el-option v-for="item in birthTimeOptions" :key="item.value" :label="item.label" :value="item.value" />
-                      </el-select>
+                      <div class="time-pair">
+                        <el-select v-model="compatForm.personA.birthHour" filterable clearable placeholder="小时" @change="onCompatibilityTimePartChange(compatForm.personA)">
+                          <el-option v-for="item in birthHourOptions" :key="item.value" :label="item.label" :value="item.value" />
+                        </el-select>
+                        <el-select v-model="compatForm.personA.birthMinute" filterable placeholder="分钟" :disabled="!compatForm.personA.birthHour" @change="onCompatibilityTimePartChange(compatForm.personA)">
+                          <el-option v-for="item in birthMinuteOptions" :key="item.value" :label="item.label" :value="item.value" />
+                        </el-select>
+                      </div>
                     </el-form-item>
                   </el-col>
                   <el-col :xs="12" :sm="8">
@@ -452,9 +462,14 @@
                   </el-col>
                   <el-col :xs="12" :sm="8">
                     <el-form-item label="出生时间">
-                      <el-select v-model="compatForm.personB.birthTime" filterable clearable placeholder="选择时辰" @change="fillCompatibilityPillars(compatForm.personB)">
-                        <el-option v-for="item in birthTimeOptions" :key="item.value" :label="item.label" :value="item.value" />
-                      </el-select>
+                      <div class="time-pair">
+                        <el-select v-model="compatForm.personB.birthHour" filterable clearable placeholder="小时" @change="onCompatibilityTimePartChange(compatForm.personB)">
+                          <el-option v-for="item in birthHourOptions" :key="item.value" :label="item.label" :value="item.value" />
+                        </el-select>
+                        <el-select v-model="compatForm.personB.birthMinute" filterable placeholder="分钟" :disabled="!compatForm.personB.birthHour" @change="onCompatibilityTimePartChange(compatForm.personB)">
+                          <el-option v-for="item in birthMinuteOptions" :key="item.value" :label="item.label" :value="item.value" />
+                        </el-select>
+                      </div>
                     </el-form-item>
                   </el-col>
                   <el-col :xs="12" :sm="8">
@@ -556,7 +571,7 @@ import { useUserStore } from '../../stores/user'
 import { getBaziDetails, getFourPillars, getLuckCycles, getTenGod, getYearGanZhi } from '../../utils/ganzhi'
 import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
 import { provinceOptions } from '../../utils/chinaCities'
-import { buildBirthTimeOptions, normalizeToOptionTime } from '../../utils/timeOptions'
+import { buildHourOptions, buildMinuteOptions, combineTimeParts, splitTimeParts } from '../../utils/timeOptions'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -571,7 +586,8 @@ const savedProfiles = ref([])
 const selectedProfileId = ref('')
 const compatSelectedA = ref('')
 const compatSelectedB = ref('')
-const birthTimeOptions = buildBirthTimeOptions()
+const birthHourOptions = buildHourOptions()
+const birthMinuteOptions = buildMinuteOptions()
 const chartTabs = [
   { key: 'info', label: '基本信息' },
   { key: 'chart', label: '基本排盘' },
@@ -586,6 +602,8 @@ const form = reactive({
   gender: '',
   birthDate: '',
   birthTime: '',
+  birthHour: '',
+  birthMinute: '30',
   birthProvince: '',
   birthPlace: '',
   useTrueSolarTime: false,
@@ -741,6 +759,8 @@ function createCompatibilityPerson(name, gender) {
     gender,
     birthDate: '',
     birthTime: '',
+    birthHour: '',
+    birthMinute: '30',
     birthProvince: '',
     birthPlace: '',
     useTrueSolarTime: false,
@@ -833,10 +853,13 @@ function findMatchingProfile(source) {
 }
 
 function applyProfileToForm(profile, target) {
+  const timeParts = splitTimeParts(profile.birthTime || '')
   target.name = profile.name || target.name || ''
   target.gender = profile.gender || ''
   target.birthDate = profile.birthDate || ''
-  target.birthTime = normalizeToOptionTime(profile.birthTime || '')
+  target.birthHour = timeParts.hour
+  target.birthMinute = timeParts.minute
+  target.birthTime = combineTimeParts(timeParts.hour, timeParts.minute)
   target.birthPlace = profile.birthPlace || ''
   target.birthProvince = profile.birthProvince || findProvinceByCity(profile.birthPlace)?.name || ''
   target.useTrueSolarTime = Boolean(profile.useTrueSolarTime)
@@ -877,6 +900,7 @@ async function promptProfileName(defaultName) {
 }
 
 async function saveBirthProfile(options = {}) {
+  syncSingleBirthTime()
   fillPillarsFromBirth({ preserveExisting: true })
   syncDayMaster()
   if (!selectedProfileId.value) {
@@ -891,6 +915,8 @@ async function saveBirthProfile(options = {}) {
     gender: form.gender,
     birthDate: form.birthDate,
     birthTime: form.birthTime,
+    birthHour: form.birthHour,
+    birthMinute: form.birthMinute,
     birthProvince: form.birthProvince,
     birthPlace: form.birthPlace,
     useTrueSolarTime: form.useTrueSolarTime,
@@ -923,6 +949,8 @@ async function saveBirthProfile(options = {}) {
 }
 
 async function saveCompatibilityPeople() {
+  syncCompatibilityBirthTime(compatForm.personA)
+  syncCompatibilityBirthTime(compatForm.personB)
   fillCompatibilityPillars(compatForm.personA, { preserveExisting: true })
   fillCompatibilityPillars(compatForm.personB, { preserveExisting: true })
   syncCompatibilityDayMaster(compatForm.personA)
@@ -970,6 +998,24 @@ function onBirthPlaceChange() {
   fillPillarsFromBirth()
 }
 
+function syncSingleBirthTime() {
+  form.birthTime = combineTimeParts(form.birthHour, form.birthMinute)
+}
+
+function onSingleTimePartChange() {
+  syncSingleBirthTime()
+  fillPillarsFromBirth()
+}
+
+function syncCompatibilityBirthTime(person) {
+  person.birthTime = combineTimeParts(person.birthHour, person.birthMinute)
+}
+
+function onCompatibilityTimePartChange(person) {
+  syncCompatibilityBirthTime(person)
+  fillCompatibilityPillars(person)
+}
+
 function enableTrueSolarTimeWhenPlaceSelected() {
   if (form.birthPlace) {
     form.useTrueSolarTime = true
@@ -977,6 +1023,7 @@ function enableTrueSolarTimeWhenPlaceSelected() {
 }
 
 function fillPillarsFromBirth(options = {}) {
+  syncSingleBirthTime()
   if (!form.birthDate) return
   const normalizedTime = normalizeBirthTime(form.birthTime)
   const hasBirthTime = Boolean(normalizedTime)
@@ -1113,6 +1160,7 @@ function onCompatibilityBirthPlaceChange(person) {
 }
 
 function fillCompatibilityPillars(person, options = {}) {
+  syncCompatibilityBirthTime(person)
   if (!person.birthDate) return
   const normalizedTime = normalizeBirthTime(person.birthTime)
   const hasBirthTime = Boolean(normalizedTime)
@@ -1267,8 +1315,9 @@ async function submit() {
   try {
     await saveBirthProfile({ silent: true })
     const accountUserId = userStore.userId
+    const { birthHour, birthMinute, ...submitForm } = form
     const data = await analyzeBazi({
-      ...form,
+      ...submitForm,
       baziDetails: JSON.stringify({
         ...baziDetails.value,
         trueSolarTime: {

@@ -49,6 +49,13 @@ body {
   width: 100%;
 }
 
+.time-pair {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 8px;
+}
+
 .section-title {
   margin: 0 0 14px;
   font-size: 17px;

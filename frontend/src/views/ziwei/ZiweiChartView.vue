@@ -201,6 +201,7 @@ import KnowledgeReferences from '../../components/KnowledgeReferences.vue'
 import ResultReport from '../../components/ResultReport.vue'
 import { useUserStore } from '../../stores/user'
 import { provinceOptions } from '../../utils/chinaCities'
+import { buildHourOptions, buildMinuteOptions } from '../../utils/timeOptions'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -211,17 +212,8 @@ const analysisResult = ref('')
 const knowledgeRules = ref([])
 const classicReferences = ref([])
 
-const hourOptions = [
-  { label: '00时', value: '00' }, { label: '01时', value: '01' }, { label: '02时', value: '02' },
-  { label: '03时', value: '03' }, { label: '04时', value: '04' }, { label: '05时', value: '05' },
-  { label: '06时', value: '06' }, { label: '07时', value: '07' }, { label: '08时', value: '08' },
-  { label: '09时', value: '09' }, { label: '10时', value: '10' }, { label: '11时', value: '11' },
-  { label: '12时', value: '12' }, { label: '13时', value: '13' }, { label: '14时', value: '14' },
-  { label: '15时', value: '15' }, { label: '16时', value: '16' }, { label: '17时', value: '17' },
-  { label: '18时', value: '18' }, { label: '19时', value: '19' }, { label: '20时', value: '20' },
-  { label: '21时', value: '21' }, { label: '22时', value: '22' }, { label: '23时', value: '23' }
-]
-const minuteOptions = ['00', '10', '20', '30', '40', '50']
+const hourOptions = buildHourOptions()
+const minuteOptions = buildMinuteOptions().map(item => item.value)
 const chartTabs = [
   { key: 'base', label: '本命盘' },
   { key: 'luck', label: '大限盘' },

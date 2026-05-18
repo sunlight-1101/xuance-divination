@@ -20,18 +20,29 @@ export function getTimeBranch(hour) {
     : value >= item.start || value <= item.end)?.branch || ''
 }
 
-export function buildBirthTimeOptions(stepMinutes = 10) {
-  const options = []
-  for (let hour = 0; hour < 24; hour += 1) {
-    for (let minute = 0; minute < 60; minute += stepMinutes) {
-      const value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
-      options.push({
-        value,
-        label: `${hour}点${String(minute).padStart(2, '0')}分 · ${getTimeBranch(hour)}时`
-      })
-    }
-  }
-  return options
+export function buildHourOptions() {
+  return Array.from({ length: 24 }, (_, hour) => ({
+    value: String(hour).padStart(2, '0'),
+    label: `${hour}点 · ${getTimeBranch(hour)}时`
+  }))
+}
+
+export function buildMinuteOptions() {
+  return Array.from({ length: 60 }, (_, minute) => ({
+    value: String(minute).padStart(2, '0'),
+    label: `${minute}分`
+  }))
+}
+
+export function combineTimeParts(hour, minute = '00') {
+  if (hour === '' || hour == null) return ''
+  return `${String(hour).padStart(2, '0')}:${String(minute || '00').padStart(2, '0')}`
+}
+
+export function splitTimeParts(value) {
+  const normalized = normalizeToOptionTime(value)
+  const match = normalized.match(/^(\d{2}):(\d{2})$/)
+  return match ? { hour: match[1], minute: match[2] } : { hour: '', minute: '30' }
 }
 
 export function normalizeToOptionTime(value) {

@@ -47,9 +47,14 @@
                   </el-col>
                   <el-col :xs="12" :sm="8">
                     <el-form-item label="出生时间">
-                      <el-select v-model="form.birthTime" filterable clearable placeholder="选择时辰">
-                        <el-option v-for="item in birthTimeOptions" :key="item.value" :label="item.label" :value="item.value" />
-                      </el-select>
+                      <div class="time-pair">
+                        <el-select v-model="form.birthHour" filterable clearable placeholder="小时" @change="syncBirthTime">
+                          <el-option v-for="item in birthHourOptions" :key="item.value" :label="item.label" :value="item.value" />
+                        </el-select>
+                        <el-select v-model="form.birthMinute" filterable placeholder="分钟" :disabled="!form.birthHour" @change="syncBirthTime">
+                          <el-option v-for="item in birthMinuteOptions" :key="item.value" :label="item.label" :value="item.value" />
+                        </el-select>
+                      </div>
                     </el-form-item>
                   </el-col>
                   <el-col :xs="12" :sm="8">
@@ -364,7 +369,7 @@ import { useUserStore } from '../../stores/user'
 import { buildHexagram, installHexagram, tossCoins } from '../../utils/liuyao'
 import { getDayGanZhi } from '../../utils/ganzhi'
 import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
-import { buildBirthTimeOptions, normalizeToOptionTime } from '../../utils/timeOptions'
+import { buildHourOptions, buildMinuteOptions, combineTimeParts, splitTimeParts } from '../../utils/timeOptions'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -375,7 +380,8 @@ const guaPanelRef = ref(null)
 const reportPanelRef = ref(null)
 const showDetailHint = ref(false)
 const positions = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻']
-const birthTimeOptions = buildBirthTimeOptions()
+const birthHourOptions = buildHourOptions()
+const birthMinuteOptions = buildMinuteOptions()
 const shakenCount = ref(0)
 const installInfo = reactive({ palace: '', palaceElement: '', shiPosition: 0, yingPosition: 0 })
 const form = reactive({
@@ -384,6 +390,8 @@ const form = reactive({
   gender: '',
   birthDate: '',
   birthTime: '',
+  birthHour: '',
+  birthMinute: '30',
   birthPlace: '',
   birthDayGanZhi: '',
   birthDayMaster: '',
@@ -539,12 +547,19 @@ function updateBirthDayMaster() {
   form.birthDayMaster = day.stem
 }
 
+function syncBirthTime() {
+  form.birthTime = combineTimeParts(form.birthHour, form.birthMinute)
+}
+
 function applyUserProfile() {
   const profile = userStore.getBirthProfile()
   if (!profile) return
+  const timeParts = splitTimeParts(profile.birthTime || '')
   form.gender = profile.gender || ''
   form.birthDate = profile.birthDate || ''
-  form.birthTime = normalizeToOptionTime(profile.birthTime || '')
+  form.birthHour = timeParts.hour
+  form.birthMinute = timeParts.minute
+  form.birthTime = combineTimeParts(timeParts.hour, timeParts.minute)
   form.birthPlace = profile.birthPlace || ''
   form.birthDayGanZhi = profile.birthDayGanZhi || profile.dayPillar || ''
   form.birthDayMaster = profile.birthDayMaster || profile.dayMaster || ''
@@ -554,6 +569,7 @@ function applyUserProfile() {
 }
 
 async function saveProfile() {
+  syncBirthTime()
   updateBirthDayMaster()
   const profile = userStore.saveBirthProfile({
     gender: form.gender,
@@ -580,6 +596,7 @@ async function saveProfile() {
 }
 
 async function submit() {
+  syncBirthTime()
   if (!form.question.trim()) {
     ElMessage.warning('请先填写求测问题')
     return
@@ -604,8 +621,9 @@ async function submit() {
       birthDayGanZhi: form.birthDayGanZhi,
       birthDayMaster: form.birthDayMaster
     })
+    const { birthHour, birthMinute, ...submitForm } = form
     const payload = {
-      ...form,
+      ...submitForm,
       userId: userStore.userId,
       yaoList: form.yaoList.map(({ coins, ...yao }) => ({ ...yao, coins }))
     }
