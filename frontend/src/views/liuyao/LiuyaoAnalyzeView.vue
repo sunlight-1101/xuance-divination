@@ -134,12 +134,52 @@
               <strong>{{ beginnerGuideTitle }}</strong>
               <span>{{ motionEnabled ? '现在可以拿起手机轻轻摇动，每摇一次生成一爻。' : beginnerGuideText }}</span>
             </div>
-            <div class="coin-stage" :class="{ shaking: isShaking, settled: animatedCoins.length && !isShaking }">
-              <div class="coin-stage-label">
-                <strong>{{ isShaking ? `正在摇第 ${activeShakeIndex + 1} 爻` : animatedCoins.length ? `第 ${activeShakeIndex + 1} 爻已落定` : '铜钱待摇' }}</strong>
-                <span>{{ isShaking ? '三枚铜钱翻转中，请稍候' : animatedCoins.length ? '结果已写入下方卦象' : '点击摇卦，或开启摇一摇后轻摇手机' }}</span>
-              </div>
-              <div class="animated-coins">
+            <div class="turtle-stage" :class="{ shaking: isShaking, settled: animatedCoins.length && !isShaking }">
+              <div class="ink-scene">
+                <div class="shell-wrap">
+                  <svg class="turtle-shell" viewBox="0 0 220 128" aria-hidden="true">
+                    <defs>
+                      <radialGradient id="shellGlow" cx="42%" cy="24%" r="78%">
+                        <stop offset="0%" stop-color="#f7d58a" />
+                        <stop offset="52%" stop-color="#b8782c" />
+                        <stop offset="100%" stop-color="#5a3519" />
+                      </radialGradient>
+                    </defs>
+                    <path class="shell-base" d="M20 102 C34 38, 74 16, 112 18 C156 20, 195 48, 207 102 C158 118, 72 118, 20 102 Z" />
+                    <path class="shell-rim" d="M31 98 C45 49, 78 29, 113 30 C152 31, 183 55, 197 98" />
+                    <path class="shell-line" d="M110 24 C96 45, 92 67, 94 107" />
+                    <path class="shell-line" d="M111 24 C126 47, 131 69, 128 107" />
+                    <path class="shell-line" d="M61 50 C83 61, 138 61, 162 49" />
+                    <path class="shell-line" d="M42 73 C76 86, 148 86, 184 73" />
+                    <path class="shell-cell" d="M77 35 L98 49 L91 70 L63 66 L58 47 Z" />
+                    <path class="shell-cell" d="M122 48 L145 34 L164 47 L159 66 L132 70 Z" />
+                    <path class="shell-cell" d="M97 50 L122 50 L132 70 L113 85 L92 70 Z" />
+                    <path class="shell-cell" d="M62 68 L91 72 L102 91 L82 103 L51 92 Z" />
+                    <path class="shell-cell" d="M132 72 L160 68 L172 92 L143 103 L122 91 Z" />
+                  </svg>
+                </div>
+                <div class="turtle-stage-label">
+                  <strong>{{ isShaking ? `请继续摇晃手机 ${activeShakeIndex + 1}/6` : shakenCount ? `已成 ${shakenCount}/6 爻` : '请摇晃手机六次' }}</strong>
+                  <span>{{ isShaking ? '玄龟摇动，铜钱将落入卦盘' : animatedCoins.length ? '铜钱已落定，可继续摇下一爻' : '也可以点击下方按钮逐爻起卦' }}</span>
+                </div>
+                <div class="bagua-plate">
+                  <span class="plate-ring ring-outer"></span>
+                  <span class="plate-ring ring-inner"></span>
+                  <span class="trigram trigram-qian">☰</span>
+                  <span class="trigram trigram-kun">☷</span>
+                  <span class="trigram trigram-li">☲</span>
+                  <span class="trigram trigram-kan">☵</span>
+                  <div class="stage-lines">
+                    <span
+                      v-for="(row, index) in stageLines"
+                      :key="`${row.position}-${index}`"
+                      class="stage-line"
+                      :class="{ yang: row.yang, moving: row.moving }"
+                    ></span>
+                    <em v-if="!stageLines.length">待起爻</em>
+                  </div>
+                </div>
+                <div v-if="isShaking || animatedCoins.length" class="animated-coins">
                 <span
                   v-for="index in 3"
                   :key="index"
@@ -169,6 +209,7 @@
                     <text x="36" y="60" text-anchor="middle">{{ animatedCoins.length ? (animatedCoins[index - 1] ? '阴' : '元') : '钱' }}</text>
                   </svg>
                 </span>
+                </div>
               </div>
             </div>
             <el-progress
@@ -511,6 +552,8 @@ const beginnerGuideText = computed(() => {
   return '你可以复制报告，也可以重新起卦再问另一个问题。'
 })
 
+const stageLines = computed(() => form.yaoList.slice(0, shakenCount.value).reverse())
+
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 async function shakeNext() {
@@ -520,10 +563,10 @@ async function shakeNext() {
   activeShakeIndex.value = shakenCount.value
   animatedCoins.value = []
   const toss = tossCoins()
-  await wait(420)
+  await wait(680)
   if (token !== shakeToken.value) return
   animatedCoins.value = toss.coins
-  await wait(80)
+  await wait(180)
   if (token !== shakeToken.value) return
   Object.assign(form.yaoList[shakenCount.value], toss)
   shakenCount.value += 1
@@ -541,10 +584,10 @@ async function reshakeYao(index) {
   activeShakeIndex.value = index
   animatedCoins.value = []
   const toss = tossCoins()
-  await wait(420)
+  await wait(680)
   if (token !== shakeToken.value) return
   animatedCoins.value = toss.coins
-  await wait(80)
+  await wait(180)
   if (token !== shakeToken.value) return
   Object.assign(form.yaoList[index], toss)
   updateGuaNames()
@@ -921,93 +964,260 @@ onBeforeUnmount(() => {
   line-height: 1.6;
 }
 
-.coin-stage {
+.turtle-stage {
+  margin: 0 0 14px;
+}
+
+.ink-scene {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  margin: 0 0 12px;
-  padding: 14px 16px;
-  border: 1px solid rgba(181, 142, 68, 0.42);
-  border-radius: 8px;
+  min-height: 520px;
+  border: 1px solid rgba(196, 176, 125, 0.54);
+  border-radius: 10px;
   background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0.44), transparent 42%),
-    radial-gradient(circle at 84% 24%, rgba(203, 161, 86, 0.22), transparent 30%),
-    repeating-linear-gradient(90deg, rgba(67, 103, 74, 0.035) 0 1px, transparent 1px 9px),
-    linear-gradient(135deg, #fffaf0, #f4efe0);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.56), 0 8px 22px rgba(71, 53, 20, 0.07);
+    radial-gradient(circle at 50% 13%, rgba(255, 255, 255, 0.82), transparent 20%),
+    radial-gradient(circle at 18% 30%, rgba(117, 153, 131, 0.2), transparent 28%),
+    radial-gradient(circle at 84% 34%, rgba(92, 128, 114, 0.18), transparent 28%),
+    linear-gradient(180deg, rgba(255, 253, 241, 0.92), rgba(236, 240, 219, 0.76)),
+    repeating-linear-gradient(90deg, rgba(40, 82, 64, 0.025) 0 1px, transparent 1px 8px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.64), 0 10px 26px rgba(69, 54, 21, 0.09);
   overflow: hidden;
 }
 
-.coin-stage::before,
-.coin-stage::after {
+.ink-scene::before,
+.ink-scene::after {
   content: "";
   position: absolute;
+  inset: 0;
   pointer-events: none;
 }
 
-.coin-stage::before {
-  right: 16px;
-  bottom: -18px;
-  width: 126px;
-  height: 72px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(89, 111, 80, 0.16), transparent 68%);
-}
-
-.coin-stage::after {
-  right: 4px;
-  top: 0;
-  width: 86px;
-  height: 100%;
+.ink-scene::before {
   background:
-    linear-gradient(108deg, transparent 36%, rgba(44, 86, 66, 0.16) 37%, transparent 39%),
-    linear-gradient(96deg, transparent 56%, rgba(44, 86, 66, 0.12) 57%, transparent 59%);
-  opacity: 0.55;
+    radial-gradient(ellipse at 14% 20%, rgba(47, 89, 76, 0.14), transparent 28%),
+    radial-gradient(ellipse at 90% 23%, rgba(43, 75, 69, 0.12), transparent 26%),
+    linear-gradient(135deg, transparent 58%, rgba(35, 79, 55, 0.12) 59%, transparent 61%),
+    linear-gradient(112deg, transparent 72%, rgba(35, 79, 55, 0.1) 73%, transparent 75%);
+  filter: blur(0.2px);
 }
 
-.coin-stage.shaking {
-  animation: trayShake 0.82s ease-in-out both;
+.ink-scene::after {
+  top: auto;
+  height: 46%;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.34));
 }
 
-.coin-stage-label {
-  position: relative;
-  z-index: 1;
+.shell-wrap {
+  position: absolute;
+  top: 34px;
+  left: 50%;
+  z-index: 2;
+  width: 186px;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 16px 18px rgba(90, 58, 22, 0.18));
+}
+
+.turtle-stage.shaking .shell-wrap {
+  animation: shellShake 0.68s ease-in-out both;
+}
+
+.turtle-shell {
+  display: block;
+  width: 100%;
+}
+
+.shell-base {
+  fill: url(#shellGlow);
+  stroke: rgba(85, 47, 17, 0.72);
+  stroke-width: 3;
+}
+
+.shell-rim,
+.shell-line,
+.shell-cell {
+  fill: none;
+  stroke: rgba(91, 54, 20, 0.52);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.shell-cell {
+  stroke-width: 2.4;
+  opacity: 0.78;
+}
+
+.turtle-stage-label {
+  position: absolute;
+  top: 164px;
+  left: 50%;
+  z-index: 3;
   display: grid;
-  gap: 4px;
-  min-width: 0;
+  gap: 5px;
+  width: min(300px, 86%);
+  text-align: center;
+  transform: translateX(-50%);
 }
 
-.coin-stage-label strong {
-  color: #173f35;
-  font-size: 15px;
+.turtle-stage-label strong {
+  color: #4f3712;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 1px;
 }
 
-.coin-stage-label span {
-  color: #806326;
+.turtle-stage-label span {
+  color: #7a6239;
   font-size: 13px;
-  line-height: 1.5;
+}
+
+.bagua-plate {
+  position: absolute;
+  left: 50%;
+  bottom: 42px;
+  z-index: 1;
+  width: min(360px, 86vw);
+  aspect-ratio: 1.72;
+  transform: translateX(-50%);
+}
+
+.plate-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 255, 232, 0.72);
+  border-radius: 50%;
+  box-shadow: 0 0 18px rgba(255, 255, 235, 0.38);
+}
+
+.ring-inner {
+  inset: 20%;
+  opacity: 0.78;
+}
+
+.bagua-plate::before {
+  content: "";
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  background:
+    linear-gradient(0deg, transparent 44%, rgba(255, 255, 236, 0.54) 45% 48%, transparent 49%),
+    linear-gradient(45deg, transparent 44%, rgba(255, 255, 236, 0.4) 45% 47%, transparent 48%),
+    linear-gradient(90deg, transparent 44%, rgba(255, 255, 236, 0.54) 45% 48%, transparent 49%),
+    linear-gradient(135deg, transparent 44%, rgba(255, 255, 236, 0.4) 45% 47%, transparent 48%);
+  opacity: 0.42;
+}
+
+.trigram {
+  position: absolute;
+  color: rgba(255, 255, 235, 0.58);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.trigram-qian {
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.trigram-kun {
+  left: 50%;
+  bottom: 2px;
+  transform: translateX(-50%);
+}
+
+.trigram-li {
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+}
+
+.trigram-kan {
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+}
+
+.stage-lines {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 4;
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  min-width: 70px;
+  min-height: 54px;
+  transform: translate(-50%, -50%);
+}
+
+.stage-lines em {
+  align-self: center;
+  color: rgba(92, 82, 54, 0.55);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.stage-line {
+  position: relative;
+  display: block;
+  width: 52px;
+  height: 6px;
+}
+
+.stage-line::before,
+.stage-line::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 21px;
+  height: 6px;
+  border-radius: 1px;
+  background: #1f1b16;
+}
+
+.stage-line::before {
+  left: 0;
+}
+
+.stage-line::after {
+  right: 0;
+}
+
+.stage-line.yang::before {
+  width: 52px;
+}
+
+.stage-line.yang::after {
+  display: none;
+}
+
+.stage-line.moving::before,
+.stage-line.moving::after {
+  background: #9d1f16;
 }
 
 .animated-coins {
-  position: relative;
-  z-index: 1;
-  width: 168px;
-  height: 78px;
+  position: absolute;
+  left: 50%;
+  bottom: 110px;
+  z-index: 5;
+  width: 250px;
+  height: 150px;
+  transform: translateX(-50%);
 }
 
 .animated-coin {
   position: absolute;
-  top: 15px;
-  left: 57px;
-  width: 54px;
-  height: 54px;
+  top: 36px;
+  left: 98px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: block;
   background: transparent;
   border: 0;
-  box-shadow: 0 10px 16px rgba(80, 58, 18, 0.2);
+  filter: drop-shadow(0 10px 8px rgba(75, 55, 18, 0.2));
   will-change: transform, opacity;
 }
 
@@ -1015,7 +1225,6 @@ onBeforeUnmount(() => {
   display: block;
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 2px 1px rgba(255, 236, 177, 0.28));
 }
 
 .coin-shadow-ring {
@@ -1068,88 +1277,91 @@ onBeforeUnmount(() => {
 }
 
 .animated-coin.empty {
-  opacity: 0.38;
-  transform: translate(0, 8px) scale(0.88);
-  box-shadow: none;
+  opacity: 0.82;
 }
 
-.coin-stage.shaking .animated-coin {
-  animation: coinToss 0.44s cubic-bezier(0.18, 0.82, 0.24, 1) both;
+.turtle-stage.shaking .animated-coin {
+  animation: realisticCoinDrop 0.78s cubic-bezier(0.18, 0.86, 0.24, 1) both;
 }
 
-.coin-stage.shaking .coin-2 {
-  animation-delay: 0.035s;
+.turtle-stage.shaking .coin-2 {
+  animation-delay: 0.06s;
 }
 
-.coin-stage.shaking .coin-3 {
-  animation-delay: 0.07s;
+.turtle-stage.shaking .coin-3 {
+  animation-delay: 0.12s;
 }
 
-.coin-stage.settled .coin-1 {
-  transform: translate(-54px, 8px) rotate(-13deg);
+.turtle-stage.settled .coin-1 {
+  transform: translate(-86px, 38px) rotate(-18deg);
 }
 
-.coin-stage.settled .coin-2 {
-  transform: translate(0, -7px) rotate(5deg);
+.turtle-stage.settled .coin-2 {
+  transform: translate(0, 3px) rotate(6deg);
 }
 
-.coin-stage.settled .coin-3 {
-  transform: translate(54px, 10px) rotate(14deg);
+.turtle-stage.settled .coin-3 {
+  transform: translate(88px, 42px) rotate(20deg);
 }
 
-@keyframes trayShake {
+@keyframes shellShake {
   0%,
   100% {
-    transform: translateX(0);
+    transform: translateX(-50%) translateY(0) rotate(0deg);
   }
-  18% {
-    transform: translateX(-3px) rotate(-0.4deg);
+  14% {
+    transform: translateX(calc(-50% - 8px)) translateY(-2px) rotate(-3deg);
   }
-  36% {
-    transform: translateX(3px) rotate(0.4deg);
+  30% {
+    transform: translateX(calc(-50% + 8px)) translateY(1px) rotate(3deg);
   }
-  54% {
-    transform: translateX(-2px) rotate(-0.25deg);
+  48% {
+    transform: translateX(calc(-50% - 6px)) translateY(-1px) rotate(-2deg);
   }
-  72% {
-    transform: translateX(2px) rotate(0.2deg);
+  66% {
+    transform: translateX(calc(-50% + 5px)) translateY(1px) rotate(1.5deg);
+  }
+  82% {
+    transform: translateX(calc(-50% - 2px)) rotate(-0.7deg);
   }
 }
 
-@keyframes coinToss {
+@keyframes realisticCoinDrop {
   0% {
-    transform: translate(0, 10px) rotate(0deg) scale(0.9);
-    opacity: 0.55;
+    transform: translate(0, -92px) rotate(0deg) scale(0.72);
+    opacity: 0;
   }
-  46% {
-    transform: translate(calc(var(--coin-x, 0) * 0.36), -18px) rotate(calc(var(--coin-rotate, 12deg) * 1.8)) scale(1.04);
+  18% {
     opacity: 1;
   }
-  76% {
-    transform: translate(calc(var(--coin-x, 0) * 0.84), calc(var(--coin-y, 8px) - 3px)) rotate(calc(var(--coin-rotate, 12deg) * 0.8)) scale(0.99);
+  48% {
+    transform: translate(calc(var(--coin-x, 0) * 0.42), -18px) rotate(calc(var(--coin-rotate, 12deg) * 2.5)) scale(1.04);
+  }
+  78% {
+    transform: translate(calc(var(--coin-x, 0) * 0.94), calc(var(--coin-y, 36px) - 8px)) rotate(calc(var(--coin-rotate, 12deg) * 0.7)) scale(0.98);
   }
   100% {
-    transform: translate(var(--coin-x, 0), var(--coin-y, 8px)) rotate(var(--coin-rotate, 12deg)) scale(1);
+    transform: translate(var(--coin-x, 0), var(--coin-y, 36px)) rotate(var(--coin-rotate, 12deg)) scale(1);
     opacity: 1;
   }
 }
 
 .coin-1 {
-  --coin-x: -54px;
-  --coin-y: 8px;
-  --coin-rotate: -13deg;
+  --coin-x: -86px;
+  --coin-y: 38px;
+  --coin-rotate: -18deg;
 }
 
 .coin-2 {
   --coin-x: 0px;
-  --coin-y: -7px;
-  --coin-rotate: 5deg;
+  --coin-y: 3px;
+  --coin-rotate: 6deg;
 }
 
 .coin-3 {
-  --coin-x: 54px;
-  --coin-y: 10px;
-  --coin-rotate: 14deg;
+  --coin-x: 88px;
+  --coin-y: 42px;
+  --coin-rotate: 20deg;
 }
 
 .install-info {
@@ -1470,21 +1682,38 @@ onBeforeUnmount(() => {
     font-weight: 800;
   }
 
-  .coin-stage {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 12px;
+  .ink-scene {
+    min-height: 500px;
+  }
+
+  .shell-wrap {
+    top: 30px;
+    width: 168px;
+  }
+
+  .turtle-stage-label {
+    top: 152px;
+  }
+
+  .turtle-stage-label strong {
+    font-size: 17px;
+  }
+
+  .bagua-plate {
+    bottom: 42px;
+    width: min(320px, 92vw);
   }
 
   .animated-coins {
-    width: 100%;
-    max-width: 176px;
-    height: 74px;
-    justify-self: center;
+    bottom: 106px;
+    width: 220px;
+    height: 136px;
   }
 
   .animated-coin {
-    left: calc(50% - 27px);
+    left: 84px;
+    width: 52px;
+    height: 52px;
   }
 
   .live-yao-cards {
