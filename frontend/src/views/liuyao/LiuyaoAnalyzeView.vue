@@ -150,9 +150,24 @@
                     { empty: !animatedCoins.length }
                   ]"
                 >
-                  <i></i>
-                  <b>{{ animatedCoins.length ? (animatedCoins[index - 1] ? '背' : '乾') : '玄' }}</b>
-                  <small>{{ animatedCoins[index - 1] ? '坤' : '元' }}</small>
+                  <svg viewBox="0 0 72 72" aria-hidden="true">
+                    <defs>
+                      <radialGradient :id="`coinFace${index}`" cx="34%" cy="28%" r="66%">
+                        <stop offset="0%" stop-color="#fff2b8" />
+                        <stop offset="42%" :stop-color="animatedCoins[index - 1] ? '#9a6a31' : '#d39b3d'" />
+                        <stop offset="74%" :stop-color="animatedCoins[index - 1] ? '#6d4723' : '#a86a25'" />
+                        <stop offset="100%" :stop-color="animatedCoins[index - 1] ? '#3f2a18' : '#6d4217'" />
+                      </radialGradient>
+                    </defs>
+                    <circle class="coin-shadow-ring" cx="36" cy="36" r="32" />
+                    <circle class="coin-body" cx="36" cy="36" r="30" :fill="`url(#coinFace${index})`" />
+                    <circle class="coin-inner-ring" cx="36" cy="36" r="22" />
+                    <rect class="coin-hole" x="27" y="27" width="18" height="18" rx="2" />
+                    <path class="coin-mark mark-top" d="M25 19 C31 15, 41 15, 47 19" />
+                    <path class="coin-mark mark-bottom" d="M25 53 C31 57, 41 57, 47 53" />
+                    <text x="36" y="18" text-anchor="middle">{{ animatedCoins.length ? (animatedCoins[index - 1] ? '坤' : '乾') : '玄' }}</text>
+                    <text x="36" y="60" text-anchor="middle">{{ animatedCoins.length ? (animatedCoins[index - 1] ? '阴' : '元') : '钱' }}</text>
+                  </svg>
                 </span>
               </div>
             </div>
@@ -505,10 +520,10 @@ async function shakeNext() {
   activeShakeIndex.value = shakenCount.value
   animatedCoins.value = []
   const toss = tossCoins()
-  await wait(760)
+  await wait(420)
   if (token !== shakeToken.value) return
   animatedCoins.value = toss.coins
-  await wait(220)
+  await wait(80)
   if (token !== shakeToken.value) return
   Object.assign(form.yaoList[shakenCount.value], toss)
   shakenCount.value += 1
@@ -526,10 +541,10 @@ async function reshakeYao(index) {
   activeShakeIndex.value = index
   animatedCoins.value = []
   const toss = tossCoins()
-  await wait(760)
+  await wait(420)
   if (token !== shakeToken.value) return
   animatedCoins.value = toss.coins
-  await wait(220)
+  await wait(80)
   if (token !== shakeToken.value) return
   Object.assign(form.yaoList[index], toss)
   updateGuaNames()
@@ -978,122 +993,108 @@ onBeforeUnmount(() => {
 .animated-coins {
   position: relative;
   z-index: 1;
-  width: 162px;
-  height: 82px;
+  width: 168px;
+  height: 78px;
 }
 
 .animated-coin {
   position: absolute;
-  top: 20px;
-  left: 58px;
-  width: 46px;
-  height: 46px;
+  top: 15px;
+  left: 57px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  display: inline-grid;
-  place-items: center;
-  border: 2px solid #9f7130;
-  background:
-    radial-gradient(circle at 34% 24%, rgba(255, 247, 203, 0.9), transparent 18%),
-    radial-gradient(circle at center, #d9ae55 0 34%, #b27a2e 35% 50%, #8d5b22 51% 56%, #d3a552 57% 72%, #754819 100%);
-  box-shadow:
-    inset 0 1px 3px rgba(255, 244, 191, 0.76),
-    inset 0 -4px 7px rgba(69, 41, 13, 0.28),
-    0 10px 18px rgba(80, 58, 18, 0.22);
-  color: #4d310d;
-  font-size: 12px;
-  font-weight: 900;
-  transform-style: preserve-3d;
-}
-
-.animated-coin.back {
-  border-color: #6a4b2a;
-  background:
-    radial-gradient(circle at 36% 25%, rgba(246, 213, 140, 0.42), transparent 18%),
-    radial-gradient(circle at center, #a97835 0 34%, #765023 35% 50%, #4f351b 51% 56%, #8a632f 57% 72%, #352419 100%);
-  color: #f7e5b5;
-}
-
-.animated-coin::before,
-.animated-coin::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.animated-coin::before {
-  inset: 5px;
-  border: 1px solid rgba(91, 57, 14, 0.42);
-  box-shadow: inset 0 0 0 2px rgba(255, 229, 150, 0.2);
-}
-
-.animated-coin::after {
-  inset: 13px;
-  border-radius: 3px;
-  background: #f6efcf;
-  border: 1px solid rgba(91, 57, 14, 0.48);
-  box-shadow: inset 0 2px 4px rgba(51, 31, 10, 0.2);
-}
-
-.animated-coin.back::after {
-  background: #2b2117;
-  border-color: rgba(247, 229, 181, 0.35);
-}
-
-.animated-coin i {
-  position: absolute;
-  inset: 16px;
-  z-index: 1;
-  border-radius: 2px;
+  display: block;
   background: transparent;
+  border: 0;
+  box-shadow: 0 10px 16px rgba(80, 58, 18, 0.2);
+  will-change: transform, opacity;
 }
 
-.animated-coin b,
-.animated-coin small {
-  position: absolute;
-  z-index: 2;
-  line-height: 1;
-  text-shadow: 0 1px 0 rgba(255, 239, 180, 0.32);
+.animated-coin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 1px rgba(255, 236, 177, 0.28));
 }
 
-.animated-coin b {
-  top: 8px;
+.coin-shadow-ring {
+  fill: rgba(93, 58, 19, 0.32);
 }
 
-.animated-coin small {
-  bottom: 8px;
+.coin-body {
+  stroke: #684113;
+  stroke-width: 2;
+}
+
+.coin-inner-ring {
+  fill: none;
+  stroke: rgba(74, 45, 12, 0.58);
+  stroke-width: 1.7;
+}
+
+.coin-hole {
+  fill: #f7efd4;
+  stroke: rgba(74, 45, 12, 0.64);
+  stroke-width: 1.4;
+}
+
+.animated-coin.back .coin-hole {
+  fill: #2a2017;
+  stroke: rgba(247, 229, 181, 0.34);
+}
+
+.coin-mark {
+  fill: none;
+  stroke: rgba(79, 49, 13, 0.42);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+
+.animated-coin.back .coin-mark {
+  stroke: rgba(247, 229, 181, 0.28);
+}
+
+.animated-coin text {
+  fill: rgba(65, 38, 9, 0.78);
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 800;
+  dominant-baseline: middle;
+  letter-spacing: 1px;
+}
+
+.animated-coin.back text {
+  fill: rgba(249, 224, 166, 0.82);
 }
 
 .animated-coin.empty {
-  opacity: 0.52;
-  filter: saturate(0.7);
-  transform: scale(0.9);
+  opacity: 0.38;
+  transform: translate(0, 8px) scale(0.88);
+  box-shadow: none;
 }
 
 .coin-stage.shaking .animated-coin {
-  animation: coinToss 0.82s cubic-bezier(0.18, 0.82, 0.22, 1) both;
+  animation: coinToss 0.44s cubic-bezier(0.18, 0.82, 0.24, 1) both;
 }
 
 .coin-stage.shaking .coin-2 {
-  animation-delay: 0.08s;
+  animation-delay: 0.035s;
 }
 
 .coin-stage.shaking .coin-3 {
-  animation-delay: 0.16s;
+  animation-delay: 0.07s;
 }
 
 .coin-stage.settled .coin-1 {
-  transform: translate(-52px, 10px) rotate(-16deg);
+  transform: translate(-54px, 8px) rotate(-13deg);
 }
 
 .coin-stage.settled .coin-2 {
-  transform: translate(1px, -8px) rotate(8deg);
+  transform: translate(0, -7px) rotate(5deg);
 }
 
 .coin-stage.settled .coin-3 {
-  transform: translate(52px, 12px) rotate(17deg);
+  transform: translate(54px, 10px) rotate(14deg);
 }
 
 @keyframes trayShake {
@@ -1117,38 +1118,38 @@ onBeforeUnmount(() => {
 
 @keyframes coinToss {
   0% {
-    transform: translate(0, 16px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.9);
-    opacity: 0.78;
+    transform: translate(0, 10px) rotate(0deg) scale(0.9);
+    opacity: 0.55;
   }
-  26% {
-    transform: translate(calc(var(--coin-x, 0) * 0.55), -24px) rotateX(64deg) rotateY(260deg) rotateZ(var(--coin-rotate, 16deg)) scale(1.02);
+  46% {
+    transform: translate(calc(var(--coin-x, 0) * 0.36), -18px) rotate(calc(var(--coin-rotate, 12deg) * 1.8)) scale(1.04);
     opacity: 1;
   }
-  62% {
-    transform: translate(calc(var(--coin-x, 0) * -0.25), -4px) rotateX(18deg) rotateY(520deg) rotateZ(calc(var(--coin-rotate, 16deg) * -0.7)) scale(0.97);
+  76% {
+    transform: translate(calc(var(--coin-x, 0) * 0.84), calc(var(--coin-y, 8px) - 3px)) rotate(calc(var(--coin-rotate, 12deg) * 0.8)) scale(0.99);
   }
   100% {
-    transform: translate(var(--coin-x, 0), var(--coin-y, 10px)) rotateX(0deg) rotateY(720deg) rotateZ(var(--coin-rotate, 16deg)) scale(1);
+    transform: translate(var(--coin-x, 0), var(--coin-y, 8px)) rotate(var(--coin-rotate, 12deg)) scale(1);
     opacity: 1;
   }
 }
 
 .coin-1 {
-  --coin-x: -52px;
-  --coin-y: 10px;
-  --coin-rotate: -16deg;
+  --coin-x: -54px;
+  --coin-y: 8px;
+  --coin-rotate: -13deg;
 }
 
 .coin-2 {
-  --coin-x: 1px;
-  --coin-y: -8px;
-  --coin-rotate: 8deg;
+  --coin-x: 0px;
+  --coin-y: -7px;
+  --coin-rotate: 5deg;
 }
 
 .coin-3 {
-  --coin-x: 52px;
-  --coin-y: 12px;
-  --coin-rotate: 17deg;
+  --coin-x: 54px;
+  --coin-y: 10px;
+  --coin-rotate: 14deg;
 }
 
 .install-info {
@@ -1477,13 +1478,13 @@ onBeforeUnmount(() => {
 
   .animated-coins {
     width: 100%;
-    max-width: 164px;
+    max-width: 176px;
     height: 74px;
     justify-self: center;
   }
 
   .animated-coin {
-    left: calc(50% - 23px);
+    left: calc(50% - 27px);
   }
 
   .live-yao-cards {
