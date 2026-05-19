@@ -171,8 +171,15 @@
                     { empty: !animatedCoins.length }
                   ]"
                 >
-                  <img src="/images/xuangui-coin.png" alt="铜钱" />
+                  <img
+                    :src="animatedCoins[index - 1] ? '/images/xuangui-coin-back.png' : '/images/xuangui-coin-front.png'"
+                    :alt="animatedCoins[index - 1] ? '铜钱背面' : '铜钱正面'"
+                  />
                 </span>
+                </div>
+                <div class="coin-legend">
+                  <span><img src="/images/xuangui-coin-front.png" alt="" />字面为正，记 2</span>
+                  <span><img src="/images/xuangui-coin-back.png" alt="" />背面为反，记 3</span>
                 </div>
               </div>
             </div>
@@ -1149,6 +1156,38 @@ onBeforeUnmount(() => {
   transform: translateX(-50%);
 }
 
+.coin-legend {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 6;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  width: min(360px, 90%);
+  padding: 7px 10px;
+  border: 1px solid rgba(182, 154, 93, 0.32);
+  border-radius: 999px;
+  background: rgba(255, 253, 241, 0.72);
+  box-shadow: 0 6px 16px rgba(80, 58, 18, 0.08);
+  color: #6b5326;
+  font-size: 12px;
+  transform: translateX(-50%);
+}
+
+.coin-legend span {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.coin-legend img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
 .animated-coin {
   position: absolute;
   top: 36px;
@@ -1607,6 +1646,19 @@ onBeforeUnmount(() => {
     bottom: 138px;
     width: 220px;
     height: 136px;
+  }
+
+  .coin-legend {
+    bottom: 14px;
+    gap: 6px;
+    width: calc(100% - 24px);
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .coin-legend img {
+    width: 16px;
+    height: 16px;
   }
 
   .animated-coin {
