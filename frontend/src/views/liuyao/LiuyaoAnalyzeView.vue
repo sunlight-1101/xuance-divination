@@ -122,6 +122,9 @@
               </div>
               <div class="shake-actions">
                 <el-button @click="resetGua">重摇</el-button>
+                <el-button :type="motionEnabled ? 'success' : 'default'" @click="enableMotionShake">
+                  {{ motionEnabled ? '摇一摇已开启' : '开启摇一摇' }}
+                </el-button>
                 <el-button type="primary" size="large" :disabled="shakenCount >= 6" @click="shakeNext">
                   {{ shakenCount >= 6 ? '已成卦' : `摇第 ${shakenCount + 1} 爻` }}
                 </el-button>
@@ -129,7 +132,7 @@
             </div>
             <div class="beginner-guide">
               <strong>{{ beginnerGuideTitle }}</strong>
-              <span>{{ beginnerGuideText }}</span>
+              <span>{{ motionEnabled ? '现在可以拿起手机轻轻摇动，每摇一次生成一爻。' : beginnerGuideText }}</span>
             </div>
             <el-progress
               class="shake-progress"
@@ -331,7 +334,15 @@
               class="estimate-note"
               type="warning"
               :closable="false"
-              title="正在调用 AI 细断，预计 60-120 秒，请不要重复点击。"
+              title="正在调用 AI 细断，预计 60-120 秒。切屏后可回到本页恢复，也可以在历史记录查看结果，请不要重复点击。"
+            />
+            <el-alert
+              v-if="analysisNotice"
+              class="estimate-note"
+              type="info"
+              :closable="true"
+              :title="analysisNotice"
+              @close="analysisNotice = ''"
             />
           </el-form>
         </div>
@@ -359,7 +370,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { updateProfile } from '../../api/auth'
 import { analyzeLiuyao } from '../../api/liuyao'
@@ -370,6 +381,7 @@ import { buildHexagram, installHexagram, tossCoins } from '../../utils/liuyao'
 import { getDayGanZhi } from '../../utils/ganzhi'
 import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
 import { buildHourOptions, buildMinuteOptions, combineTimeParts, splitTimeParts } from '../../utils/timeOptions'
+import { clearAnalysisCache, readAnalysisCache, saveAnalysisCache } from '../../utils/analysisCache'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -379,7 +391,13 @@ const classicReferences = ref([])
 const guaPanelRef = ref(null)
 const reportPanelRef = ref(null)
 const showDetailHint = ref(false)
+const motionEnabled = ref(false)
+const analysisNotice = ref('')
+const lastMotion = ref(null)
+const lastShakeAt = ref(0)
 const positions = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻']
+const CACHE_KEY = 'zhexuan_last_liuyao_report'
+const PENDING_KEY = 'zhexuan_pending_liuyao_analysis'
 const birthHourOptions = buildHourOptions()
 const birthMinuteOptions = buildMinuteOptions()
 const shakenCount = ref(0)
@@ -479,6 +497,7 @@ function resetGua() {
   result.value = ''
   knowledgeRules.value = []
   classicReferences.value = []
+  clearAnalysisCache(CACHE_KEY)
   showDetailHint.value = false
   Object.assign(installInfo, { palace: '', palaceElement: '', shiPosition: 0, yingPosition: 0 })
   form.yaoList.forEach((yao, index) => {
@@ -547,6 +566,50 @@ function updateBirthDayMaster() {
   form.birthDayMaster = day.stem
 }
 
+async function enableMotionShake() {
+  if (motionEnabled.value) return
+  if (!window.DeviceMotionEvent) {
+    ElMessage.warning('当前浏览器不支持摇一摇，可以继续点击按钮摇卦')
+    return
+  }
+  try {
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      const permission = await DeviceMotionEvent.requestPermission()
+      if (permission !== 'granted') {
+        ElMessage.warning('未获得传感器权限，可以继续点击按钮摇卦')
+        return
+      }
+    }
+    window.addEventListener('devicemotion', handleDeviceMotion)
+    motionEnabled.value = true
+    ElMessage.success('摇一摇已开启，轻轻摇动手机即可起爻')
+  } catch {
+    ElMessage.warning('开启摇一摇失败，可以继续点击按钮摇卦')
+  }
+}
+
+function handleDeviceMotion(event) {
+  if (shakenCount.value >= 6 || loading.value) return
+  const acc = event.accelerationIncludingGravity || event.acceleration
+  if (!acc) return
+  const current = { x: acc.x || 0, y: acc.y || 0, z: acc.z || 0, time: Date.now() }
+  if (!lastMotion.value) {
+    lastMotion.value = current
+    return
+  }
+  const previous = lastMotion.value
+  const deltaTime = Math.max((current.time - previous.time) / 1000, 0.08)
+  const speed = Math.abs(current.x + current.y + current.z - previous.x - previous.y - previous.z) / deltaTime
+  lastMotion.value = current
+  if (speed > 90 && current.time - lastShakeAt.value > 900) {
+    lastShakeAt.value = current.time
+    shakeNext()
+    if (shakenCount.value < 6) {
+      ElMessage.success(`已摇出第 ${shakenCount.value} 爻`)
+    }
+  }
+}
+
 function syncBirthTime() {
   form.birthTime = combineTimeParts(form.birthHour, form.birthMinute)
 }
@@ -611,6 +674,7 @@ async function submit() {
     return
   }
   loading.value = true
+  saveAnalysisCache(PENDING_KEY, { type: 'LIUYAO', question: form.question, startedAt: Date.now() })
   try {
     updateBirthDayMaster()
     userStore.saveBirthProfile({
@@ -631,6 +695,12 @@ async function submit() {
     result.value = data.resultJson
     knowledgeRules.value = data.knowledgeRules || []
     classicReferences.value = data.classicReferences || []
+    saveAnalysisCache(CACHE_KEY, {
+      result: result.value,
+      knowledgeRules: knowledgeRules.value,
+      classicReferences: classicReferences.value
+    })
+    clearAnalysisCache(PENDING_KEY)
     ElMessage.success('分析完成')
     scrollToReport()
   } finally {
@@ -661,6 +731,21 @@ function exportCurrentReport() {
 onMounted(() => {
   applyUserProfile()
   setCurrentTime()
+  const cached = readAnalysisCache(CACHE_KEY)
+  if (cached?.result && !result.value) {
+    result.value = cached.result
+    knowledgeRules.value = cached.knowledgeRules || []
+    classicReferences.value = cached.classicReferences || []
+    analysisNotice.value = '已恢复上一次六爻分析报告；如果切屏后没看到结果，也可以到历史记录查看。'
+  } else if (readAnalysisCache(PENDING_KEY)) {
+    analysisNotice.value = '检测到上次有分析进行中；如果本页没有恢复结果，请到历史记录查看，避免重复消耗。'
+  }
+})
+
+onBeforeUnmount(() => {
+  if (motionEnabled.value) {
+    window.removeEventListener('devicemotion', handleDeviceMotion)
+  }
 })
 </script>
 
@@ -1074,12 +1159,12 @@ onMounted(() => {
 
   .shake-actions {
     display: grid;
-    grid-template-columns: 76px 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
 
-  .shake-actions .el-button:nth-child(2) {
-    grid-column: 2;
+  .shake-actions .el-button:last-child {
+    grid-column: 1 / -1;
     min-height: 56px;
     white-space: normal;
     font-size: 16px;

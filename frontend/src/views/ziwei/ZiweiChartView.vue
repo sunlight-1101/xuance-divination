@@ -176,7 +176,8 @@
               <el-input v-model="analysisForm.question" type="textarea" :rows="3" placeholder="例如：这张盘的事业发展和近几年机会如何？" />
             </el-form-item>
           </el-form>
-          <div v-if="analysisLoading" class="analysis-placeholder">正在调用 AI 分析，预计 60-120 秒，请不要重复点击。</div>
+          <div v-if="analysisLoading" class="analysis-placeholder">正在调用 AI 分析，预计 60-120 秒。切屏后可回到本页恢复，也可以在历史记录查看结果，请不要重复点击。</div>
+          <div v-if="analysisNotice" class="analysis-placeholder notice">{{ analysisNotice }}</div>
           <ResultReport v-else-if="parsedAnalysis" :report="parsedAnalysis" />
           <KnowledgeReferences
             v-if="knowledgeRules.length || classicReferences.length"
@@ -202,6 +203,7 @@ import ResultReport from '../../components/ResultReport.vue'
 import { useUserStore } from '../../stores/user'
 import { provinceOptions } from '../../utils/chinaCities'
 import { buildHourOptions, buildMinuteOptions } from '../../utils/timeOptions'
+import { clearAnalysisCache, readAnalysisCache, saveAnalysisCache } from '../../utils/analysisCache'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -211,6 +213,9 @@ const activeChartTab = ref('base')
 const analysisResult = ref('')
 const knowledgeRules = ref([])
 const classicReferences = ref([])
+const analysisNotice = ref('')
+const CACHE_KEY = 'zhexuan_last_ziwei_report'
+const PENDING_KEY = 'zhexuan_pending_ziwei_analysis'
 
 const hourOptions = buildHourOptions()
 const minuteOptions = buildMinuteOptions().map(item => item.value)
@@ -376,6 +381,7 @@ async function analyzeCurrentChart() {
     return
   }
   analysisLoading.value = true
+  saveAnalysisCache(PENDING_KEY, { type: 'ZIWEI', question: analysisForm.question, startedAt: Date.now() })
   try {
     const data = await analyzeZiwei({
       userId: userStore.userId,
@@ -390,6 +396,13 @@ async function analyzeCurrentChart() {
     analysisResult.value = data.resultJson
     knowledgeRules.value = data.knowledgeRules || []
     classicReferences.value = data.classicReferences || []
+    saveAnalysisCache(CACHE_KEY, {
+      chart: chart.value,
+      result: analysisResult.value,
+      knowledgeRules: knowledgeRules.value,
+      classicReferences: classicReferences.value
+    })
+    clearAnalysisCache(PENDING_KEY)
     ElMessage.success('紫微分析完成')
   } finally {
     analysisLoading.value = false
@@ -488,7 +501,19 @@ function findProvinceByCity(place) {
   return provinceOptions.find(province => province.cities.some(city => city.name === value || value.includes(city.name))) || null
 }
 
-onMounted(applyProfile)
+onMounted(() => {
+  applyProfile()
+  const cached = readAnalysisCache(CACHE_KEY)
+  if (cached?.result && !analysisResult.value) {
+    if (cached.chart) chart.value = cached.chart
+    analysisResult.value = cached.result
+    knowledgeRules.value = cached.knowledgeRules || []
+    classicReferences.value = cached.classicReferences || []
+    analysisNotice.value = '已恢复上一次紫微分析报告；如果切屏后没看到结果，也可以到历史记录查看。'
+  } else if (readAnalysisCache(PENDING_KEY)) {
+    analysisNotice.value = '检测到上次有分析进行中；如果本页没有恢复结果，请到历史记录查看，避免重复消耗。'
+  }
+})
 </script>
 
 <style scoped>
@@ -875,6 +900,13 @@ onMounted(applyProfile)
   border: 1px solid #edf0f3;
   border-radius: 8px;
   color: #8a8f98;
+}
+
+.analysis-placeholder.notice {
+  min-height: 0;
+  border-color: #d8c696;
+  background: #fffaf0;
+  color: #806326;
 }
 
 .analysis-form {

@@ -163,7 +163,7 @@
       </div>
       <button class="support-strip" type="button" @click="$router.push('/quota')">
         <span>支持开发</span>
-        <strong>制作不易，觉得好用可以随缘打赏一下</strong>
+        <strong>制作不易，觉得好用可以打赏；建议反馈 QQ 1559087584</strong>
         <i>›</i>
       </button>
     </section>

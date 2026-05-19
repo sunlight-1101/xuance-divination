@@ -12,6 +12,10 @@
           <h2>自愿打赏</h2>
           <p>打赏完全自愿，不影响任何功能，也不兑换次数。你的支持会用于服务器、模型调用、古籍资料整理和后续功能维护。</p>
           <small>感谢每一次支持，也感谢你愿意把这个工具继续用下去。</small>
+          <div class="contact-box">
+            <strong>建议与反馈</strong>
+            <span>QQ：1559087584</span>
+          </div>
         </div>
         <div class="qr-box">
           <img src="/wechat-pay-qr.jpg" alt="自愿打赏收款码" />
@@ -82,6 +86,26 @@
   display: block;
   margin-top: 14px;
   line-height: 1.6;
+}
+
+.contact-box {
+  margin-top: 16px;
+  display: inline-grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid rgba(176, 138, 60, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 253, 246, 0.72);
+}
+
+.contact-box strong {
+  color: #173f35;
+  font-size: 14px;
+}
+
+.contact-box span {
+  color: #806326;
+  font-weight: 800;
 }
 
 .qr-box {

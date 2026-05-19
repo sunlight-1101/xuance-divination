@@ -371,7 +371,15 @@
               class="estimate-note"
               type="warning"
               :closable="false"
-              title="正在调用 AI 细断，预计 60-120 秒，请不要重复点击。"
+              title="正在调用 AI 细断，预计 60-120 秒。切屏后可回到本页恢复，也可以在历史记录查看结果，请不要重复点击。"
+            />
+            <el-alert
+              v-if="analysisNotice"
+              class="estimate-note"
+              type="info"
+              :closable="true"
+              :title="analysisNotice"
+              @close="analysisNotice = ''"
             />
           </el-form>
         </div>
@@ -533,7 +541,15 @@
               class="estimate-note"
               type="warning"
               :closable="false"
-              title="正在调用 AI 合盘细断，预计 60-120 秒，请不要重复点击。"
+              title="正在调用 AI 合盘细断，预计 60-120 秒。切屏后可回到本页恢复，也可以在历史记录查看结果，请不要重复点击。"
+            />
+            <el-alert
+              v-if="analysisNotice"
+              class="estimate-note"
+              type="info"
+              :closable="true"
+              :title="analysisNotice"
+              @close="analysisNotice = ''"
             />
           </el-form>
         </div>
@@ -572,12 +588,14 @@ import { getBaziDetails, getFourPillars, getLuckCycles, getTenGod, getYearGanZhi
 import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
 import { provinceOptions } from '../../utils/chinaCities'
 import { buildHourOptions, buildMinuteOptions, combineTimeParts, splitTimeParts } from '../../utils/timeOptions'
+import { clearAnalysisCache, readAnalysisCache, saveAnalysisCache } from '../../utils/analysisCache'
 
 const userStore = useUserStore()
 const loading = ref(false)
 const result = ref('')
 const knowledgeRules = ref([])
 const classicReferences = ref([])
+const analysisNotice = ref('')
 const reportPanelRef = ref(null)
 const analysisMode = ref('single')
 const baziViewMode = ref('professional')
@@ -588,6 +606,8 @@ const compatSelectedA = ref('')
 const compatSelectedB = ref('')
 const birthHourOptions = buildHourOptions()
 const birthMinuteOptions = buildMinuteOptions()
+const CACHE_KEY = 'zhexuan_last_bazi_report'
+const PENDING_KEY = 'zhexuan_pending_bazi_analysis'
 const chartTabs = [
   { key: 'info', label: '基本信息' },
   { key: 'chart', label: '基本排盘' },
@@ -777,6 +797,7 @@ function switchAnalysisMode(mode) {
   result.value = ''
   knowledgeRules.value = []
   classicReferences.value = []
+  analysisNotice.value = ''
 }
 
 const solarText = computed(() => {
@@ -1312,6 +1333,7 @@ async function submit() {
     return
   }
   loading.value = true
+  saveAnalysisCache(PENDING_KEY, { type: 'BAZI', mode: 'single', question: form.question, startedAt: Date.now() })
   try {
     await saveBirthProfile({ silent: true })
     const accountUserId = userStore.userId
@@ -1334,6 +1356,13 @@ async function submit() {
     result.value = data.resultJson
     knowledgeRules.value = data.knowledgeRules || []
     classicReferences.value = data.classicReferences || []
+    saveAnalysisCache(CACHE_KEY, {
+      mode: 'single',
+      result: result.value,
+      knowledgeRules: knowledgeRules.value,
+      classicReferences: classicReferences.value
+    })
+    clearAnalysisCache(PENDING_KEY)
     ElMessage.success('分析完成')
     await nextTick()
     reportPanelRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -1360,6 +1389,7 @@ async function submitCompatibility() {
     return
   }
   loading.value = true
+  saveAnalysisCache(PENDING_KEY, { type: 'BAZI', mode: 'compatibility', question: compatForm.question, startedAt: Date.now() })
   try {
     const accountUserId = userStore.userId
     const data = await analyzeBaziCompatibility({
@@ -1372,6 +1402,13 @@ async function submitCompatibility() {
     result.value = data.resultJson
     knowledgeRules.value = data.knowledgeRules || []
     classicReferences.value = data.classicReferences || []
+    saveAnalysisCache(CACHE_KEY, {
+      mode: 'compatibility',
+      result: result.value,
+      knowledgeRules: knowledgeRules.value,
+      classicReferences: classicReferences.value
+    })
+    clearAnalysisCache(PENDING_KEY)
     ElMessage.success('合盘解析完成')
     await nextTick()
     reportPanelRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -1395,7 +1432,19 @@ function exportCurrentReport() {
   }))
 }
 
-onMounted(applyProfile)
+onMounted(() => {
+  applyProfile()
+  const cached = readAnalysisCache(CACHE_KEY)
+  if (cached?.result && !result.value) {
+    analysisMode.value = cached.mode || analysisMode.value
+    result.value = cached.result
+    knowledgeRules.value = cached.knowledgeRules || []
+    classicReferences.value = cached.classicReferences || []
+    analysisNotice.value = '已恢复上一次八字分析报告；如果切屏后没看到结果，也可以到历史记录查看。'
+  } else if (readAnalysisCache(PENDING_KEY)) {
+    analysisNotice.value = '检测到上次有分析进行中；如果本页没有恢复结果，请到历史记录查看，避免重复消耗。'
+  }
+})
 </script>
 
 <style scoped>
