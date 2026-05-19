@@ -1,5 +1,5 @@
 <template>
-  <el-container class="layout">
+  <el-container class="layout" :class="{ 'home-layout': $route.path === '/home' }">
     <el-aside width="228px" class="aside">
       <div class="brand">
         <img class="brand-logo" src="/icons/zhexuan-logo.png" alt="哲玄" />
@@ -26,6 +26,11 @@
           <img class="mobile-logo" src="/icons/icon-192.png" alt="哲玄" />
           <span>哲玄</span>
         </div>
+        <nav class="home-top-nav" aria-label="首页导航">
+          <router-link to="/home">首页</router-link>
+          <router-link to="/bazi">工具</router-link>
+          <router-link to="/records">收藏</router-link>
+        </nav>
         <el-dropdown>
           <span class="user">
             <UserRound :size="18" />
@@ -178,8 +183,81 @@ function handleLogout() {
   padding: 0;
 }
 
+.home-top-nav {
+  display: none;
+}
+
 .bottom-nav {
   display: none;
+}
+
+@media (min-width: 701px) {
+  .layout.home-layout {
+    display: block;
+    background: #f8f1e2;
+  }
+
+  .layout.home-layout .aside {
+    display: none;
+  }
+
+  .layout.home-layout .header {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 8;
+    height: 74px;
+    padding: 0 46px;
+    border-bottom: 1px solid rgba(232, 214, 165, 0.12);
+    background: rgba(0, 45, 39, 0.88);
+    backdrop-filter: blur(10px);
+  }
+
+  .layout.home-layout .mobile-title {
+    color: #fff8dd;
+    font-size: 22px;
+    gap: 12px;
+  }
+
+  .layout.home-layout .mobile-logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid #d6b66d;
+    background: #0b3b32;
+  }
+
+  .layout.home-layout .home-top-nav {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-right: auto;
+    margin-left: 44px;
+  }
+
+  .layout.home-layout .home-top-nav a {
+    min-width: 86px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: #e9d39c;
+    text-decoration: none;
+    font-weight: 800;
+  }
+
+  .layout.home-layout .home-top-nav a.router-link-active,
+  .layout.home-layout .home-top-nav a:hover {
+    border-color: rgba(232, 214, 165, 0.26);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff4ca;
+  }
+
+  .layout.home-layout .user {
+    color: #e9d39c;
+  }
 }
 
 @media (max-width: 700px) {
@@ -200,6 +278,26 @@ function handleLogout() {
     position: sticky;
     top: 0;
     z-index: 20;
+  }
+
+  .layout.home-layout .header {
+    position: absolute;
+    background: transparent;
+    border-bottom: 0;
+  }
+
+  .layout.home-layout .mobile-title {
+    color: #fff8dd;
+  }
+
+  .layout.home-layout .mobile-logo {
+    border-radius: 50%;
+    border: 1px solid #d6b66d;
+    background: #0b3b32;
+  }
+
+  .layout.home-layout .user {
+    color: #e9d39c;
   }
 
   .user {

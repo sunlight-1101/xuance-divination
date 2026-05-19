@@ -4,6 +4,7 @@
       <div class="hero-copy">
         <h1>哲玄</h1>
         <p>八字 · 六爻 · 紫微</p>
+        <small>洞察天时 · 明辨吉凶 · 趋吉避凶 · 顺势而为</small>
       </div>
       <button class="wisdom-button" type="button" @click="$router.push('/knowledge')">
         <Sparkles :size="18" />
@@ -16,6 +17,7 @@
         <span class="leaf-mark">竹</span>
         <h2>今日概览</h2>
         <small>{{ todayText }}</small>
+        <span class="lunar-pill">{{ selectedDisplay.lunar || '农历加载中' }}</span>
         <button class="expand-button" type="button" @click="almanacExpanded = !almanacExpanded">
           {{ almanacExpanded ? '收起' : '展开' }}
         </button>
@@ -39,6 +41,10 @@
             <div>
               <span>日</span>
               <strong>{{ todayPillars.dayPillar || '-' }}</strong>
+            </div>
+            <div>
+              <span>时</span>
+              <strong>{{ todayPillars.hourPillar || '-' }}</strong>
             </div>
           </div>
         </div>
@@ -168,21 +174,36 @@
       </button>
     </section>
 
-    <section class="paper-card advice-card">
-      <div class="card-title">
-        <span class="leaf-mark">宜</span>
-        <h2>使用建议</h2>
-        <button type="button" @click="$router.push('/records')">查看记录 ›</button>
+    <section class="home-lower-grid">
+      <div class="paper-card advice-card">
+        <div class="card-title">
+          <span class="leaf-mark">竹</span>
+          <h2>使用建议</h2>
+        </div>
+        <div class="advice-content">
+          <p><strong>先存资料：</strong>常用出生信息可以保存多人，八字和命盘都能直接调用。</p>
+          <p><strong>再问问题：</strong>问题越具体，报告越容易给出清楚判断和行动建议。</p>
+          <p><strong>遵循参考：</strong>命理是趋势参考，真正的改变，始于你的选择与行动。</p>
+        </div>
+        <button class="support-strip" type="button" @click="$router.push('/quota')">
+          <span>支持开发</span>
+          <strong>制作不易，觉得好用可以打赏；建议反馈 QQ 1559087584</strong>
+          <i>›</i>
+        </button>
       </div>
-      <div class="advice-content">
-        <p><strong>先存资料：</strong>常用出生信息可以保存多人，八字和合盘都能直接调用。</p>
-        <p><strong>再问问题：</strong>问题越具体，报告越容易给出清楚判断和行动建议。</p>
+
+      <div class="paper-card recent-card">
+        <div class="card-title">
+          <span class="leaf-mark">时</span>
+          <h2>最近记录</h2>
+          <button type="button" @click="$router.push('/records')">查看全部 ›</button>
+        </div>
+        <div class="recent-empty">
+          <span>卷</span>
+          <strong>暂无记录</strong>
+          <p>开始使用工具，记录将显示在这里</p>
+        </div>
       </div>
-      <button class="support-strip" type="button" @click="$router.push('/quota')">
-        <span>支持开发</span>
-        <strong>制作不易，觉得好用可以打赏；建议反馈 QQ 1559087584</strong>
-        <i>›</i>
-      </button>
     </section>
   </div>
 </template>
@@ -341,21 +362,24 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 <style scoped>
 .home-page {
-  min-height: calc(100vh - 58px);
-  padding: 18px 18px 92px;
+  min-height: 100vh;
+  padding: 74px 46px 46px;
   color: #173f35;
   background:
-    linear-gradient(180deg, rgba(12, 48, 41, 0.92), rgba(23, 63, 53, 0.88) 320px, #f8f4e8 321px),
+    linear-gradient(180deg, rgba(0, 62, 54, 0.96) 0 410px, #f8f1e2 411px),
+    radial-gradient(circle at 82% 12%, rgba(232, 214, 165, 0.16), transparent 26%),
     repeating-linear-gradient(105deg, transparent 0 36px, rgba(232, 214, 165, 0.08) 36px 38px);
 }
 
 .home-hero {
   position: relative;
-  min-height: 230px;
+  min-height: 252px;
+  max-width: 1480px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28px 18px 40px;
+  padding: 30px 82px 42px;
   color: #f8f0d8;
   overflow: hidden;
 }
@@ -363,16 +387,28 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 .home-hero::before {
   content: "";
   position: absolute;
-  inset: -20px 0 auto auto;
-  width: 210px;
-  height: 260px;
-  opacity: 0.18;
+  inset: 0;
+  opacity: 0.6;
   background:
-    linear-gradient(90deg, transparent 48%, #f4e6b8 49% 51%, transparent 52%),
-    radial-gradient(ellipse at 60% 18%, transparent 0 30%, #f4e6b8 31% 34%, transparent 35%),
-    radial-gradient(ellipse at 42% 40%, transparent 0 30%, #f4e6b8 31% 34%, transparent 35%),
-    radial-gradient(ellipse at 62% 64%, transparent 0 30%, #f4e6b8 31% 34%, transparent 35%);
-  transform: rotate(14deg);
+    radial-gradient(circle at 88% 22%, rgba(237, 200, 116, 0.95) 0 18px, transparent 19px),
+    repeating-radial-gradient(circle at 88% 22%, transparent 0 58px, rgba(214, 169, 84, 0.22) 59px 60px),
+    linear-gradient(120deg, transparent 0 64%, rgba(214, 169, 84, 0.18) 65% 65.4%, transparent 66%),
+    radial-gradient(ellipse at 44% 66%, rgba(12, 35, 31, 0.28), transparent 38%),
+    linear-gradient(90deg, rgba(5, 45, 38, 0.2), rgba(2, 62, 55, 0.1));
+}
+
+.home-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 240px;
+  height: 100%;
+  opacity: 0.22;
+  background:
+    linear-gradient(96deg, transparent 0 30%, rgba(202, 229, 205, 0.5) 31% 33%, transparent 34%),
+    linear-gradient(104deg, transparent 0 54%, rgba(202, 229, 205, 0.38) 55% 56%, transparent 57%),
+    radial-gradient(ellipse at 16% 24%, rgba(202, 229, 205, 0.36), transparent 30%);
 }
 
 .hero-copy {
@@ -382,16 +418,25 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .hero-copy h1 {
   margin: 0;
-  font-size: 54px;
+  font-size: 64px;
   line-height: 1;
   letter-spacing: 0;
-  color: #f8f0d8;
+  color: #f7d88e;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
 .hero-copy p {
   margin: 14px 0 0;
-  font-size: 17px;
-  color: rgba(248, 240, 216, 0.86);
+  font-size: 21px;
+  color: #f4d791;
+  font-weight: 800;
+}
+
+.hero-copy small {
+  display: block;
+  margin-top: 14px;
+  color: rgba(255, 248, 221, 0.9);
+  font-size: 15px;
 }
 
 .wisdom-button {
@@ -412,17 +457,18 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .paper-card,
 .feature-card {
-  border: 1px solid #d8c696;
-  border-radius: 8px;
+  border: 1px solid rgba(218, 184, 122, 0.48);
+  border-radius: 14px;
   background:
     linear-gradient(180deg, rgba(255, 252, 243, 0.97), rgba(248, 244, 230, 0.97)),
     repeating-linear-gradient(0deg, transparent 0 34px, rgba(91, 112, 95, 0.035) 34px 36px);
-  box-shadow: 0 10px 24px rgba(23, 63, 53, 0.12), inset 0 0 0 2px rgba(255, 255, 255, 0.48);
+  box-shadow: 0 16px 30px rgba(23, 63, 53, 0.13), inset 0 0 0 2px rgba(255, 255, 255, 0.56);
 }
 
 .today-card {
-  padding: 16px;
-  margin-top: -30px;
+  max-width: 1480px;
+  margin: -32px auto 0;
+  padding: 28px 32px;
   position: relative;
   z-index: 2;
 }
@@ -436,14 +482,24 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .card-title h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
   color: #173f35;
 }
 
 .card-title small {
   margin-left: auto;
   color: #806326;
+  font-size: 15px;
+}
+
+.lunar-pill {
+  border: 1px solid rgba(128, 99, 38, 0.25);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 253, 246, 0.64);
+  color: #9b7430;
   font-size: 13px;
+  font-weight: 800;
 }
 
 .expand-button {
@@ -470,18 +526,24 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .almanac-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.7fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.38fr) minmax(320px, 0.72fr);
+  gap: 16px;
   align-items: stretch;
 }
 
 .almanac-main,
 .almanac-advice {
   min-width: 0;
+  border: 1px solid rgba(176, 138, 60, 0.22);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 4% 86%, rgba(47, 111, 94, 0.08), transparent 25%),
+    rgba(255, 253, 246, 0.6);
 }
 
 .almanac-date {
-  margin-bottom: 10px;
+  margin: 0;
+  padding: 16px 18px 0;
 }
 
 .almanac-date span {
@@ -509,14 +571,14 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .almanac-pillars {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  border: 1px solid rgba(176, 138, 60, 0.28);
-  border-radius: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
 }
 
 .almanac-pillars div {
-  min-height: 82px;
+  min-height: 118px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -535,27 +597,48 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .almanac-pillars strong {
   color: #173f35;
-  font-size: 24px;
+  font-size: 32px;
+  font-weight: 900;
 }
 
 .almanac-advice {
-  border-radius: 8px;
-  background: rgba(47, 111, 94, 0.08);
-  padding: 12px;
+  background: transparent;
+  border: 0;
+  padding: 0;
   display: grid;
   gap: 10px;
 }
 
 .almanac-advice div {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  min-height: 105px;
+  padding: 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(176, 138, 60, 0.18);
+  overflow: hidden;
+  position: relative;
+}
+
+.almanac-advice div::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 0;
+  width: 150px;
+  height: 100%;
+  opacity: 0.18;
+  background:
+    linear-gradient(105deg, transparent 0 48%, currentColor 49% 51%, transparent 52%),
+    radial-gradient(ellipse at 70% 22%, currentColor 0 12%, transparent 13%);
+  transform: rotate(9deg);
 }
 
 .almanac-advice span {
-  width: 34px;
-  height: 34px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -568,13 +651,23 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   background: #2f6f5e;
 }
 
+.almanac-advice .good {
+  color: #2f6f5e;
+  background: linear-gradient(90deg, rgba(47, 111, 94, 0.13), rgba(255, 253, 246, 0.8));
+}
+
 .almanac-advice .avoid span {
   background: #a64e3d;
 }
 
+.almanac-advice .avoid {
+  color: #a64e3d;
+  background: linear-gradient(90deg, rgba(166, 78, 61, 0.12), rgba(255, 245, 236, 0.8));
+}
+
 .almanac-advice strong {
   color: #173f35;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.5;
   word-break: break-word;
 }
@@ -719,17 +812,18 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 }
 
 .entry-grid {
+  max-width: 1480px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 18px 0;
+  gap: 16px;
+  margin: 16px auto;
 }
 
 .feature-card {
   position: relative;
   min-height: 178px;
   border: 1px solid rgba(232, 214, 165, 0.36);
-  border-radius: 8px;
+  border-radius: 10px;
   text-align: left;
   padding: 26px 72px 24px 132px;
   color: #f4e6b8;
@@ -759,7 +853,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .feature-card::after {
   inset: 1px;
-  border-radius: 7px;
+  border-radius: 9px;
   box-shadow: inset 0 0 0 1px rgba(255, 240, 192, 0.14);
 }
 
@@ -960,11 +1054,21 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
 }
 
-.advice-card {
-  padding: 16px;
+.home-lower-grid {
+  max-width: 1480px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+  gap: 16px;
 }
 
-.advice-card .card-title button {
+.advice-card,
+.recent-card {
+  padding: 20px;
+}
+
+.advice-card .card-title button,
+.recent-card .card-title button {
   margin-left: auto;
   border: 0;
   background: transparent;
@@ -998,6 +1102,39 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   text-align: left;
 }
 
+.recent-empty {
+  min-height: 168px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  color: #806326;
+  text-align: center;
+}
+
+.recent-empty span {
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: rgba(214, 169, 84, 0.14);
+  color: rgba(128, 99, 38, 0.38);
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.recent-empty strong {
+  color: #4c463a;
+  font-size: 16px;
+}
+
+.recent-empty p {
+  margin: 0;
+  color: #7b7466;
+  font-size: 13px;
+}
+
 .support-strip span {
   color: #806326;
   font-weight: 800;
@@ -1016,7 +1153,8 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 }
 
 @media (max-width: 980px) {
-  .entry-grid {
+  .entry-grid,
+  .home-lower-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1024,16 +1162,41 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 @media (max-width: 700px) {
   .home-page {
     min-height: 100dvh;
-    padding: 0 10px 90px;
+    padding: 0 14px 92px;
+    background:
+      linear-gradient(180deg, rgba(0, 62, 54, 0.97) 0 460px, #f8f1e2 461px),
+      radial-gradient(circle at 86px 120px, rgba(232, 214, 165, 0.1), transparent 26%);
   }
 
   .home-hero {
-    min-height: 260px;
-    padding: 26px 14px 48px;
+    min-height: 346px;
+    padding: 78px 20px 86px;
+    align-items: flex-start;
   }
 
   .hero-copy h1 {
-    font-size: 52px;
+    font-size: 56px;
+  }
+
+  .hero-copy p {
+    font-size: 19px;
+  }
+
+  .hero-copy small {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .wisdom-button {
+    width: 48px;
+    height: 48px;
+    font-size: 10px;
+  }
+
+  .today-card {
+    margin-top: -74px;
+    padding: 18px;
+    border-radius: 12px;
   }
 
   .almanac-layout,
@@ -1052,6 +1215,12 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
     margin-left: 44px;
   }
 
+  .lunar-pill {
+    margin-left: 44px;
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
   .expand-button {
     margin-left: auto;
   }
@@ -1061,7 +1230,17 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   }
 
   .almanac-pillars strong {
-    font-size: 22px;
+    font-size: 28px;
+  }
+
+  .almanac-pillars div {
+    min-height: 106px;
+  }
+
+  .almanac-advice div {
+    min-height: 84px;
+    grid-template-columns: 48px minmax(0, 1fr);
+    padding: 13px;
   }
 
   .month-calendar {
@@ -1083,8 +1262,9 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   }
 
   .feature-card {
-    min-height: 154px;
-    padding: 22px 64px 20px 116px;
+    min-height: 124px;
+    padding: 18px 60px 16px 116px;
+    border-radius: 8px;
   }
 
   .feature-emblem {
@@ -1103,7 +1283,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   }
 
   .feature-copy strong {
-    font-size: 27px;
+    font-size: 26px;
   }
 
   .feature-copy small {
@@ -1112,8 +1292,16 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   }
 
   .feature-copy em {
-    margin-top: 18px;
+    display: inline-block;
+    margin-top: 12px;
+    padding: 3px 10px;
+    border: 1px solid rgba(232, 214, 165, 0.24);
+    border-radius: 999px;
     font-size: 13px;
+  }
+
+  .feature-copy em::before {
+    display: none;
   }
 
   .feature-card i {
@@ -1121,6 +1309,17 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
     bottom: 18px;
     width: 38px;
     height: 38px;
+  }
+
+  .home-lower-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .advice-card,
+  .recent-card {
+    padding: 16px;
+    border-radius: 12px;
   }
 }
 </style>
