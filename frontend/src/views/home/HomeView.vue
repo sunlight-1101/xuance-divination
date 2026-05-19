@@ -131,23 +131,40 @@
     </section>
 
     <section class="entry-grid">
-      <button class="feature-card dark" type="button" @click="$router.push('/bazi')">
-        <CalendarDays :size="28" />
-        <strong>八字排盘</strong>
-        <span>出生信息 · 命理分析</span>
-        <i>→</i>
+      <button class="feature-card feature-bazi" type="button" @click="$router.push('/bazi')">
+        <span class="feature-emblem bazi-emblem" aria-hidden="true">
+          <span>年</span><span>月</span><span>日</span><span>时</span>
+          <strong>甲</strong><strong>乙</strong><strong>丙</strong><strong>丁</strong>
+          <strong>子</strong><strong>丑</strong><strong>寅</strong><strong>卯</strong>
+        </span>
+        <span class="feature-copy">
+          <strong>八字排盘</strong>
+          <small>出生信息 · 命理分析</small>
+          <em>洞悉命局，把握人生轨迹</em>
+        </span>
+        <i aria-hidden="true">→</i>
       </button>
-      <button class="feature-card" type="button" @click="$router.push('/liuyao')">
-        <ScrollText :size="28" />
-        <strong>六爻解卦</strong>
-        <span>摇卦断事 · 洞察吉凶</span>
-        <i>→</i>
+      <button class="feature-card feature-liuyao" type="button" @click="$router.push('/liuyao')">
+        <span class="feature-emblem hexagram-emblem" aria-hidden="true">
+          <b></b><b></b><b></b><b></b><b></b><b></b>
+        </span>
+        <span class="feature-copy">
+          <strong>六爻解卦</strong>
+          <small>摇卦断事 · 洞察吉凶</small>
+          <em>解读当下，指引决策方向</em>
+        </span>
+        <i aria-hidden="true">→</i>
       </button>
-      <button class="feature-card" type="button" @click="$router.push('/ziwei')">
-        <Sparkles :size="28" />
-        <strong>紫微斗数</strong>
-        <span>命盘格局 · 运势分析</span>
-        <i>→</i>
+      <button class="feature-card feature-ziwei" type="button" @click="$router.push('/ziwei')">
+        <span class="feature-emblem astrolabe-emblem" aria-hidden="true">
+          <b></b><b></b><b></b>
+        </span>
+        <span class="feature-copy">
+          <strong>紫微斗数</strong>
+          <small>命盘格局 · 运势分析</small>
+          <em>星曜布局，洞见运势起伏</em>
+        </span>
+        <i aria-hidden="true">→</i>
       </button>
     </section>
 
@@ -172,7 +189,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { CalendarDays, ScrollText, Sparkles } from 'lucide-vue-next'
+import { Sparkles } from 'lucide-vue-next'
 import { getAlmanacDay } from '../../api/almanac'
 import { getFourPillars } from '../../utils/ganzhi'
 
@@ -710,50 +727,237 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .feature-card {
   position: relative;
-  min-height: 164px;
-  border-color: #d8c696;
+  min-height: 178px;
+  border: 1px solid rgba(232, 214, 165, 0.36);
+  border-radius: 8px;
   text-align: left;
-  padding: 20px;
-  color: #173f35;
+  padding: 26px 72px 24px 132px;
+  color: #f4e6b8;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 16px 28px rgba(19, 37, 32, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.feature-card.dark {
-  color: #f8f0d8;
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 34px rgba(19, 37, 32, 0.22);
+}
+
+.feature-card::before,
+.feature-card::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.feature-card::before {
+  inset: 0;
+  opacity: 0.72;
+}
+
+.feature-card::after {
+  inset: 1px;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1px rgba(255, 240, 192, 0.14);
+}
+
+.feature-bazi {
   background:
-    linear-gradient(180deg, rgba(23, 63, 53, 0.94), rgba(18, 55, 47, 0.96)),
-    radial-gradient(circle at 70% 70%, rgba(232, 214, 165, 0.18), transparent 38%);
+    radial-gradient(circle at 15% 35%, rgba(56, 115, 95, 0.42), transparent 34%),
+    linear-gradient(110deg, #062f28 0%, #0d493c 54%, #0a372f 100%);
 }
 
-.feature-card strong,
-.feature-card span {
+.feature-bazi::before {
+  background:
+    linear-gradient(120deg, transparent 0 58%, rgba(151, 193, 159, 0.22) 58% 59%, transparent 60%),
+    radial-gradient(ellipse at 80% 18%, rgba(178, 214, 178, 0.18), transparent 30%),
+    repeating-linear-gradient(150deg, transparent 0 28px, rgba(229, 213, 157, 0.09) 29px 31px),
+    linear-gradient(22deg, transparent 58%, rgba(198, 218, 181, 0.12) 59% 63%, transparent 64%);
+}
+
+.feature-liuyao {
+  background:
+    radial-gradient(circle at 80% 80%, rgba(177, 132, 58, 0.28), transparent 30%),
+    linear-gradient(110deg, #1c1a10 0%, #40351c 55%, #1f1b10 100%);
+}
+
+.feature-liuyao::before {
+  background:
+    radial-gradient(ellipse at 86% 42%, rgba(229, 200, 130, 0.18), transparent 22%),
+    radial-gradient(circle at 78% 76%, rgba(188, 137, 56, 0.2), transparent 16%),
+    repeating-linear-gradient(170deg, transparent 0 30px, rgba(229, 213, 157, 0.08) 31px 33px);
+}
+
+.feature-ziwei {
+  background:
+    radial-gradient(circle at 83% 36%, rgba(125, 95, 190, 0.32), transparent 28%),
+    linear-gradient(110deg, #121936 0%, #182145 54%, #11152e 100%);
+}
+
+.feature-ziwei::before {
+  background:
+    radial-gradient(circle at 17% 28%, rgba(247, 221, 149, 0.18) 0 1px, transparent 2px),
+    radial-gradient(circle at 70% 22%, rgba(247, 221, 149, 0.24) 0 1px, transparent 2px),
+    radial-gradient(circle at 82% 70%, rgba(247, 221, 149, 0.22) 0 1px, transparent 2px),
+    radial-gradient(ellipse at 88% 48%, rgba(91, 84, 166, 0.28), transparent 30%),
+    repeating-radial-gradient(circle at 82% 48%, transparent 0 22px, rgba(229, 213, 157, 0.13) 23px 24px);
+}
+
+.feature-emblem {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  width: 86px;
+  height: 86px;
+  transform: translateY(-50%);
+  border: 2px solid rgba(232, 214, 165, 0.78);
+  border-radius: 50%;
+  color: #f4e6b8;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 2px rgba(232, 214, 165, 0.14);
+}
+
+.bazi-emblem {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0;
+  padding: 12px;
+  border-radius: 50%;
+}
+
+.bazi-emblem span,
+.bazi-emblem strong {
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid rgba(232, 214, 165, 0.38);
+  border-bottom: 1px solid rgba(232, 214, 165, 0.38);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.bazi-emblem :nth-child(4n) {
+  border-right: 0;
+}
+
+.bazi-emblem :nth-last-child(-n + 4) {
+  border-bottom: 0;
+}
+
+.hexagram-emblem {
+  align-content: center;
+  gap: 6px;
+  padding: 20px 18px;
+}
+
+.hexagram-emblem b {
+  width: 46px;
+  height: 5px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #d7b66e, #fff1bb, #b2873e);
+}
+
+.hexagram-emblem b:nth-child(2),
+.hexagram-emblem b:nth-child(5) {
+  background:
+    linear-gradient(90deg, #d7b66e 0 39%, transparent 40% 60%, #b2873e 61% 100%);
+}
+
+.astrolabe-emblem {
+  background:
+    radial-gradient(circle, #f4e6b8 0 4px, transparent 5px),
+    repeating-radial-gradient(circle, transparent 0 16px, rgba(232, 214, 165, 0.78) 17px 18px),
+    conic-gradient(from 0deg, transparent 0 23deg, rgba(232, 214, 165, 0.58) 24deg 25deg, transparent 26deg 60deg);
+}
+
+.astrolabe-emblem b {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f4e6b8;
+}
+
+.astrolabe-emblem b:nth-child(1) {
+  left: 26px;
+  top: 28px;
+}
+
+.astrolabe-emblem b:nth-child(2) {
+  right: 22px;
+  top: 42px;
+}
+
+.astrolabe-emblem b:nth-child(3) {
+  left: 42px;
+  bottom: 23px;
+}
+
+.feature-copy,
+.feature-copy strong,
+.feature-copy small,
+.feature-copy em {
   display: block;
 }
 
-.feature-card strong {
-  margin-top: 18px;
-  font-size: 24px;
+.feature-copy {
+  position: relative;
+  z-index: 1;
 }
 
-.feature-card span {
-  margin-top: 8px;
-  color: inherit;
-  opacity: 0.78;
+.feature-copy strong {
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: 0;
+  color: #f4d791;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+}
+
+.feature-copy small {
+  margin-top: 12px;
+  color: rgba(255, 248, 221, 0.92);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.feature-copy em {
+  position: relative;
+  margin-top: 22px;
+  color: rgba(244, 215, 145, 0.9);
   font-size: 14px;
+  font-style: normal;
+  line-height: 1.4;
+}
+
+.feature-copy em::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 0;
+  width: min(170px, 80%);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(232, 214, 165, 0.54), transparent);
 }
 
 .feature-card i {
   position: absolute;
-  right: 18px;
-  bottom: 16px;
-  width: 38px;
-  height: 38px;
+  right: 20px;
+  bottom: 20px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #e8d6a5;
-  color: #173f35;
+  background: radial-gradient(circle at 34% 28%, #fff1bb, #d7b66e 58%, #a9782d);
+  color: #0f2f29;
   font-style: normal;
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 900;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
 }
 
 .advice-card {
@@ -809,6 +1013,12 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   font-style: normal;
   color: #806326;
   font-size: 20px;
+}
+
+@media (max-width: 980px) {
+  .entry-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 700px) {
@@ -873,7 +1083,44 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   }
 
   .feature-card {
-    min-height: 138px;
+    min-height: 154px;
+    padding: 22px 64px 20px 116px;
+  }
+
+  .feature-emblem {
+    left: 18px;
+    width: 76px;
+    height: 76px;
+  }
+
+  .bazi-emblem {
+    padding: 10px;
+  }
+
+  .bazi-emblem span,
+  .bazi-emblem strong {
+    font-size: 11px;
+  }
+
+  .feature-copy strong {
+    font-size: 27px;
+  }
+
+  .feature-copy small {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
+  .feature-copy em {
+    margin-top: 18px;
+    font-size: 13px;
+  }
+
+  .feature-card i {
+    right: 18px;
+    bottom: 18px;
+    width: 38px;
+    height: 38px;
   }
 }
 </style>
