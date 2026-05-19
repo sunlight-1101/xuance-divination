@@ -358,12 +358,12 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 <style scoped>
 .home-page {
+  --display-font: "STXingkai", "华文行楷", "STKaiti", "KaiTi", "FangSong", "Microsoft YaHei", serif;
   min-height: 100vh;
   padding: 74px 46px 46px;
   color: #173f35;
   background:
     linear-gradient(180deg, rgba(0, 62, 54, 0.96) 0 410px, #f8f1e2 411px),
-    url("/images/home-ui/hero-bg.jpg") right 74px top / auto 360px no-repeat,
     radial-gradient(circle at 82% 12%, rgba(232, 214, 165, 0.16), transparent 26%),
     repeating-linear-gradient(105deg, transparent 0 36px, rgba(232, 214, 165, 0.08) 36px 38px);
 }
@@ -384,11 +384,15 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 .home-hero::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: -74px;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
   opacity: 1;
   background:
-    linear-gradient(90deg, rgba(4, 50, 43, 0.94) 0%, rgba(4, 50, 43, 0.78) 34%, rgba(4, 50, 43, 0.28) 100%),
-    url("/images/home-ui/hero-bg.jpg") right center / cover no-repeat;
+    linear-gradient(90deg, rgba(4, 50, 43, 0.96) 0%, rgba(4, 50, 43, 0.76) 34%, rgba(4, 50, 43, 0.16) 100%),
+    url("/images/home-ui/hero-bg.jpg") center top / cover no-repeat;
 }
 
 .home-hero::after {
@@ -412,16 +416,21 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .hero-copy h1 {
   margin: 0;
-  font-family: "STKaiti", "KaiTi", "FangSong", "Microsoft YaHei", serif;
-  font-size: 64px;
+  font-family: var(--display-font);
+  font-size: 68px;
   line-height: 1;
   letter-spacing: 0;
   color: #f7d88e;
-  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  background: linear-gradient(180deg, #fff1bf 0%, #f2cb75 42%, #c89437 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
 }
 
 .hero-copy p {
   margin: 14px 0 0;
+  font-family: var(--display-font);
   font-size: 21px;
   color: #f4d791;
   font-weight: 800;
@@ -477,6 +486,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .card-title h2 {
   margin: 0;
+  font-family: var(--display-font);
   font-size: 24px;
   color: #173f35;
 }
@@ -1161,7 +1171,6 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
     padding: 0 14px 92px;
     background:
       linear-gradient(180deg, rgba(0, 62, 54, 0.97) 0 460px, #f8f1e2 461px),
-      url("/images/home-ui/hero-bg.jpg") right top / auto 360px no-repeat,
       radial-gradient(circle at 86px 120px, rgba(232, 214, 165, 0.1), transparent 26%);
   }
 
@@ -1171,8 +1180,13 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
     align-items: flex-start;
   }
 
+  .home-hero::before {
+    top: 0;
+    background-position: 55% top;
+  }
+
   .hero-copy h1 {
-    font-size: 56px;
+    font-size: 58px;
   }
 
   .hero-copy p {
