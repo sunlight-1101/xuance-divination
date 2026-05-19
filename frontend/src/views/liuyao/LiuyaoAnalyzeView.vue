@@ -150,7 +150,9 @@
                     { empty: !animatedCoins.length }
                   ]"
                 >
-                  {{ animatedCoins.length ? (animatedCoins[index - 1] ? '背' : '字') : '钱' }}
+                  <i></i>
+                  <b>{{ animatedCoins.length ? (animatedCoins[index - 1] ? '背' : '乾') : '玄' }}</b>
+                  <small>{{ animatedCoins[index - 1] ? '坤' : '元' }}</small>
                 </span>
               </div>
             </div>
@@ -905,21 +907,58 @@ onBeforeUnmount(() => {
 }
 
 .coin-stage {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   margin: 0 0 12px;
-  padding: 14px;
-  border: 1px solid #e8d7ad;
+  padding: 14px 16px;
+  border: 1px solid rgba(181, 142, 68, 0.42);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 82% 18%, rgba(214, 169, 84, 0.18), transparent 28%),
-    linear-gradient(135deg, #fffdf7, #f7fbf8);
+    linear-gradient(115deg, rgba(255, 255, 255, 0.44), transparent 42%),
+    radial-gradient(circle at 84% 24%, rgba(203, 161, 86, 0.22), transparent 30%),
+    repeating-linear-gradient(90deg, rgba(67, 103, 74, 0.035) 0 1px, transparent 1px 9px),
+    linear-gradient(135deg, #fffaf0, #f4efe0);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.56), 0 8px 22px rgba(71, 53, 20, 0.07);
   overflow: hidden;
 }
 
+.coin-stage::before,
+.coin-stage::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.coin-stage::before {
+  right: 16px;
+  bottom: -18px;
+  width: 126px;
+  height: 72px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(89, 111, 80, 0.16), transparent 68%);
+}
+
+.coin-stage::after {
+  right: 4px;
+  top: 0;
+  width: 86px;
+  height: 100%;
+  background:
+    linear-gradient(108deg, transparent 36%, rgba(44, 86, 66, 0.16) 37%, transparent 39%),
+    linear-gradient(96deg, transparent 56%, rgba(44, 86, 66, 0.12) 57%, transparent 59%);
+  opacity: 0.55;
+}
+
+.coin-stage.shaking {
+  animation: trayShake 0.82s ease-in-out both;
+}
+
 .coin-stage-label {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 4px;
   min-width: 0;
@@ -938,45 +977,103 @@ onBeforeUnmount(() => {
 
 .animated-coins {
   position: relative;
-  width: 138px;
-  height: 72px;
+  z-index: 1;
+  width: 162px;
+  height: 82px;
 }
 
 .animated-coin {
   position: absolute;
-  top: 18px;
-  left: 50px;
-  width: 40px;
-  height: 40px;
+  top: 20px;
+  left: 58px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   display: inline-grid;
   place-items: center;
-  border: 2px solid #b88a36;
+  border: 2px solid #9f7130;
   background:
-    radial-gradient(circle at 38% 32%, rgba(255, 255, 255, 0.72), transparent 24%),
-    linear-gradient(145deg, #f8dc8a, #b9822d);
-  box-shadow: 0 8px 16px rgba(80, 58, 18, 0.18);
-  color: #5b3b0f;
-  font-size: 13px;
+    radial-gradient(circle at 34% 24%, rgba(255, 247, 203, 0.9), transparent 18%),
+    radial-gradient(circle at center, #d9ae55 0 34%, #b27a2e 35% 50%, #8d5b22 51% 56%, #d3a552 57% 72%, #754819 100%);
+  box-shadow:
+    inset 0 1px 3px rgba(255, 244, 191, 0.76),
+    inset 0 -4px 7px rgba(69, 41, 13, 0.28),
+    0 10px 18px rgba(80, 58, 18, 0.22);
+  color: #4d310d;
+  font-size: 12px;
   font-weight: 900;
   transform-style: preserve-3d;
 }
 
 .animated-coin.back {
-  border-color: #2f3a4a;
+  border-color: #6a4b2a;
   background:
-    radial-gradient(circle at 38% 32%, rgba(255, 255, 255, 0.22), transparent 24%),
-    linear-gradient(145deg, #4a5568, #1f2937);
-  color: #fff;
+    radial-gradient(circle at 36% 25%, rgba(246, 213, 140, 0.42), transparent 18%),
+    radial-gradient(circle at center, #a97835 0 34%, #765023 35% 50%, #4f351b 51% 56%, #8a632f 57% 72%, #352419 100%);
+  color: #f7e5b5;
+}
+
+.animated-coin::before,
+.animated-coin::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.animated-coin::before {
+  inset: 5px;
+  border: 1px solid rgba(91, 57, 14, 0.42);
+  box-shadow: inset 0 0 0 2px rgba(255, 229, 150, 0.2);
+}
+
+.animated-coin::after {
+  inset: 13px;
+  border-radius: 3px;
+  background: #f6efcf;
+  border: 1px solid rgba(91, 57, 14, 0.48);
+  box-shadow: inset 0 2px 4px rgba(51, 31, 10, 0.2);
+}
+
+.animated-coin.back::after {
+  background: #2b2117;
+  border-color: rgba(247, 229, 181, 0.35);
+}
+
+.animated-coin i {
+  position: absolute;
+  inset: 16px;
+  z-index: 1;
+  border-radius: 2px;
+  background: transparent;
+}
+
+.animated-coin b,
+.animated-coin small {
+  position: absolute;
+  z-index: 2;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 239, 180, 0.32);
+}
+
+.animated-coin b {
+  top: 8px;
+}
+
+.animated-coin small {
+  bottom: 8px;
+  font-size: 10px;
+  font-weight: 900;
 }
 
 .animated-coin.empty {
-  opacity: 0.45;
-  transform: scale(0.88);
+  opacity: 0.52;
+  filter: saturate(0.7);
+  transform: scale(0.9);
 }
 
 .coin-stage.shaking .animated-coin {
-  animation: coinToss 0.76s cubic-bezier(0.2, 0.72, 0.18, 1) infinite;
+  animation: coinToss 0.82s cubic-bezier(0.18, 0.82, 0.22, 1) both;
 }
 
 .coin-stage.shaking .coin-2 {
@@ -988,42 +1085,70 @@ onBeforeUnmount(() => {
 }
 
 .coin-stage.settled .coin-1 {
-  transform: translate(-45px, 8px) rotate(-12deg);
+  transform: translate(-52px, 10px) rotate(-16deg);
 }
 
 .coin-stage.settled .coin-2 {
-  transform: translate(0, -8px) rotate(8deg);
+  transform: translate(1px, -8px) rotate(8deg);
 }
 
 .coin-stage.settled .coin-3 {
-  transform: translate(44px, 10px) rotate(14deg);
+  transform: translate(52px, 12px) rotate(17deg);
+}
+
+@keyframes trayShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  18% {
+    transform: translateX(-3px) rotate(-0.4deg);
+  }
+  36% {
+    transform: translateX(3px) rotate(0.4deg);
+  }
+  54% {
+    transform: translateX(-2px) rotate(-0.25deg);
+  }
+  72% {
+    transform: translateX(2px) rotate(0.2deg);
+  }
 }
 
 @keyframes coinToss {
   0% {
-    transform: translate(0, 12px) rotateY(0deg) rotateZ(0deg) scale(0.92);
+    transform: translate(0, 16px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.9);
+    opacity: 0.78;
   }
-  35% {
-    transform: translate(var(--coin-x, 0), -20px) rotateY(540deg) rotateZ(24deg) scale(1.05);
+  26% {
+    transform: translate(calc(var(--coin-x, 0) * 0.55), -24px) rotateX(64deg) rotateY(260deg) rotateZ(var(--coin-rotate, 16deg)) scale(1.02);
+    opacity: 1;
   }
-  70% {
-    transform: translate(calc(var(--coin-x, 0) * -0.6), 2px) rotateY(900deg) rotateZ(-18deg) scale(0.96);
+  62% {
+    transform: translate(calc(var(--coin-x, 0) * -0.25), -4px) rotateX(18deg) rotateY(520deg) rotateZ(calc(var(--coin-rotate, 16deg) * -0.7)) scale(0.97);
   }
   100% {
-    transform: translate(0, 12px) rotateY(1080deg) rotateZ(0deg) scale(0.92);
+    transform: translate(var(--coin-x, 0), var(--coin-y, 10px)) rotateX(0deg) rotateY(720deg) rotateZ(var(--coin-rotate, 16deg)) scale(1);
+    opacity: 1;
   }
 }
 
 .coin-1 {
-  --coin-x: -28px;
+  --coin-x: -52px;
+  --coin-y: 10px;
+  --coin-rotate: -16deg;
 }
 
 .coin-2 {
-  --coin-x: 6px;
+  --coin-x: 1px;
+  --coin-y: -8px;
+  --coin-rotate: 8deg;
 }
 
 .coin-3 {
-  --coin-x: 30px;
+  --coin-x: 52px;
+  --coin-y: 12px;
+  --coin-rotate: 17deg;
 }
 
 .install-info {
@@ -1352,13 +1477,13 @@ onBeforeUnmount(() => {
 
   .animated-coins {
     width: 100%;
-    max-width: 170px;
-    height: 68px;
+    max-width: 164px;
+    height: 74px;
     justify-self: center;
   }
 
   .animated-coin {
-    left: calc(50% - 20px);
+    left: calc(50% - 23px);
   }
 
   .live-yao-cards {
