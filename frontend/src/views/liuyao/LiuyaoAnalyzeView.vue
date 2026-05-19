@@ -137,26 +137,7 @@
             <div class="turtle-stage" :class="{ shaking: isShaking, settled: animatedCoins.length && !isShaking }">
               <div class="ink-scene">
                 <div class="shell-wrap">
-                  <svg class="turtle-shell" viewBox="0 0 220 128" aria-hidden="true">
-                    <defs>
-                      <radialGradient id="shellGlow" cx="42%" cy="24%" r="78%">
-                        <stop offset="0%" stop-color="#f7d58a" />
-                        <stop offset="52%" stop-color="#b8782c" />
-                        <stop offset="100%" stop-color="#5a3519" />
-                      </radialGradient>
-                    </defs>
-                    <path class="shell-base" d="M20 102 C34 38, 74 16, 112 18 C156 20, 195 48, 207 102 C158 118, 72 118, 20 102 Z" />
-                    <path class="shell-rim" d="M31 98 C45 49, 78 29, 113 30 C152 31, 183 55, 197 98" />
-                    <path class="shell-line" d="M110 24 C96 45, 92 67, 94 107" />
-                    <path class="shell-line" d="M111 24 C126 47, 131 69, 128 107" />
-                    <path class="shell-line" d="M61 50 C83 61, 138 61, 162 49" />
-                    <path class="shell-line" d="M42 73 C76 86, 148 86, 184 73" />
-                    <path class="shell-cell" d="M77 35 L98 49 L91 70 L63 66 L58 47 Z" />
-                    <path class="shell-cell" d="M122 48 L145 34 L164 47 L159 66 L132 70 Z" />
-                    <path class="shell-cell" d="M97 50 L122 50 L132 70 L113 85 L92 70 Z" />
-                    <path class="shell-cell" d="M62 68 L91 72 L102 91 L82 103 L51 92 Z" />
-                    <path class="shell-cell" d="M132 72 L160 68 L172 92 L143 103 L122 91 Z" />
-                  </svg>
+                  <img src="/images/xuangui-shell.png" alt="玄龟" />
                 </div>
                 <div class="turtle-stage-label">
                   <strong>{{ isShaking ? `请继续摇晃手机 ${activeShakeIndex + 1}/6` : shakenCount ? `已成 ${shakenCount}/6 爻` : '请摇晃手机六次' }}</strong>
@@ -190,24 +171,7 @@
                     { empty: !animatedCoins.length }
                   ]"
                 >
-                  <svg viewBox="0 0 72 72" aria-hidden="true">
-                    <defs>
-                      <radialGradient :id="`coinFace${index}`" cx="34%" cy="28%" r="66%">
-                        <stop offset="0%" stop-color="#fff2b8" />
-                        <stop offset="42%" :stop-color="animatedCoins[index - 1] ? '#9a6a31' : '#d39b3d'" />
-                        <stop offset="74%" :stop-color="animatedCoins[index - 1] ? '#6d4723' : '#a86a25'" />
-                        <stop offset="100%" :stop-color="animatedCoins[index - 1] ? '#3f2a18' : '#6d4217'" />
-                      </radialGradient>
-                    </defs>
-                    <circle class="coin-shadow-ring" cx="36" cy="36" r="32" />
-                    <circle class="coin-body" cx="36" cy="36" r="30" :fill="`url(#coinFace${index})`" />
-                    <circle class="coin-inner-ring" cx="36" cy="36" r="22" />
-                    <rect class="coin-hole" x="27" y="27" width="18" height="18" rx="2" />
-                    <path class="coin-mark mark-top" d="M25 19 C31 15, 41 15, 47 19" />
-                    <path class="coin-mark mark-bottom" d="M25 53 C31 57, 41 57, 47 53" />
-                    <text x="36" y="18" text-anchor="middle">{{ animatedCoins.length ? (animatedCoins[index - 1] ? '坤' : '乾') : '玄' }}</text>
-                    <text x="36" y="60" text-anchor="middle">{{ animatedCoins.length ? (animatedCoins[index - 1] ? '阴' : '元') : '钱' }}</text>
-                  </svg>
+                  <img src="/images/xuangui-coin.png" alt="铜钱" />
                 </span>
                 </div>
               </div>
@@ -970,15 +934,12 @@ onBeforeUnmount(() => {
 
 .ink-scene {
   position: relative;
-  min-height: 520px;
+  min-height: 620px;
   border: 1px solid rgba(196, 176, 125, 0.54);
   border-radius: 10px;
   background:
-    radial-gradient(circle at 50% 13%, rgba(255, 255, 255, 0.82), transparent 20%),
-    radial-gradient(circle at 18% 30%, rgba(117, 153, 131, 0.2), transparent 28%),
-    radial-gradient(circle at 84% 34%, rgba(92, 128, 114, 0.18), transparent 28%),
-    linear-gradient(180deg, rgba(255, 253, 241, 0.92), rgba(236, 240, 219, 0.76)),
-    repeating-linear-gradient(90deg, rgba(40, 82, 64, 0.025) 0 1px, transparent 1px 8px);
+    linear-gradient(180deg, rgba(255, 255, 246, 0.16), rgba(244, 242, 221, 0.2)),
+    url("/images/xuangui-bg.jpg") center / cover no-repeat;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.64), 0 10px 26px rgba(69, 54, 21, 0.09);
   overflow: hidden;
 }
@@ -993,8 +954,9 @@ onBeforeUnmount(() => {
 
 .ink-scene::before {
   background:
-    radial-gradient(ellipse at 14% 20%, rgba(47, 89, 76, 0.14), transparent 28%),
-    radial-gradient(ellipse at 90% 23%, rgba(43, 75, 69, 0.12), transparent 26%),
+    radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.34), transparent 33%),
+    radial-gradient(ellipse at 14% 20%, rgba(47, 89, 76, 0.08), transparent 28%),
+    radial-gradient(ellipse at 90% 23%, rgba(43, 75, 69, 0.08), transparent 26%),
     linear-gradient(135deg, transparent 58%, rgba(35, 79, 55, 0.12) 59%, transparent 61%),
     linear-gradient(112deg, transparent 72%, rgba(35, 79, 55, 0.1) 73%, transparent 75%);
   filter: blur(0.2px);
@@ -1008,47 +970,27 @@ onBeforeUnmount(() => {
 
 .shell-wrap {
   position: absolute;
-  top: 34px;
+  top: 54px;
   left: 50%;
   z-index: 2;
-  width: 186px;
+  width: 270px;
   transform: translateX(-50%);
-  filter: drop-shadow(0 16px 18px rgba(90, 58, 22, 0.18));
+  filter: drop-shadow(0 20px 20px rgba(90, 58, 22, 0.2));
 }
 
 .turtle-stage.shaking .shell-wrap {
   animation: shellShake 0.68s ease-in-out both;
 }
 
-.turtle-shell {
+.shell-wrap img {
   display: block;
   width: 100%;
-}
-
-.shell-base {
-  fill: url(#shellGlow);
-  stroke: rgba(85, 47, 17, 0.72);
-  stroke-width: 3;
-}
-
-.shell-rim,
-.shell-line,
-.shell-cell {
-  fill: none;
-  stroke: rgba(91, 54, 20, 0.52);
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.shell-cell {
-  stroke-width: 2.4;
-  opacity: 0.78;
+  user-select: none;
 }
 
 .turtle-stage-label {
   position: absolute;
-  top: 164px;
+  top: 258px;
   left: 50%;
   z-index: 3;
   display: grid;
@@ -1073,7 +1015,7 @@ onBeforeUnmount(() => {
 .bagua-plate {
   position: absolute;
   left: 50%;
-  bottom: 42px;
+  bottom: 54px;
   z-index: 1;
   width: min(360px, 86vw);
   aspect-ratio: 1.72;
@@ -1200,7 +1142,7 @@ onBeforeUnmount(() => {
 .animated-coins {
   position: absolute;
   left: 50%;
-  bottom: 110px;
+  bottom: 150px;
   z-index: 5;
   width: 250px;
   height: 150px;
@@ -1211,69 +1153,26 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 36px;
   left: 98px;
-  width: 56px;
-  height: 56px;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
   display: block;
   background: transparent;
   border: 0;
-  filter: drop-shadow(0 10px 8px rgba(75, 55, 18, 0.2));
+  filter: drop-shadow(0 10px 8px rgba(75, 55, 18, 0.22));
   will-change: transform, opacity;
 }
 
-.animated-coin svg {
+.animated-coin img {
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: contain;
+  user-select: none;
 }
 
-.coin-shadow-ring {
-  fill: rgba(93, 58, 19, 0.32);
-}
-
-.coin-body {
-  stroke: #684113;
-  stroke-width: 2;
-}
-
-.coin-inner-ring {
-  fill: none;
-  stroke: rgba(74, 45, 12, 0.58);
-  stroke-width: 1.7;
-}
-
-.coin-hole {
-  fill: #f7efd4;
-  stroke: rgba(74, 45, 12, 0.64);
-  stroke-width: 1.4;
-}
-
-.animated-coin.back .coin-hole {
-  fill: #2a2017;
-  stroke: rgba(247, 229, 181, 0.34);
-}
-
-.coin-mark {
-  fill: none;
-  stroke: rgba(79, 49, 13, 0.42);
-  stroke-width: 1.7;
-  stroke-linecap: round;
-}
-
-.animated-coin.back .coin-mark {
-  stroke: rgba(247, 229, 181, 0.28);
-}
-
-.animated-coin text {
-  fill: rgba(65, 38, 9, 0.78);
-  font-size: 10px;
-  font-weight: 800;
-  dominant-baseline: middle;
-  letter-spacing: 1px;
-}
-
-.animated-coin.back text {
-  fill: rgba(249, 224, 166, 0.82);
+.animated-coin.back img {
+  filter: brightness(0.72) contrast(1.16) sepia(0.28);
 }
 
 .animated-coin.empty {
@@ -1293,7 +1192,7 @@ onBeforeUnmount(() => {
 }
 
 .turtle-stage.settled .coin-1 {
-  transform: translate(-86px, 38px) rotate(-18deg);
+  transform: translate(-90px, 42px) rotate(-18deg);
 }
 
 .turtle-stage.settled .coin-2 {
@@ -1301,7 +1200,7 @@ onBeforeUnmount(() => {
 }
 
 .turtle-stage.settled .coin-3 {
-  transform: translate(88px, 42px) rotate(20deg);
+  transform: translate(92px, 44px) rotate(20deg);
 }
 
 @keyframes shellShake {
@@ -1347,8 +1246,8 @@ onBeforeUnmount(() => {
 }
 
 .coin-1 {
-  --coin-x: -86px;
-  --coin-y: 38px;
+  --coin-x: -90px;
+  --coin-y: 42px;
   --coin-rotate: -18deg;
 }
 
@@ -1359,8 +1258,8 @@ onBeforeUnmount(() => {
 }
 
 .coin-3 {
-  --coin-x: 88px;
-  --coin-y: 42px;
+  --coin-x: 92px;
+  --coin-y: 44px;
   --coin-rotate: 20deg;
 }
 
@@ -1683,16 +1582,16 @@ onBeforeUnmount(() => {
   }
 
   .ink-scene {
-    min-height: 500px;
+    min-height: 570px;
   }
 
   .shell-wrap {
-    top: 30px;
-    width: 168px;
+    top: 42px;
+    width: 230px;
   }
 
   .turtle-stage-label {
-    top: 152px;
+    top: 224px;
   }
 
   .turtle-stage-label strong {
@@ -1700,20 +1599,20 @@ onBeforeUnmount(() => {
   }
 
   .bagua-plate {
-    bottom: 42px;
+    bottom: 46px;
     width: min(320px, 92vw);
   }
 
   .animated-coins {
-    bottom: 106px;
+    bottom: 138px;
     width: 220px;
     height: 136px;
   }
 
   .animated-coin {
-    left: 84px;
-    width: 52px;
-    height: 52px;
+    left: 80px;
+    width: 60px;
+    height: 60px;
   }
 
   .live-yao-cards {
