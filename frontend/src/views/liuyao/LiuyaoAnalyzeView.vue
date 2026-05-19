@@ -125,14 +125,34 @@
                 <el-button :type="motionEnabled ? 'success' : 'default'" @click="enableMotionShake">
                   {{ motionEnabled ? '摇一摇已开启' : '开启摇一摇' }}
                 </el-button>
-                <el-button type="primary" size="large" :disabled="shakenCount >= 6" @click="shakeNext">
-                  {{ shakenCount >= 6 ? '已成卦' : `摇第 ${shakenCount + 1} 爻` }}
+                <el-button type="primary" size="large" :disabled="shakenCount >= 6 || isShaking" :loading="isShaking" @click="shakeNext">
+                  {{ shakenCount >= 6 ? '已成卦' : isShaking ? '铜钱落定中' : `摇第 ${shakenCount + 1} 爻` }}
                 </el-button>
               </div>
             </div>
             <div class="beginner-guide">
               <strong>{{ beginnerGuideTitle }}</strong>
               <span>{{ motionEnabled ? '现在可以拿起手机轻轻摇动，每摇一次生成一爻。' : beginnerGuideText }}</span>
+            </div>
+            <div class="coin-stage" :class="{ shaking: isShaking, settled: animatedCoins.length && !isShaking }">
+              <div class="coin-stage-label">
+                <strong>{{ isShaking ? `正在摇第 ${activeShakeIndex + 1} 爻` : animatedCoins.length ? `第 ${activeShakeIndex + 1} 爻已落定` : '铜钱待摇' }}</strong>
+                <span>{{ isShaking ? '三枚铜钱翻转中，请稍候' : animatedCoins.length ? '结果已写入下方卦象' : '点击摇卦，或开启摇一摇后轻摇手机' }}</span>
+              </div>
+              <div class="animated-coins">
+                <span
+                  v-for="index in 3"
+                  :key="index"
+                  class="animated-coin"
+                  :class="[
+                    `coin-${index}`,
+                    animatedCoins[index - 1] ? 'back' : 'front',
+                    { empty: !animatedCoins.length }
+                  ]"
+                >
+                  {{ animatedCoins.length ? (animatedCoins[index - 1] ? '背' : '字') : '钱' }}
+                </span>
+              </div>
             </div>
             <el-progress
               class="shake-progress"
@@ -395,6 +415,10 @@ const motionEnabled = ref(false)
 const analysisNotice = ref('')
 const lastMotion = ref(null)
 const lastShakeAt = ref(0)
+const isShaking = ref(false)
+const animatedCoins = ref([])
+const activeShakeIndex = ref(0)
+const shakeToken = ref(0)
 const positions = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻']
 const CACHE_KEY = 'zhexuan_last_liuyao_report'
 const PENDING_KEY = 'zhexuan_pending_liuyao_analysis'
@@ -470,28 +494,55 @@ const beginnerGuideText = computed(() => {
   return '你可以复制报告，也可以重新起卦再问另一个问题。'
 })
 
-function shakeNext() {
-  if (shakenCount.value >= 6) return
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+async function shakeNext() {
+  if (shakenCount.value >= 6 || isShaking.value) return
+  isShaking.value = true
+  const token = ++shakeToken.value
+  activeShakeIndex.value = shakenCount.value
+  animatedCoins.value = []
   const toss = tossCoins()
+  await wait(760)
+  if (token !== shakeToken.value) return
+  animatedCoins.value = toss.coins
+  await wait(220)
+  if (token !== shakeToken.value) return
   Object.assign(form.yaoList[shakenCount.value], toss)
   shakenCount.value += 1
   updateGuaNames()
   if (shakenCount.value === 6) {
     scrollToGua()
   }
+  isShaking.value = false
 }
 
-function reshakeYao(index) {
-  if (index >= shakenCount.value) return
-  Object.assign(form.yaoList[index], tossCoins())
+async function reshakeYao(index) {
+  if (index >= shakenCount.value || isShaking.value) return
+  isShaking.value = true
+  const token = ++shakeToken.value
+  activeShakeIndex.value = index
+  animatedCoins.value = []
+  const toss = tossCoins()
+  await wait(760)
+  if (token !== shakeToken.value) return
+  animatedCoins.value = toss.coins
+  await wait(220)
+  if (token !== shakeToken.value) return
+  Object.assign(form.yaoList[index], toss)
   updateGuaNames()
   result.value = ''
   knowledgeRules.value = []
   classicReferences.value = []
+  isShaking.value = false
 }
 
 function resetGua() {
+  shakeToken.value += 1
   shakenCount.value = 0
+  isShaking.value = false
+  animatedCoins.value = []
+  activeShakeIndex.value = 0
   form.mainGua = ''
   form.changedGua = ''
   result.value = ''
@@ -589,7 +640,7 @@ async function enableMotionShake() {
 }
 
 function handleDeviceMotion(event) {
-  if (shakenCount.value >= 6 || loading.value) return
+  if (shakenCount.value >= 6 || loading.value || isShaking.value) return
   const acc = event.accelerationIncludingGravity || event.acceleration
   if (!acc) return
   const current = { x: acc.x || 0, y: acc.y || 0, z: acc.z || 0, time: Date.now() }
@@ -851,6 +902,128 @@ onBeforeUnmount(() => {
   color: #7a5b1e;
   font-size: 13px;
   line-height: 1.6;
+}
+
+.coin-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 14px;
+  border: 1px solid #e8d7ad;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(214, 169, 84, 0.18), transparent 28%),
+    linear-gradient(135deg, #fffdf7, #f7fbf8);
+  overflow: hidden;
+}
+
+.coin-stage-label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.coin-stage-label strong {
+  color: #173f35;
+  font-size: 15px;
+}
+
+.coin-stage-label span {
+  color: #806326;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.animated-coins {
+  position: relative;
+  width: 138px;
+  height: 72px;
+}
+
+.animated-coin {
+  position: absolute;
+  top: 18px;
+  left: 50px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  border: 2px solid #b88a36;
+  background:
+    radial-gradient(circle at 38% 32%, rgba(255, 255, 255, 0.72), transparent 24%),
+    linear-gradient(145deg, #f8dc8a, #b9822d);
+  box-shadow: 0 8px 16px rgba(80, 58, 18, 0.18);
+  color: #5b3b0f;
+  font-size: 13px;
+  font-weight: 900;
+  transform-style: preserve-3d;
+}
+
+.animated-coin.back {
+  border-color: #2f3a4a;
+  background:
+    radial-gradient(circle at 38% 32%, rgba(255, 255, 255, 0.22), transparent 24%),
+    linear-gradient(145deg, #4a5568, #1f2937);
+  color: #fff;
+}
+
+.animated-coin.empty {
+  opacity: 0.45;
+  transform: scale(0.88);
+}
+
+.coin-stage.shaking .animated-coin {
+  animation: coinToss 0.76s cubic-bezier(0.2, 0.72, 0.18, 1) infinite;
+}
+
+.coin-stage.shaking .coin-2 {
+  animation-delay: 0.08s;
+}
+
+.coin-stage.shaking .coin-3 {
+  animation-delay: 0.16s;
+}
+
+.coin-stage.settled .coin-1 {
+  transform: translate(-45px, 8px) rotate(-12deg);
+}
+
+.coin-stage.settled .coin-2 {
+  transform: translate(0, -8px) rotate(8deg);
+}
+
+.coin-stage.settled .coin-3 {
+  transform: translate(44px, 10px) rotate(14deg);
+}
+
+@keyframes coinToss {
+  0% {
+    transform: translate(0, 12px) rotateY(0deg) rotateZ(0deg) scale(0.92);
+  }
+  35% {
+    transform: translate(var(--coin-x, 0), -20px) rotateY(540deg) rotateZ(24deg) scale(1.05);
+  }
+  70% {
+    transform: translate(calc(var(--coin-x, 0) * -0.6), 2px) rotateY(900deg) rotateZ(-18deg) scale(0.96);
+  }
+  100% {
+    transform: translate(0, 12px) rotateY(1080deg) rotateZ(0deg) scale(0.92);
+  }
+}
+
+.coin-1 {
+  --coin-x: -28px;
+}
+
+.coin-2 {
+  --coin-x: 6px;
+}
+
+.coin-3 {
+  --coin-x: 30px;
 }
 
 .install-info {
@@ -1169,6 +1342,23 @@ onBeforeUnmount(() => {
     white-space: normal;
     font-size: 16px;
     font-weight: 800;
+  }
+
+  .coin-stage {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .animated-coins {
+    width: 100%;
+    max-width: 170px;
+    height: 68px;
+    justify-self: center;
+  }
+
+  .animated-coin {
+    left: calc(50% - 20px);
   }
 
   .live-yao-cards {
