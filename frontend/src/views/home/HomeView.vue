@@ -358,7 +358,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 <style scoped>
 .home-page {
-  --display-font: "STXingkai", "华文行楷", "STKaiti", "KaiTi", "FangSong", "Microsoft YaHei", serif;
+  --display-font: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", "FangSong", "SimSun", serif;
   min-height: 100vh;
   padding: 74px 46px 46px;
   color: #173f35;
@@ -417,23 +417,25 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 .hero-copy h1 {
   margin: 0;
   font-family: var(--display-font);
-  font-size: 68px;
+  font-size: 72px;
+  font-weight: 400;
   line-height: 1;
-  letter-spacing: 0;
+  letter-spacing: 0.04em;
   color: #f7d88e;
-  background: linear-gradient(180deg, #fff1bf 0%, #f2cb75 42%, #c89437 100%);
+  background: linear-gradient(180deg, #fff3c7 0%, #efd181 48%, #c28a31 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+  text-shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
 }
 
 .hero-copy p {
   margin: 14px 0 0;
   font-family: var(--display-font);
-  font-size: 21px;
+  font-size: 22px;
   color: #f4d791;
-  font-weight: 800;
+  font-weight: 400;
+  letter-spacing: 0.08em;
 }
 
 .hero-copy small {
@@ -441,6 +443,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   margin-top: 14px;
   color: rgba(255, 248, 221, 0.9);
   font-size: 15px;
+  letter-spacing: 0.04em;
 }
 
 .wisdom-button {
@@ -469,6 +472,33 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   box-shadow: 0 16px 30px rgba(23, 63, 53, 0.13), inset 0 0 0 2px rgba(255, 255, 255, 0.56);
 }
 
+.paper-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.paper-card::before {
+  content: "";
+  position: absolute;
+  right: -26px;
+  bottom: -36px;
+  width: 250px;
+  height: 190px;
+  pointer-events: none;
+  opacity: 0.12;
+  background:
+    linear-gradient(112deg, transparent 0 47%, #2f6f5e 48% 50%, transparent 51%),
+    linear-gradient(102deg, transparent 0 57%, #2f6f5e 58% 60%, transparent 61%),
+    radial-gradient(ellipse at 68% 26%, #2f6f5e 0 10%, transparent 11%),
+    radial-gradient(ellipse at 78% 44%, #2f6f5e 0 9%, transparent 10%),
+    radial-gradient(ellipse at 56% 58%, #2f6f5e 0 8%, transparent 9%);
+}
+
+.paper-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 .today-card {
   max-width: 1480px;
   margin: -32px auto 0;
@@ -487,7 +517,9 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 .card-title h2 {
   margin: 0;
   font-family: var(--display-font);
-  font-size: 24px;
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
   color: #173f35;
 }
 
@@ -542,6 +574,8 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   border: 1px solid rgba(176, 138, 60, 0.22);
   border-radius: 10px;
   background:
+    linear-gradient(135deg, rgba(255, 253, 246, 0.84), rgba(255, 253, 246, 0.58)),
+    radial-gradient(ellipse at 7% 88%, rgba(128, 99, 38, 0.1), transparent 34%),
     radial-gradient(circle at 4% 86%, rgba(47, 111, 94, 0.08), transparent 25%),
     rgba(255, 253, 246, 0.6);
 }
@@ -601,9 +635,11 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 }
 
 .almanac-pillars strong {
+  font-family: var(--display-font);
   color: #173f35;
-  font-size: 32px;
-  font-weight: 900;
+  font-size: 34px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
 }
 
 .almanac-advice {
@@ -671,8 +707,11 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 }
 
 .almanac-advice strong {
+  font-family: var(--display-font);
   color: #173f35;
-  font-size: 17px;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
   line-height: 1.5;
   word-break: break-word;
 }
@@ -1186,11 +1225,11 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   }
 
   .hero-copy h1 {
-    font-size: 58px;
+    font-size: 60px;
   }
 
   .hero-copy p {
-    font-size: 19px;
+    font-size: 20px;
   }
 
   .hero-copy small {
@@ -1241,7 +1280,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   }
 
   .almanac-pillars strong {
-    font-size: 28px;
+    font-size: 30px;
   }
 
   .almanac-pillars div {
