@@ -363,6 +363,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   color: #173f35;
   background:
     linear-gradient(180deg, rgba(0, 62, 54, 0.96) 0 410px, #f8f1e2 411px),
+    url("/images/home-ui/hero-bg.jpg") right 74px top / auto 360px no-repeat,
     radial-gradient(circle at 82% 12%, rgba(232, 214, 165, 0.16), transparent 26%),
     repeating-linear-gradient(105deg, transparent 0 36px, rgba(232, 214, 165, 0.08) 36px 38px);
 }
@@ -384,13 +385,10 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.6;
+  opacity: 1;
   background:
-    radial-gradient(circle at 88% 22%, rgba(237, 200, 116, 0.95) 0 18px, transparent 19px),
-    repeating-radial-gradient(circle at 88% 22%, transparent 0 58px, rgba(214, 169, 84, 0.22) 59px 60px),
-    linear-gradient(120deg, transparent 0 64%, rgba(214, 169, 84, 0.18) 65% 65.4%, transparent 66%),
-    radial-gradient(ellipse at 44% 66%, rgba(12, 35, 31, 0.28), transparent 38%),
-    linear-gradient(90deg, rgba(5, 45, 38, 0.2), rgba(2, 62, 55, 0.1));
+    linear-gradient(90deg, rgba(4, 50, 43, 0.94) 0%, rgba(4, 50, 43, 0.78) 34%, rgba(4, 50, 43, 0.28) 100%),
+    url("/images/home-ui/hero-bg.jpg") right center / cover no-repeat;
 }
 
 .home-hero::after {
@@ -414,6 +412,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .hero-copy h1 {
   margin: 0;
+  font-family: "STKaiti", "KaiTi", "FangSong", "Microsoft YaHei", serif;
   font-size: 64px;
   line-height: 1;
   letter-spacing: 0;
@@ -817,11 +816,12 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .feature-card {
   position: relative;
-  min-height: 178px;
+  min-height: 0;
+  aspect-ratio: 2.62 / 1;
   border: 1px solid rgba(232, 214, 165, 0.36);
   border-radius: 10px;
   text-align: left;
-  padding: 26px 72px 24px 132px;
+  padding: 0;
   color: #f4e6b8;
   overflow: hidden;
   isolation: isolate;
@@ -843,20 +843,17 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 }
 
 .feature-card::before {
-  inset: 0;
-  opacity: 0.72;
+  display: none;
 }
 
 .feature-card::after {
   inset: 1px;
   border-radius: 9px;
-  box-shadow: inset 0 0 0 1px rgba(255, 240, 192, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 240, 192, 0.18);
 }
 
 .feature-bazi {
-  background:
-    radial-gradient(circle at 15% 35%, rgba(56, 115, 95, 0.42), transparent 34%),
-    linear-gradient(110deg, #062f28 0%, #0d493c 54%, #0a372f 100%);
+  background: url("/images/home-ui/card-bazi.jpg") center / cover no-repeat;
 }
 
 .feature-bazi::before {
@@ -868,9 +865,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 }
 
 .feature-liuyao {
-  background:
-    radial-gradient(circle at 80% 80%, rgba(177, 132, 58, 0.28), transparent 30%),
-    linear-gradient(110deg, #1c1a10 0%, #40351c 55%, #1f1b10 100%);
+  background: url("/images/home-ui/card-liuyao.jpg") center / cover no-repeat;
 }
 
 .feature-liuyao::before {
@@ -881,9 +876,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 }
 
 .feature-ziwei {
-  background:
-    radial-gradient(circle at 83% 36%, rgba(125, 95, 190, 0.32), transparent 28%),
-    linear-gradient(110deg, #121936 0%, #182145 54%, #11152e 100%);
+  background: url("/images/home-ui/card-ziwei.jpg") center / cover no-repeat;
 }
 
 .feature-ziwei::before {
@@ -908,6 +901,13 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   display: grid;
   place-items: center;
   box-shadow: inset 0 0 0 2px rgba(232, 214, 165, 0.14);
+}
+
+.feature-card .feature-emblem,
+.feature-card .feature-copy,
+.feature-card > i {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .bazi-emblem {
@@ -1161,6 +1161,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
     padding: 0 14px 92px;
     background:
       linear-gradient(180deg, rgba(0, 62, 54, 0.97) 0 460px, #f8f1e2 461px),
+      url("/images/home-ui/hero-bg.jpg") right top / auto 360px no-repeat,
       radial-gradient(circle at 86px 120px, rgba(232, 214, 165, 0.1), transparent 26%);
   }
 
@@ -1258,8 +1259,9 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   }
 
   .feature-card {
-    min-height: 124px;
-    padding: 18px 60px 16px 116px;
+    min-height: 0;
+    aspect-ratio: 2.62 / 1;
+    padding: 0;
     border-radius: 8px;
   }
 
