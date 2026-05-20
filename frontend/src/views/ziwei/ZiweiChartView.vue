@@ -1,5 +1,5 @@
 <template>
-  <div class="page ziwei-page">
+  <div class="page ziwei-page tool-page-ziwei">
     <header class="hero-head">
       <h1>AI 紫微斗数排盘</h1>
       <p>输入出生信息，生成紫微命盘，获取 AI 解读与问答</p>
@@ -524,30 +524,68 @@ onMounted(() => {
 
 <style scoped>
 .ziwei-page {
-  background: #fff;
+  position: relative;
+  min-height: 100vh;
+  color: #172f35;
+  background:
+    linear-gradient(180deg, rgba(8, 23, 52, 0.95) 0 230px, rgba(248, 241, 226, 0.97) 231px),
+    radial-gradient(circle at 82% 92px, rgba(232, 214, 165, 0.18), transparent 30%),
+    repeating-linear-gradient(105deg, transparent 0 38px, rgba(47, 111, 94, 0.03) 38px 40px);
+}
+
+.ziwei-page::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 265px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(6, 29, 47, 0.95), rgba(12, 35, 67, 0.72) 48%, rgba(12, 35, 67, 0.34)),
+    url("/images/home-ui/card-ziwei.jpg") center / cover no-repeat;
+  opacity: 0.96;
+}
+
+.ziwei-page > * {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-head {
   text-align: center;
-  padding: 24px 0 28px;
+  max-width: 980px;
+  margin: 0 auto 16px;
+  padding: 26px 28px;
+  border: 1px solid rgba(232, 214, 165, 0.28);
+  border-radius: 14px;
+  color: #f8f0d8;
+  background: linear-gradient(90deg, rgba(12, 32, 58, 0.5), rgba(12, 32, 58, 0.16));
+  box-shadow: 0 18px 34px rgba(17, 47, 40, 0.16);
 }
 
 .hero-head h1 {
   margin: 0;
-  font-size: 28px;
-  font-weight: 800;
-  color: #111;
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", serif;
+  font-size: 34px;
+  font-weight: 400;
+  color: #f4d791;
 }
 
 .hero-head p {
-  margin: 22px 0 0;
-  color: #6b7280;
+  margin: 10px 0 0;
+  color: rgba(255, 248, 221, 0.88);
   font-size: 15px;
 }
 
 .ziwei-shell {
   max-width: 880px;
   margin: 0 auto;
+  padding: 24px;
+  border: 1px solid rgba(176, 138, 60, 0.24);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 246, 0.96), rgba(251, 250, 246, 0.98)),
+    repeating-linear-gradient(90deg, transparent 0 72px, rgba(47, 111, 94, 0.026) 72px 74px);
+  box-shadow: 0 14px 28px rgba(23, 63, 53, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.42);
 }
 
 .form-section-title {
@@ -625,14 +663,14 @@ onMounted(() => {
   width: 100%;
   height: 38px;
   border: 0;
-  background: #111;
+  background: linear-gradient(180deg, #2f6f5e, #173f35);
   color: #fff;
   font-weight: 800;
 }
 
 .chart-button:hover,
 .chart-button:focus {
-  background: #222;
+  background: linear-gradient(180deg, #337965, #173f35);
   color: #fff;
 }
 
@@ -645,10 +683,11 @@ onMounted(() => {
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(4, 188px);
   gap: 4px;
-  border: 4px solid #e7e7e7;
+  border: 4px solid rgba(176, 138, 60, 0.28);
   border-radius: 8px;
   overflow: hidden;
-  background: #e7e7e7;
+  background: rgba(176, 138, 60, 0.24);
+  box-shadow: 0 12px 26px rgba(16, 28, 48, 0.1);
 }
 
 .palace-card,
@@ -878,9 +917,10 @@ onMounted(() => {
   align-items: start;
   margin-bottom: 36px;
   padding: 26px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(176, 138, 60, 0.24);
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  background: rgba(255, 253, 246, 0.82);
+  box-shadow: 0 12px 24px rgba(23, 63, 53, 0.08);
 }
 
 .ai-panel h2 {
@@ -940,17 +980,35 @@ onMounted(() => {
 }
 
 @media (max-width: 700px) {
+  .ziwei-page {
+    background:
+      linear-gradient(180deg, rgba(8, 23, 52, 0.96) 0 270px, rgba(248, 241, 226, 0.98) 271px),
+      radial-gradient(circle at 70% 95px, rgba(232, 214, 165, 0.13), transparent 30%);
+  }
+
+  .ziwei-page::before {
+    height: 300px;
+    background-position: 54% top;
+  }
+
   .hero-head {
-    padding: 14px 0 18px;
+    margin-bottom: 12px;
+    padding: 18px 16px;
+    border-radius: 12px;
   }
 
   .hero-head h1 {
-    font-size: 22px;
+    font-size: 28px;
   }
 
   .hero-head p {
     margin-top: 10px;
     font-size: 13px;
+  }
+
+  .ziwei-shell {
+    padding: 14px 10px;
+    border-radius: 12px;
   }
 
   .form-section-title {

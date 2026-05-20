@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page tool-page-liuyao">
     <div class="page-header">
       <h1 class="page-title">六爻解卦</h1>
       <p class="page-desc">三步完成：提问，摇卦，查看报告。</p>
@@ -838,6 +838,72 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.tool-page-liuyao {
+  position: relative;
+  min-height: 100vh;
+  color: #183a33;
+  background:
+    linear-gradient(180deg, rgba(0, 54, 48, 0.94) 0 230px, rgba(248, 241, 226, 0.97) 231px),
+    radial-gradient(circle at 82% 94px, rgba(232, 214, 165, 0.17), transparent 30%),
+    repeating-linear-gradient(105deg, transparent 0 38px, rgba(47, 111, 94, 0.035) 38px 40px);
+}
+
+.tool-page-liuyao::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 265px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(4, 45, 39, 0.95), rgba(34, 43, 31, 0.76) 48%, rgba(34, 43, 31, 0.32)),
+    url("/images/home-ui/card-liuyao.jpg") center / cover no-repeat;
+  opacity: 0.96;
+}
+
+.tool-page-liuyao > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tool-page-liuyao .page-header {
+  max-width: 1180px;
+  margin: 0 auto 16px;
+  padding: 26px 28px;
+  border: 1px solid rgba(232, 214, 165, 0.28);
+  border-radius: 14px;
+  color: #f8f0d8;
+  background: linear-gradient(90deg, rgba(10, 44, 38, 0.5), rgba(48, 39, 25, 0.18));
+  box-shadow: 0 18px 34px rgba(17, 47, 40, 0.16);
+}
+
+.tool-page-liuyao .page-title {
+  color: #f4d791;
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", serif;
+  font-size: 34px;
+  font-weight: 400;
+}
+
+.tool-page-liuyao .page-desc {
+  color: rgba(255, 248, 221, 0.88);
+}
+
+.tool-page-liuyao .panel,
+.tool-page-liuyao .mobile-steps {
+  border-color: rgba(176, 138, 60, 0.25);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 246, 0.96), rgba(251, 250, 246, 0.98)),
+    repeating-linear-gradient(90deg, transparent 0 72px, rgba(47, 111, 94, 0.026) 72px 74px);
+  box-shadow: 0 14px 28px rgba(23, 63, 53, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+}
+
+.tool-page-liuyao .mobile-steps {
+  max-width: 1180px;
+  margin: 0 auto 16px;
+  padding: 14px 18px;
+  border: 1px solid rgba(176, 138, 60, 0.25);
+  border-radius: 12px;
+}
+
 .sub-title {
   margin: 0 0 4px;
   font-size: 15px;
@@ -846,9 +912,9 @@ onBeforeUnmount(() => {
 .flow-section {
   margin: 0 0 14px;
   padding: 14px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(176, 138, 60, 0.22);
   border-radius: 8px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .flow-section.active {
@@ -904,9 +970,9 @@ onBeforeUnmount(() => {
   align-items: center;
   margin: 10px 0 14px;
   padding: 14px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(176, 138, 60, 0.22);
   border-radius: 8px;
-  background: #f8fafc;
+  background: rgba(255, 253, 246, 0.76);
 }
 
 .shake-actions {
@@ -1593,8 +1659,34 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 700px) {
+  .tool-page-liuyao {
+    background:
+      linear-gradient(180deg, rgba(0, 54, 48, 0.96) 0 270px, rgba(248, 241, 226, 0.98) 271px),
+      radial-gradient(circle at 70% 95px, rgba(232, 214, 165, 0.13), transparent 30%);
+  }
+
+  .tool-page-liuyao::before {
+    height: 300px;
+    background-position: 52% top;
+  }
+
   .page {
     padding: 10px 8px 88px;
+  }
+
+  .tool-page-liuyao .page-header {
+    margin-bottom: 12px;
+    padding: 18px 16px;
+    border-radius: 12px;
+  }
+
+  .tool-page-liuyao .page-title {
+    font-size: 28px;
+  }
+
+  .tool-page-liuyao .mobile-steps {
+    margin-bottom: 12px;
+    padding: 12px 10px;
   }
 
   .mobile-stack {

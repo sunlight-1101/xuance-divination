@@ -1,5 +1,5 @@
 <template>
-  <div class="page bazi-page">
+  <div class="page bazi-page bamboo-pro-page tool-page-bazi">
     <div class="page-header">
       <h1 class="page-title">八字分析</h1>
       <p class="page-desc">输入出生日期、时间和问题，系统会先自动排出四柱，再结合知识库生成分析。</p>
@@ -1466,6 +1466,14 @@ onMounted(() => {
   overflow-x: hidden;
 }
 
+.bazi-page .panel {
+  border-color: rgba(176, 138, 60, 0.24);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 246, 0.96), rgba(251, 250, 246, 0.98)),
+    repeating-linear-gradient(90deg, transparent 0 72px, rgba(47, 111, 94, 0.026) 72px 74px);
+  box-shadow: 0 14px 28px rgba(23, 63, 53, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+}
+
 .auto-note {
   margin: 2px 0 14px;
 }
@@ -1475,9 +1483,51 @@ onMounted(() => {
 }
 
 .bazi-page.bamboo-pro-page {
+  position: relative;
+  min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(246, 250, 246, 0.95), rgba(250, 248, 241, 0.95)),
+    linear-gradient(180deg, rgba(0, 62, 54, 0.94) 0 230px, rgba(248, 241, 226, 0.97) 231px),
+    radial-gradient(circle at 84% 90px, rgba(232, 214, 165, 0.17), transparent 28%),
     repeating-linear-gradient(100deg, transparent 0 38px, rgba(47, 111, 94, 0.035) 38px 40px);
+}
+
+.bazi-page.bamboo-pro-page::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 265px;
+  pointer-events: none;
+  opacity: 0.95;
+  background:
+    linear-gradient(90deg, rgba(4, 50, 43, 0.94), rgba(4, 50, 43, 0.7) 42%, rgba(4, 50, 43, 0.25)),
+    url("/images/home-ui/hero-bg.jpg") center top / cover no-repeat;
+}
+
+.bazi-page.bamboo-pro-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+.bazi-page .page-header {
+  max-width: 1180px;
+  margin: 0 auto 16px;
+  padding: 26px 28px;
+  border: 1px solid rgba(232, 214, 165, 0.26);
+  border-radius: 14px;
+  color: #f8f0d8;
+  background: linear-gradient(90deg, rgba(10, 54, 46, 0.46), rgba(10, 54, 46, 0.16));
+  box-shadow: 0 18px 34px rgba(17, 47, 40, 0.16);
+}
+
+.bazi-page .page-title {
+  color: #f4d791;
+  font-family: var(--tool-display-font, "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", serif);
+  font-size: 34px;
+  font-weight: 400;
+}
+
+.bazi-page .page-desc {
+  color: rgba(255, 248, 221, 0.88);
 }
 
 .bamboo-hero {
@@ -1625,11 +1675,12 @@ onMounted(() => {
 .mode-switch {
   display: inline-flex;
   padding: 4px;
-  margin: 0 0 14px;
-  border: 1px solid #e5e7eb;
+  margin: 0 0 14px calc((100% - min(1180px, 100%)) / 2);
+  border: 1px solid rgba(232, 214, 165, 0.38);
   border-radius: 10px;
-  background: #f8fafc;
+  background: rgba(255, 253, 246, 0.82);
   gap: 4px;
+  box-shadow: 0 12px 24px rgba(23, 63, 53, 0.1);
 }
 
 .mode-switch button {
@@ -1645,9 +1696,9 @@ onMounted(() => {
 }
 
 .mode-switch button.active {
-  background: #111;
+  background: linear-gradient(180deg, #2f6f5e, #173f35);
   color: #fff;
-  box-shadow: 0 6px 16px rgba(17, 17, 17, 0.12);
+  box-shadow: 0 6px 16px rgba(23, 63, 53, 0.18);
 }
 
 .view-switch {
@@ -2585,8 +2636,29 @@ onMounted(() => {
 }
 
 @media (max-width: 700px) {
+  .bazi-page.bamboo-pro-page {
+    background:
+      linear-gradient(180deg, rgba(0, 62, 54, 0.96) 0 270px, rgba(248, 241, 226, 0.98) 271px),
+      radial-gradient(circle at 70% 95px, rgba(232, 214, 165, 0.13), transparent 30%);
+  }
+
+  .bazi-page.bamboo-pro-page::before {
+    height: 300px;
+    background-position: 54% top;
+  }
+
   .page {
     padding: 10px 8px 88px;
+  }
+
+  .bazi-page .page-header {
+    margin-bottom: 12px;
+    padding: 18px 16px;
+    border-radius: 12px;
+  }
+
+  .bazi-page .page-title {
+    font-size: 28px;
   }
 
   .panel {
@@ -2595,6 +2667,7 @@ onMounted(() => {
 
   .mode-switch {
     width: 100%;
+    margin-left: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
