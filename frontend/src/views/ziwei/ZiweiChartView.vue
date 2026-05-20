@@ -552,8 +552,8 @@ onMounted(() => {
 }
 
 .hero-head {
-  text-align: center;
-  max-width: 980px;
+  text-align: left;
+  max-width: 1180px;
   margin: 0 auto 16px;
   padding: 26px 28px;
   border: 1px solid rgba(232, 214, 165, 0.28);
@@ -569,6 +569,7 @@ onMounted(() => {
   font-size: 34px;
   font-weight: 400;
   color: #f4d791;
+  line-height: 1.2;
 }
 
 .hero-head p {
@@ -578,7 +579,7 @@ onMounted(() => {
 }
 
 .ziwei-shell {
-  max-width: 880px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 24px;
   border: 1px solid rgba(176, 138, 60, 0.24);
@@ -591,7 +592,7 @@ onMounted(() => {
 
 .form-section-title {
   margin: 0 0 20px;
-  color: #6b7280;
+  color: #173f35;
   font-size: 18px;
   font-weight: 700;
 }
@@ -996,6 +997,7 @@ onMounted(() => {
     margin-bottom: 12px;
     padding: 18px 16px;
     border-radius: 12px;
+    text-align: left;
   }
 
   .hero-head h1 {
