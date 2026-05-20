@@ -9,7 +9,7 @@
       v-if="isGuest"
       type="warning"
       :closable="false"
-      title="游客模式不会展示历史记录，请注册或登录后保存个人记录。"
+      title="请注册或登录后查看并保存个人记录。"
       class="guest-alert"
     />
 

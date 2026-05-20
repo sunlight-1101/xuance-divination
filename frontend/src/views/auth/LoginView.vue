@@ -3,7 +3,7 @@
     <div class="auth-panel">
       <img class="auth-logo" src="/icons/zhexuan-logo.png" alt="哲玄" />
       <h1>哲玄</h1>
-      <p>登录后进入术数分析系统，也可以直接游客体验。</p>
+      <p>登录后进入术数分析系统，分析记录会同步保存到账号。</p>
       <el-form :model="form" label-position="top" @submit.prevent>
         <el-form-item label="邮箱">
           <el-input v-model="form.username" size="large" autocomplete="username" />
@@ -12,7 +12,6 @@
           <el-input v-model="form.password" type="password" size="large" show-password autocomplete="current-password" />
         </el-form-item>
         <el-button type="primary" size="large" :loading="loading" @click="handleLogin">登录</el-button>
-        <el-button size="large" @click="guestLogin">游客体验</el-button>
         <div class="auth-links">
           <el-button link @click="$router.push('/register')">注册新账号</el-button>
           <el-button link @click="resetDialogVisible = true">忘记密码</el-button>
@@ -75,11 +74,6 @@ async function handleLogin() {
   } finally {
     loading.value = false
   }
-}
-
-function guestLogin() {
-  userStore.setUser({ id: null, username: 'guest', nickname: '游客', role: 'GUEST' })
-  router.push('/home')
 }
 
 async function sendResetCode() {

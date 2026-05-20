@@ -75,7 +75,7 @@
                 </el-row>
                 <div class="profile-actions">
                   <el-button @click="saveProfile">保存出生资料</el-button>
-                  <span class="hint">{{ userStore.userId ? '已登录时会同步到账号' : '游客模式会保存到本机' }}</span>
+                  <span class="hint">{{ userStore.userId ? '已登录时会同步到账号' : '登录后可同步到账号' }}</span>
                 </div>
               </el-collapse-item>
             </el-collapse>

@@ -8,7 +8,7 @@ const APP_VERSION = '2026-05-14-permission-v2'
 
 function readStoredUser() {
   const user = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
-  if (user?.id && !/^\d+$/.test(String(user.id))) {
+  if (user && (!user.id || !/^\d+$/.test(String(user.id)))) {
     localStorage.removeItem(STORAGE_KEY)
     return null
   }
@@ -25,7 +25,10 @@ export const useUserStore = defineStore('user', {
     user: readStoredUser()
   }),
   getters: {
-    isLogin: state => Boolean(state.user),
+    isLogin: state => {
+      const id = state.user?.id
+      return Boolean(id && /^\d+$/.test(String(id)))
+    },
     userId: state => {
       const id = state.user?.id
       return typeof id === 'number' || /^\d+$/.test(String(id || '')) ? Number(id) : null
