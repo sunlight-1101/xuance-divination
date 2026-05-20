@@ -1,8 +1,8 @@
 <template>
   <div class="page ziwei-page tool-page-ziwei">
     <header class="hero-head">
-      <h1>AI 紫微斗数排盘</h1>
-      <p>输入出生信息，生成紫微命盘，获取 AI 解读与问答</p>
+      <h1>紫微斗数排盘</h1>
+      <p>输入出生信息，生成紫微命盘，获取解读与问答</p>
     </header>
 
     <section class="ziwei-shell">
@@ -157,10 +157,10 @@
 
         <section class="ai-panel">
           <div>
-            <h2>AI 紫微分析</h2>
+            <h2>紫微分析</h2>
             <p>结合命盘结构、主星和四化，生成结构化的紫微斗数解读</p>
           </div>
-          <el-button class="ai-button" :loading="analysisLoading" @click="analyzeCurrentChart">开始 AI 分析</el-button>
+          <el-button class="ai-button" :loading="analysisLoading" @click="analyzeCurrentChart">开始分析</el-button>
           <el-form label-position="top" class="analysis-form">
             <el-form-item label="分析方向">
               <el-select v-model="analysisForm.questionType">
@@ -176,7 +176,7 @@
               <el-input v-model="analysisForm.question" type="textarea" :rows="3" placeholder="例如：这张盘的事业发展和近几年机会如何？" />
             </el-form-item>
           </el-form>
-          <div v-if="analysisLoading" class="analysis-placeholder">正在调用 AI 分析，预计 60-120 秒。切屏后可回到本页恢复，也可以在历史记录查看结果，请不要重复点击。</div>
+          <div v-if="analysisLoading" class="analysis-placeholder">正在生成分析，预计 60-120 秒。切屏后可回到本页恢复，也可以在历史记录查看结果，请不要重复点击。</div>
           <div v-if="analysisNotice" class="analysis-placeholder notice">{{ analysisNotice }}</div>
           <ResultReport v-else-if="parsedAnalysis" :report="parsedAnalysis" />
           <KnowledgeReferences
@@ -184,7 +184,7 @@
             :rules="knowledgeRules"
             :classic-references="classicReferences"
           />
-          <div v-if="!analysisLoading && !parsedAnalysis" class="analysis-placeholder">点击「开始 AI 分析」后，这里会展示完整的紫微斗数解读</div>
+          <div v-if="!analysisLoading && !parsedAnalysis" class="analysis-placeholder">点击「开始分析」后，这里会展示完整的紫微斗数解读</div>
         </section>
       </div>
 
