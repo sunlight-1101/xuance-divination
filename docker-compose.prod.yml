@@ -25,6 +25,7 @@ services:
       - ./docs/seed_classic_pattern_cases.sql:/docker-entrypoint-initdb.d/33-classic-cases.sql:ro
       - ./docs/seed_bazi_classic_books.sql:/docker-entrypoint-initdb.d/34-bazi-classic-books.sql:ro
       - ./docs/seed_classic_books_catalog.sql:/docker-entrypoint-initdb.d/35-classic-books-catalog.sql:ro
+      - ./docs/seed_ziwei_knowledge.sql:/docker-entrypoint-initdb.d/36-ziwei-knowledge.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
       interval: 10s

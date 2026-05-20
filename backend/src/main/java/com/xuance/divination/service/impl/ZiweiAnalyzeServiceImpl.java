@@ -29,7 +29,7 @@ import org.springframework.util.StringUtils;
 @Service
 public class ZiweiAnalyzeServiceImpl implements ZiweiAnalyzeService {
     private static final String TYPE = "ZIWEI";
-    private static final String REPORT_STYLE_VERSION = "plain-core-v2";
+    private static final String REPORT_STYLE_VERSION = "plain-core-v3-ziwei-rules";
 
     private final KnowledgeService knowledgeService;
     private final ClassicBookService classicBookService;
