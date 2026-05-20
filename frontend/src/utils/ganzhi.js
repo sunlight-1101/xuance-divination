@@ -345,11 +345,21 @@ function getShenShaForPillar(dayStem, stem, branch, pillars) {
   if (getHuaGaiBranch(dayBranch) === branch) names.push('华盖')
   if (getHongLuanBranch(yearBranch) === branch) names.push('红鸾')
   if (getTianXiBranch(yearBranch) === branch) names.push('天喜')
+  if (getGuChenBranch(yearBranch) === branch) names.push('孤辰')
+  if (getGuaSuBranch(yearBranch) === branch) names.push('寡宿')
   if (getJieShaBranch(dayBranch) === branch) names.push('劫煞')
   if (getZaiShaBranch(dayBranch) === branch) names.push('灾煞')
   if (getWangShenBranch(dayBranch) === branch) names.push('亡神')
+  if (getTianYiMedicalBranch(monthBranch) === branch) names.push('天医')
+  if (getHongYanBranch(dayStem) === branch) names.push('红艳')
+  if (getLiuXiaBranch(dayStem) === branch) names.push('流霞')
   if (matchesMonthVirtue(monthBranch, stem, branch, 'tianDe')) names.push('天德')
   if (matchesMonthVirtue(monthBranch, stem, branch, 'yueDe')) names.push('月德')
+  if (isKuiGang(stem, branch)) names.push('魁罡')
+  if (isShiEDaBai(stem, branch)) names.push('十恶大败')
+  if (isYinYangChaCuo(stem, branch)) names.push('阴阳差错')
+  if (isJinShen(stem, branch)) names.push('金神')
+  if (isTianShe(monthBranch, stem, branch)) names.push('天赦')
   if (branches.filter(item => item === branch).length > 1) names.push('伏吟')
   return Array.from(new Set(names))
 }
@@ -470,6 +480,22 @@ function getTianXiBranch(yearBranch) {
   }[yearBranch] || ''
 }
 
+function getGuChenBranch(yearBranch) {
+  if (['亥', '子', '丑'].includes(yearBranch)) return '寅'
+  if (['寅', '卯', '辰'].includes(yearBranch)) return '巳'
+  if (['巳', '午', '未'].includes(yearBranch)) return '申'
+  if (['申', '酉', '戌'].includes(yearBranch)) return '亥'
+  return ''
+}
+
+function getGuaSuBranch(yearBranch) {
+  if (['亥', '子', '丑'].includes(yearBranch)) return '戌'
+  if (['寅', '卯', '辰'].includes(yearBranch)) return '丑'
+  if (['巳', '午', '未'].includes(yearBranch)) return '辰'
+  if (['申', '酉', '戌'].includes(yearBranch)) return '未'
+  return ''
+}
+
 function getJieShaBranch(dayBranch) {
   if (['申', '子', '辰'].includes(dayBranch)) return '巳'
   if (['寅', '午', '戌'].includes(dayBranch)) return '亥'
@@ -492,6 +518,31 @@ function getWangShenBranch(dayBranch) {
   if (['亥', '卯', '未'].includes(dayBranch)) return '寅'
   if (['巳', '酉', '丑'].includes(dayBranch)) return '申'
   return ''
+}
+
+function getTianYiMedicalBranch(monthBranch) {
+  return {
+    寅: '丑',
+    卯: '寅',
+    辰: '卯',
+    巳: '辰',
+    午: '巳',
+    未: '午',
+    申: '未',
+    酉: '申',
+    戌: '酉',
+    亥: '戌',
+    子: '亥',
+    丑: '子'
+  }[monthBranch] || ''
+}
+
+function getHongYanBranch(dayStem) {
+  return { 甲: '午', 乙: '申', 丙: '寅', 丁: '未', 戊: '辰', 己: '辰', 庚: '戌', 辛: '酉', 壬: '子', 癸: '申' }[dayStem] || ''
+}
+
+function getLiuXiaBranch(dayStem) {
+  return { 甲: '酉', 乙: '戌', 丙: '未', 丁: '申', 戊: '巳', 己: '午', 庚: '辰', 辛: '卯', 壬: '亥', 癸: '寅' }[dayStem] || ''
 }
 
 function matchesMonthVirtue(monthBranch, stem, branch, type) {
@@ -525,6 +576,31 @@ function matchesMonthVirtue(monthBranch, stem, branch, type) {
   }
   const target = type === 'tianDe' ? tianDe[monthBranch] : yueDe[monthBranch]
   return Boolean(target && (stem === target || branch === target))
+}
+
+function isKuiGang(stem, branch) {
+  return ['庚辰', '庚戌', '壬辰', '戊戌'].includes(`${stem}${branch}`)
+}
+
+function isShiEDaBai(stem, branch) {
+  return ['甲辰', '乙巳', '丙申', '丁亥', '戊戌', '己丑', '庚辰', '辛巳', '壬申', '癸亥'].includes(`${stem}${branch}`)
+}
+
+function isYinYangChaCuo(stem, branch) {
+  return ['丙子', '丁丑', '戊寅', '辛卯', '壬辰', '癸巳', '丙午', '丁未', '戊申', '辛酉', '壬戌', '癸亥'].includes(`${stem}${branch}`)
+}
+
+function isJinShen(stem, branch) {
+  return ['乙丑', '己巳', '癸酉'].includes(`${stem}${branch}`)
+}
+
+function isTianShe(monthBranch, stem, branch) {
+  const pillar = `${stem}${branch}`
+  if (['寅', '卯', '辰'].includes(monthBranch)) return pillar === '戊寅'
+  if (['巳', '午', '未'].includes(monthBranch)) return pillar === '甲午'
+  if (['申', '酉', '戌'].includes(monthBranch)) return pillar === '戊申'
+  if (['亥', '子', '丑'].includes(monthBranch)) return pillar === '甲子'
+  return false
 }
 
 export function parseDate(value) {
