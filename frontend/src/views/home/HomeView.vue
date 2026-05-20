@@ -194,10 +194,28 @@
           <h2>最近记录</h2>
           <button type="button" @click="$router.push('/records')">查看全部 ›</button>
         </div>
-        <div class="recent-empty">
+        <div v-if="recentLoading" class="recent-empty">
+          <span>卷</span>
+          <strong>正在读取</strong>
+          <p>稍等一下，正在整理最近的分析记录</p>
+        </div>
+        <div v-else-if="recentRecords.length" class="recent-list">
+          <button
+            v-for="record in recentRecords"
+            :key="record.id"
+            type="button"
+            class="recent-item"
+            @click="$router.push('/records')"
+          >
+            <span>{{ typeLabel(record.type) }}</span>
+            <strong>{{ record.question || '未填写问题' }}</strong>
+            <small>{{ formatRecordTime(record.createTime) }}</small>
+          </button>
+        </div>
+        <div v-else class="recent-empty">
           <span>卷</span>
           <strong>暂无记录</strong>
-          <p>开始使用工具，记录将显示在这里</p>
+          <p>{{ userStore.userId ? '开始使用工具，记录将显示在这里' : '登录后会显示你的最近分析记录' }}</p>
         </div>
       </div>
     </section>
@@ -205,11 +223,14 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Sparkles } from 'lucide-vue-next'
 import { getAlmanacDay } from '../../api/almanac'
+import { listRecords } from '../../api/record'
+import { useUserStore } from '../../stores/user'
 import { getFourPillars } from '../../utils/ganzhi'
 
+const userStore = useUserStore()
 const todayText = computed(() => new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }))
 const todayPillars = computed(() => getFourPillars(new Date()))
 const almanacExpanded = ref(false)
@@ -218,6 +239,9 @@ const calendarMonth = ref(toMonthKey(new Date()))
 const remoteAlmanac = ref(null)
 const almanacLoading = ref(false)
 const almanacError = ref('')
+const recentRecords = ref([])
+const recentLoading = ref(false)
+const recentUserId = computed(() => userStore.userId)
 const weekdays = ['一', '二', '三', '四', '五', '六', '日']
 
 const dailyAdvice = computed(() => getDailyAdvice(todayPillars.value.dayPillar))
@@ -351,9 +375,40 @@ async function loadRemoteAlmanac(dateKey) {
   }
 }
 
+async function loadRecentRecords() {
+  if (!userStore.userId) {
+    recentRecords.value = []
+    return
+  }
+  recentLoading.value = true
+  try {
+    const records = await listRecords({ userId: userStore.userId })
+    recentRecords.value = Array.isArray(records) ? records.slice(0, 3) : []
+  } catch (error) {
+    recentRecords.value = []
+  } finally {
+    recentLoading.value = false
+  }
+}
+
+function typeLabel(type) {
+  return { LIUYAO: '六爻', BAZI: '八字', BAZI_COMPATIBILITY: '合盘', ZIWEI: '紫微', QIMEN: '奇门' }[type] || '记录'
+}
+
+function formatRecordTime(value) {
+  if (!value) return ''
+  return String(value).replace('T', ' ').slice(0, 16)
+}
+
 watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   if (expanded) loadRemoteAlmanac(dateKey)
 }, { immediate: true })
+
+watch(recentUserId, () => loadRecentRecords())
+
+onMounted(() => {
+  loadRecentRecords()
+})
 </script>
 
 <style scoped>
@@ -1224,6 +1279,58 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   margin: 0;
   color: #7b7466;
   font-size: 13px;
+}
+
+.recent-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.recent-item {
+  width: 100%;
+  border: 1px solid rgba(176, 138, 60, 0.2);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 252, 244, 0.94), rgba(244, 234, 213, 0.66));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 10px;
+  padding: 12px 13px;
+  text-align: left;
+  color: #173f35;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.recent-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(176, 138, 60, 0.42);
+  box-shadow: 0 10px 22px rgba(67, 44, 17, 0.08);
+}
+
+.recent-item span {
+  grid-row: span 2;
+  align-self: center;
+  min-width: 46px;
+  border-radius: 999px;
+  background: rgba(23, 63, 53, 0.09);
+  color: #173f35;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  padding: 5px 8px;
+}
+
+.recent-item strong {
+  overflow: hidden;
+  color: #263d36;
+  font-size: 14px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.recent-item small {
+  color: #8b7b5e;
+  font-size: 12px;
 }
 
 .support-strip span {
