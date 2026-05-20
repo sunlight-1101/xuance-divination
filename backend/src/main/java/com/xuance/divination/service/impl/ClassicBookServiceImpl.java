@@ -113,6 +113,7 @@ public class ClassicBookServiceImpl implements ClassicBookService {
         if ("LIUYAO".equalsIgnoreCase(type)) {
             return containsAny(name + focus, Arrays.asList(
                     "\u706b\u73e0\u6797",
+                    "\u6613\u7ecf",
                     "\u535c\u7b6e\u6b63\u5b97",
                     "\u535c\u7b6e\u5168\u4e66",
                     "\u589e\u5220\u535c\u6613",
