@@ -2,9 +2,12 @@ package com.xuance.divination.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xuance.divination.common.BizException;
+import com.xuance.divination.dto.ChangePasswordDTO;
 import com.xuance.divination.dto.EmailCodeDTO;
 import com.xuance.divination.dto.LoginDTO;
 import com.xuance.divination.dto.RegisterDTO;
+import com.xuance.divination.dto.ResetPasswordDTO;
+import com.xuance.divination.dto.UpdateNicknameDTO;
 import com.xuance.divination.dto.UserProfileDTO;
 import com.xuance.divination.entity.User;
 import com.xuance.divination.entity.VerificationCode;
@@ -12,6 +15,7 @@ import com.xuance.divination.mapper.UserMapper;
 import com.xuance.divination.mapper.VerificationCodeMapper;
 import com.xuance.divination.service.AuthService;
 import com.xuance.divination.vo.UserVO;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +28,7 @@ import org.springframework.util.StringUtils;
 @Service
 public class AuthServiceImpl implements AuthService {
     private static final String REGISTER_SCENE = "REGISTER";
+    private static final String RESET_PASSWORD_SCENE = "RESET_PASSWORD";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UserMapper userMapper;
@@ -46,40 +51,27 @@ public class AuthServiceImpl implements AuthService {
     public Boolean sendRegisterEmailCode(EmailCodeDTO dto) {
         String email = normalizeEmail(dto == null ? null : dto.getEmail());
         validateEmail(email);
-        if (!mailEnabled || !StringUtils.hasText(mailFrom)) {
-            throw new BizException("邮箱验证码未启用，请先配置 SMTP 发信邮箱");
-        }
-        Long count = userMapper.selectCount(new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, email)
-                .or()
-                .eq(User::getEmail, email));
-        if (count > 0) {
+        ensureMailEnabled();
+        if (findByEmail(email) != null) {
             throw new BizException("该邮箱已注册");
         }
-        VerificationCode latest = codeMapper.selectOne(new LambdaQueryWrapper<VerificationCode>()
-                .eq(VerificationCode::getTarget, email)
-                .eq(VerificationCode::getScene, REGISTER_SCENE)
-                .orderByDesc(VerificationCode::getCreateTime)
-                .last("LIMIT 1"));
-        if (latest != null && latest.getCreateTime() != null && latest.getCreateTime().plusSeconds(60).isAfter(LocalDateTime.now())) {
-            throw new BizException("验证码发送太频繁，请稍后再试");
-        }
-        String code = String.format("%06d", RANDOM.nextInt(1000000));
-        VerificationCode record = new VerificationCode();
-        record.setTarget(email);
-        record.setScene(REGISTER_SCENE);
-        record.setCode(code);
-        record.setUsed(0);
-        record.setExpireTime(LocalDateTime.now().plusMinutes(10));
-        record.setCreateTime(LocalDateTime.now());
-        codeMapper.insert(record);
+        assertCodeSendInterval(email, REGISTER_SCENE);
+        String code = createCode(email, REGISTER_SCENE);
+        sendMail(email, "哲玄注册验证码", "你的注册验证码是：" + code + "\n\n验证码 10 分钟内有效。如非本人操作，请忽略。");
+        return true;
+    }
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailFrom);
-        message.setTo(email);
-        message.setSubject("哲玄注册验证码");
-        message.setText("你的注册验证码是：" + code + "\n\n验证码 10 分钟内有效。如非本人操作，请忽略。");
-        mailSender.send(message);
+    @Override
+    public Boolean sendResetPasswordEmailCode(EmailCodeDTO dto) {
+        String email = normalizeEmail(dto == null ? null : dto.getEmail());
+        validateEmail(email);
+        ensureMailEnabled();
+        if (findByEmail(email) == null) {
+            throw new BizException("该邮箱尚未注册");
+        }
+        assertCodeSendInterval(email, RESET_PASSWORD_SCENE);
+        String code = createCode(email, RESET_PASSWORD_SCENE);
+        sendMail(email, "哲玄重置密码验证码", "你的重置密码验证码是：" + code + "\n\n验证码 10 分钟内有效。如非本人操作，请忽略。");
         return true;
     }
 
@@ -90,22 +82,16 @@ public class AuthServiceImpl implements AuthService {
             email = normalizeEmail(dto.getUsername());
         }
         validateEmail(email);
-        if (!StringUtils.hasText(dto.getPassword())) {
-            throw new BizException("密码不能为空");
-        }
-        verifyRegisterCode(email, dto.getEmailCode());
-        Long count = userMapper.selectCount(new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, email)
-                .or()
-                .eq(User::getEmail, email));
-        if (count > 0) {
+        validatePassword(dto.getPassword());
+        verifyCode(email, dto.getEmailCode(), REGISTER_SCENE);
+        if (findByEmail(email) != null) {
             throw new BizException("该邮箱已注册");
         }
         User user = new User();
         user.setUsername(email);
         user.setEmail(email);
         user.setPassword(hash(dto.getPassword()));
-        user.setNickname(StringUtils.hasText(dto.getNickname()) ? dto.getNickname() : email);
+        user.setNickname(StringUtils.hasText(dto.getNickname()) ? dto.getNickname().trim() : email);
         user.setRole("USER");
         user.setStatus(1);
         user.setCreateTime(LocalDateTime.now());
@@ -117,10 +103,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserVO login(LoginDTO dto) {
         String account = normalizeEmail(dto.getUsername());
-        User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, account)
-                .or()
-                .eq(User::getEmail, account));
+        User user = findByEmail(account);
         if (user == null || !hash(dto.getPassword()).equals(user.getPassword())) {
             throw new BizException("用户名或密码错误");
         }
@@ -150,8 +133,68 @@ public class AuthServiceImpl implements AuthService {
         return toVO(user);
     }
 
+    @Override
+    public UserVO updateNickname(UpdateNicknameDTO dto) {
+        if (dto == null || dto.getUserId() == null) {
+            throw new BizException("请先登录后再修改昵称");
+        }
+        String nickname = dto.getNickname() == null ? "" : dto.getNickname().trim();
+        if (!StringUtils.hasText(nickname)) {
+            throw new BizException("昵称不能为空");
+        }
+        if (nickname.length() > 30) {
+            throw new BizException("昵称不能超过 30 个字");
+        }
+        User user = userMapper.selectById(dto.getUserId());
+        if (user == null) {
+            throw new BizException("用户不存在");
+        }
+        user.setNickname(nickname);
+        user.setUpdateTime(LocalDateTime.now());
+        userMapper.updateById(user);
+        return toVO(user);
+    }
+
+    @Override
+    public Boolean changePassword(ChangePasswordDTO dto) {
+        if (dto == null || dto.getUserId() == null) {
+            throw new BizException("请先登录后再修改密码");
+        }
+        if (!StringUtils.hasText(dto.getOldPassword())) {
+            throw new BizException("请输入原密码");
+        }
+        validatePassword(dto.getNewPassword());
+        User user = userMapper.selectById(dto.getUserId());
+        if (user == null) {
+            throw new BizException("用户不存在");
+        }
+        if (!hash(dto.getOldPassword()).equals(user.getPassword())) {
+            throw new BizException("原密码不正确");
+        }
+        user.setPassword(hash(dto.getNewPassword()));
+        user.setUpdateTime(LocalDateTime.now());
+        userMapper.updateById(user);
+        return true;
+    }
+
+    @Override
+    public Boolean resetPassword(ResetPasswordDTO dto) {
+        String email = normalizeEmail(dto == null ? null : dto.getEmail());
+        validateEmail(email);
+        validatePassword(dto.getNewPassword());
+        verifyCode(email, dto.getEmailCode(), RESET_PASSWORD_SCENE);
+        User user = findByEmail(email);
+        if (user == null) {
+            throw new BizException("该邮箱尚未注册");
+        }
+        user.setPassword(hash(dto.getNewPassword()));
+        user.setUpdateTime(LocalDateTime.now());
+        userMapper.updateById(user);
+        return true;
+    }
+
     private String hash(String password) {
-        return DigestUtils.md5DigestAsHex(("xuance:" + password).getBytes());
+        return DigestUtils.md5DigestAsHex(("xuance:" + password).getBytes(StandardCharsets.UTF_8));
     }
 
     private UserVO toVO(User user) {
@@ -170,13 +213,13 @@ public class AuthServiceImpl implements AuthService {
         return vo;
     }
 
-    private void verifyRegisterCode(String email, String code) {
+    private void verifyCode(String email, String code, String scene) {
         if (!StringUtils.hasText(code)) {
             throw new BizException("请先输入邮箱验证码");
         }
         VerificationCode record = codeMapper.selectOne(new LambdaQueryWrapper<VerificationCode>()
                 .eq(VerificationCode::getTarget, email)
-                .eq(VerificationCode::getScene, REGISTER_SCENE)
+                .eq(VerificationCode::getScene, scene)
                 .eq(VerificationCode::getUsed, 0)
                 .orderByDesc(VerificationCode::getCreateTime)
                 .last("LIMIT 1"));
@@ -188,6 +231,62 @@ public class AuthServiceImpl implements AuthService {
         }
         record.setUsed(1);
         codeMapper.updateById(record);
+    }
+
+    private void ensureMailEnabled() {
+        if (!mailEnabled || !StringUtils.hasText(mailFrom)) {
+            throw new BizException("邮箱验证码未启用，请先配置 SMTP 发信邮箱");
+        }
+    }
+
+    private void assertCodeSendInterval(String email, String scene) {
+        VerificationCode latest = codeMapper.selectOne(new LambdaQueryWrapper<VerificationCode>()
+                .eq(VerificationCode::getTarget, email)
+                .eq(VerificationCode::getScene, scene)
+                .orderByDesc(VerificationCode::getCreateTime)
+                .last("LIMIT 1"));
+        if (latest != null && latest.getCreateTime() != null && latest.getCreateTime().plusSeconds(60).isAfter(LocalDateTime.now())) {
+            throw new BizException("验证码发送太频繁，请稍后再试");
+        }
+    }
+
+    private String createCode(String email, String scene) {
+        String code = String.format("%06d", RANDOM.nextInt(1000000));
+        VerificationCode record = new VerificationCode();
+        record.setTarget(email);
+        record.setScene(scene);
+        record.setCode(code);
+        record.setUsed(0);
+        record.setExpireTime(LocalDateTime.now().plusMinutes(10));
+        record.setCreateTime(LocalDateTime.now());
+        codeMapper.insert(record);
+        return code;
+    }
+
+    private void sendMail(String email, String subject, String text) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailFrom);
+        message.setTo(email);
+        message.setSubject(subject);
+        message.setText(text);
+        mailSender.send(message);
+    }
+
+    private User findByEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            return null;
+        }
+        return userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, email)
+                .or()
+                .eq(User::getEmail, email)
+                .last("LIMIT 1"));
+    }
+
+    private void validatePassword(String password) {
+        if (!StringUtils.hasText(password) || password.length() < 6) {
+            throw new BizException("密码至少需要 6 位");
+        }
     }
 
     private String normalizeEmail(String email) {

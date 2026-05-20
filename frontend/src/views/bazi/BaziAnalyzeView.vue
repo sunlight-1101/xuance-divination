@@ -588,7 +588,7 @@ import { getBaziDetails, getFourPillars, getLuckCycles, getTenGod, getYearGanZhi
 import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
 import { provinceOptions } from '../../utils/chinaCities'
 import { buildHourOptions, buildMinuteOptions, combineTimeParts, splitTimeParts } from '../../utils/timeOptions'
-import { clearAnalysisCache, readAnalysisCache, saveAnalysisCache } from '../../utils/analysisCache'
+import { clearAnalysisCache, finishPendingAnalysis, readAnalysisCache, readPendingAnalysis, saveAnalysisCache, startPendingAnalysis } from '../../utils/analysisCache'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -1332,8 +1332,13 @@ async function submit() {
     ElMessage.warning('请填写出生日期，或手动补充日柱')
     return
   }
+  if (readPendingAnalysis(PENDING_KEY)) {
+    analysisNotice.value = '之前的报告正在分析中，请稍后再试；完成后可以在历史记录查看。'
+    ElMessage.warning(analysisNotice.value)
+    return
+  }
   loading.value = true
-  saveAnalysisCache(PENDING_KEY, { type: 'BAZI', mode: 'single', question: form.question, startedAt: Date.now() })
+  startPendingAnalysis(PENDING_KEY, { type: 'BAZI', mode: 'single', question: form.question })
   try {
     await saveBirthProfile({ silent: true })
     const accountUserId = userStore.userId
@@ -1367,6 +1372,7 @@ async function submit() {
     await nextTick()
     reportPanelRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   } finally {
+    finishPendingAnalysis(PENDING_KEY)
     loading.value = false
   }
 }
@@ -1388,8 +1394,13 @@ async function submitCompatibility() {
     ElMessage.warning('请补充乙方出生日期或日柱')
     return
   }
+  if (readPendingAnalysis(PENDING_KEY)) {
+    analysisNotice.value = '之前的报告正在分析中，请稍后再试；完成后可以在历史记录查看。'
+    ElMessage.warning(analysisNotice.value)
+    return
+  }
   loading.value = true
-  saveAnalysisCache(PENDING_KEY, { type: 'BAZI', mode: 'compatibility', question: compatForm.question, startedAt: Date.now() })
+  startPendingAnalysis(PENDING_KEY, { type: 'BAZI', mode: 'compatibility', question: compatForm.question })
   try {
     const accountUserId = userStore.userId
     const data = await analyzeBaziCompatibility({
@@ -1413,6 +1424,7 @@ async function submitCompatibility() {
     await nextTick()
     reportPanelRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   } finally {
+    finishPendingAnalysis(PENDING_KEY)
     loading.value = false
   }
 }
@@ -1441,7 +1453,7 @@ onMounted(() => {
     knowledgeRules.value = cached.knowledgeRules || []
     classicReferences.value = cached.classicReferences || []
     analysisNotice.value = '已恢复上一次八字分析报告；如果切屏后没看到结果，也可以到历史记录查看。'
-  } else if (readAnalysisCache(PENDING_KEY)) {
+  } else if (readPendingAnalysis(PENDING_KEY)) {
     analysisNotice.value = '检测到上次有分析进行中；如果本页没有恢复结果，请到历史记录查看，避免重复消耗。'
   }
 })

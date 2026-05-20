@@ -1,9 +1,12 @@
 package com.xuance.divination.controller;
 
 import com.xuance.divination.common.Result;
+import com.xuance.divination.dto.ChangePasswordDTO;
+import com.xuance.divination.dto.EmailCodeDTO;
 import com.xuance.divination.dto.LoginDTO;
 import com.xuance.divination.dto.RegisterDTO;
-import com.xuance.divination.dto.EmailCodeDTO;
+import com.xuance.divination.dto.ResetPasswordDTO;
+import com.xuance.divination.dto.UpdateNicknameDTO;
 import com.xuance.divination.dto.UserProfileDTO;
 import com.xuance.divination.service.AuthService;
 import com.xuance.divination.vo.UserVO;
@@ -31,6 +34,11 @@ public class AuthController {
         return Result.ok(authService.sendRegisterEmailCode(dto));
     }
 
+    @PostMapping("/send-reset-code")
+    public Result<Boolean> sendResetCode(@RequestBody EmailCodeDTO dto) {
+        return Result.ok(authService.sendResetPasswordEmailCode(dto));
+    }
+
     @PostMapping("/login")
     public Result<UserVO> login(@RequestBody LoginDTO dto) {
         return Result.ok(authService.login(dto));
@@ -44,5 +52,20 @@ public class AuthController {
     @PostMapping("/profile")
     public Result<UserVO> updateProfile(@RequestBody UserProfileDTO dto) {
         return Result.ok(authService.updateProfile(dto));
+    }
+
+    @PostMapping("/nickname")
+    public Result<UserVO> updateNickname(@RequestBody UpdateNicknameDTO dto) {
+        return Result.ok(authService.updateNickname(dto));
+    }
+
+    @PostMapping("/change-password")
+    public Result<Boolean> changePassword(@RequestBody ChangePasswordDTO dto) {
+        return Result.ok(authService.changePassword(dto));
+    }
+
+    @PostMapping("/reset-password")
+    public Result<Boolean> resetPassword(@RequestBody ResetPasswordDTO dto) {
+        return Result.ok(authService.resetPassword(dto));
     }
 }

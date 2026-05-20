@@ -203,7 +203,7 @@ import ResultReport from '../../components/ResultReport.vue'
 import { useUserStore } from '../../stores/user'
 import { provinceOptions } from '../../utils/chinaCities'
 import { buildHourOptions, buildMinuteOptions } from '../../utils/timeOptions'
-import { clearAnalysisCache, readAnalysisCache, saveAnalysisCache } from '../../utils/analysisCache'
+import { clearAnalysisCache, finishPendingAnalysis, readAnalysisCache, readPendingAnalysis, saveAnalysisCache, startPendingAnalysis } from '../../utils/analysisCache'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -380,8 +380,13 @@ async function analyzeCurrentChart() {
     ElMessage.warning('请填写分析问题')
     return
   }
+  if (readPendingAnalysis(PENDING_KEY)) {
+    analysisNotice.value = '之前的报告正在分析中，请稍后再试；完成后可以在历史记录查看。'
+    ElMessage.warning(analysisNotice.value)
+    return
+  }
   analysisLoading.value = true
-  saveAnalysisCache(PENDING_KEY, { type: 'ZIWEI', question: analysisForm.question, startedAt: Date.now() })
+  startPendingAnalysis(PENDING_KEY, { type: 'ZIWEI', question: analysisForm.question })
   try {
     const data = await analyzeZiwei({
       userId: userStore.userId,
@@ -405,6 +410,7 @@ async function analyzeCurrentChart() {
     clearAnalysisCache(PENDING_KEY)
     ElMessage.success('紫微分析完成')
   } finally {
+    finishPendingAnalysis(PENDING_KEY)
     analysisLoading.value = false
   }
 }
@@ -510,7 +516,7 @@ onMounted(() => {
     knowledgeRules.value = cached.knowledgeRules || []
     classicReferences.value = cached.classicReferences || []
     analysisNotice.value = '已恢复上一次紫微分析报告；如果切屏后没看到结果，也可以到历史记录查看。'
-  } else if (readAnalysisCache(PENDING_KEY)) {
+  } else if (readPendingAnalysis(PENDING_KEY)) {
     analysisNotice.value = '检测到上次有分析进行中；如果本页没有恢复结果，请到历史记录查看，避免重复消耗。'
   }
 })

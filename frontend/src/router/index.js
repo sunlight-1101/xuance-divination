@@ -11,6 +11,7 @@ import ZiweiChartView from '../views/ziwei/ZiweiChartView.vue'
 import KnowledgeView from '../views/knowledge/KnowledgeView.vue'
 import RecordListView from '../views/record/RecordListView.vue'
 import QuotaView from '../views/quota/QuotaView.vue'
+import AccountView from '../views/account/AccountView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -32,7 +33,8 @@ const router = createRouter({
         { path: 'ziwei', component: ZiweiChartView },
         { path: 'quota', component: QuotaView },
         { path: 'knowledge', component: KnowledgeView },
-        { path: 'records', component: RecordListView }
+        { path: 'records', component: RecordListView },
+        { path: 'account', component: AccountView }
       ]
     }
   ]

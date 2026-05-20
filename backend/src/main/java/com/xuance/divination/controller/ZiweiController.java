@@ -5,6 +5,7 @@ import com.xuance.divination.dto.ZiweiAnalyzeDTO;
 import com.xuance.divination.dto.ZiweiChartDTO;
 import com.xuance.divination.service.ZiweiAnalyzeService;
 import com.xuance.divination.service.ZiweiChartService;
+import com.xuance.divination.service.impl.AnalysisTaskGuard;
 import com.xuance.divination.vo.ZiweiAnalyzeVO;
 import java.util.Map;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,10 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class ZiweiController {
     private final ZiweiChartService chartService;
     private final ZiweiAnalyzeService analyzeService;
+    private final AnalysisTaskGuard taskGuard;
 
-    public ZiweiController(ZiweiChartService chartService, ZiweiAnalyzeService analyzeService) {
+    public ZiweiController(ZiweiChartService chartService, ZiweiAnalyzeService analyzeService, AnalysisTaskGuard taskGuard) {
         this.chartService = chartService;
         this.analyzeService = analyzeService;
+        this.taskGuard = taskGuard;
     }
 
     @PostMapping("/chart")
@@ -30,6 +33,11 @@ public class ZiweiController {
 
     @PostMapping("/analyze")
     public Result<ZiweiAnalyzeVO> analyze(@RequestBody ZiweiAnalyzeDTO dto) {
-        return Result.ok(analyzeService.analyze(dto));
+        taskGuard.enter(dto.getUserId());
+        try {
+            return Result.ok(analyzeService.analyze(dto));
+        } finally {
+            taskGuard.exit(dto.getUserId());
+        }
     }
 }
