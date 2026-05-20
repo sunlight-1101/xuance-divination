@@ -2,17 +2,17 @@
   <div class="references">
     <div class="references-head">
       <h3>引用规则</h3>
-      <span>{{ rules.length + classicReferences.length }} 条</span>
+      <span>{{ displayRules.length + displayClassicReferences.length }} 条</span>
     </div>
-    <el-empty v-if="rules.length === 0 && classicReferences.length === 0" description="暂无引用资料" />
-    <div v-if="classicReferences.length" class="classic-block">
+    <el-empty v-if="displayRules.length === 0 && displayClassicReferences.length === 0" description="暂无引用资料" />
+    <div v-if="displayClassicReferences.length" class="classic-block">
       <h4>引用典籍</h4>
-      <article v-for="(item, index) in classicReferences" :key="index" class="classic-reference">
+      <article v-for="(item, index) in displayClassicReferences" :key="index" class="classic-reference">
         {{ item }}
       </article>
     </div>
-    <el-collapse v-if="rules.length">
-      <el-collapse-item v-for="rule in rules" :key="rule.id" :name="rule.id">
+    <el-collapse v-if="displayRules.length">
+      <el-collapse-item v-for="rule in displayRules" :key="rule.id" :name="rule.id">
         <template #title>
           <div class="rule-title">
             <el-tag size="small">{{ rule.category || '未分类' }}</el-tag>
@@ -35,7 +35,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   rules: {
     type: Array,
     default: () => []
@@ -46,8 +48,36 @@ defineProps({
   }
 })
 
+const displayRules = computed(() => props.rules
+  .map(rule => ({
+    ...rule,
+    category: cleanText(rule.category),
+    title: cleanText(rule.title),
+    ruleContent: cleanText(rule.ruleContent),
+    example: cleanText(rule.example),
+    keywords: cleanText(rule.keywords)
+  }))
+  .filter(rule => rule.title || rule.ruleContent))
+
+const displayClassicReferences = computed(() => props.classicReferences
+  .map(cleanText)
+  .filter(Boolean))
+
 function splitKeywords(value) {
-  return value.split(/[,\s，、]+/).filter(Boolean)
+  return cleanText(value).split(/[,\s，、]+/).filter(Boolean)
+}
+
+function cleanText(value) {
+  if (value == null) return ''
+  const text = String(value)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .replace(/�+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!text) return ''
+  const suspect = (text.match(/[ÃÂåæçðþÐÞ]/g) || []).length
+  if (suspect >= 8 && suspect / text.length > 0.08) return ''
+  return text
 }
 </script>
 
@@ -56,12 +86,17 @@ function splitKeywords(value) {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #e5e7eb;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .references-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
   margin-bottom: 10px;
 }
 
@@ -77,9 +112,11 @@ h3 {
 
 .rule-title {
   min-width: 0;
+  max-width: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
+  overflow: hidden;
 }
 
 .rule-title span:last-child {
@@ -92,6 +129,8 @@ p {
   margin: 0;
   color: #344054;
   line-height: 1.7;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .example {
@@ -101,6 +140,8 @@ p {
   background: #f6f7f9;
   color: #475467;
   line-height: 1.6;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .example strong {
@@ -135,6 +176,26 @@ p {
   color: #57451f;
   line-height: 1.7;
   font-size: 13px;
+  overflow-wrap: anywhere;
   word-break: break-word;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 700px) {
+  .references {
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  .rule-title {
+    gap: 6px;
+  }
+
+  .classic-reference,
+  p,
+  .example {
+    font-size: 13px;
+    line-height: 1.75;
+  }
 }
 </style>

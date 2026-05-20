@@ -182,8 +182,36 @@ public class ClassicBookServiceImpl implements ClassicBookService {
         if (compact.length() < 40) {
             return false;
         }
+        if (looksGarbled(compact)) {
+            return false;
+        }
         int chapterMarkerCount = countContains(compact, Arrays.asList("卷一", "卷二", "卷三", "卷四", "上卷", "下卷", "目录", "篇目"));
         return chapterMarkerCount < 3;
+    }
+
+    private boolean looksGarbled(String value) {
+        if (!StringUtils.hasText(value)) {
+            return true;
+        }
+        int replacementCount = countChar(value, '\ufffd');
+        int suspectLatinCount = 0;
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if ("ÃÂåæçðþÐÞ".indexOf(ch) >= 0) {
+                suspectLatinCount++;
+            }
+        }
+        return replacementCount >= 2 || (suspectLatinCount >= 8 && suspectLatinCount * 10 > value.length());
+    }
+
+    private int countChar(String value, char target) {
+        int count = 0;
+        for (int i = 0; i < value.length(); i++) {
+            if (value.charAt(i) == target) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private int countContains(String value, List<String> words) {
@@ -211,7 +239,11 @@ public class ClassicBookServiceImpl implements ClassicBookService {
     }
 
     private String snippet(String value, int maxLength) {
-        String text = safe(value).replaceAll("\\s+", " ").trim();
+        String text = safe(value)
+                .replaceAll("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]", "")
+                .replaceAll("\ufffd+", "")
+                .replaceAll("\\s+", " ")
+                .trim();
         if (text.length() <= maxLength) {
             return text;
         }

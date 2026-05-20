@@ -922,8 +922,15 @@ onMounted(() => {
   gap: 12px;
 }
 
-.ai-panel :deep(.result-report) {
+.ai-panel :deep(.report),
+.ai-panel :deep(.references) {
   grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+}
+
+.ai-panel :deep(.references) {
+  margin-top: 0;
 }
 
 @media (max-width: 900px) {
@@ -1097,10 +1104,16 @@ onMounted(() => {
 
   .ai-panel {
     grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 18px;
   }
 
   .analysis-form {
     grid-template-columns: 1fr;
+  }
+
+  .ai-button {
+    width: 100%;
   }
 }
 </style>
