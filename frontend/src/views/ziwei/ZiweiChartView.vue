@@ -541,7 +541,12 @@ onMounted(() => {
   pointer-events: none;
   background:
     linear-gradient(90deg, rgba(6, 29, 47, 0.95), rgba(12, 35, 67, 0.72) 48%, rgba(12, 35, 67, 0.34)),
-    url("/images/home-ui/card-ziwei.jpg") center / cover no-repeat;
+    radial-gradient(circle at 84% 26%, rgba(244, 215, 145, 0.26) 0 18px, transparent 19px),
+    radial-gradient(circle at 68% 34%, rgba(244, 215, 145, 0.36) 0 1px, transparent 2px),
+    radial-gradient(circle at 74% 58%, rgba(244, 215, 145, 0.28) 0 1px, transparent 2px),
+    radial-gradient(circle at 90% 66%, rgba(244, 215, 145, 0.26) 0 1px, transparent 2px),
+    repeating-radial-gradient(circle at 82% 46%, transparent 0 28px, rgba(232, 214, 165, 0.09) 29px 30px),
+    conic-gradient(from 12deg at 82% 46%, transparent 0 17deg, rgba(232, 214, 165, 0.1) 18deg 19deg, transparent 20deg 58deg);
   opacity: 0.96;
 }
 

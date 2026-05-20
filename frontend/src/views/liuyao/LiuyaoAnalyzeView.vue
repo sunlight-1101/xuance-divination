@@ -856,7 +856,11 @@ onBeforeUnmount(() => {
   pointer-events: none;
   background:
     linear-gradient(90deg, rgba(4, 45, 39, 0.95), rgba(34, 43, 31, 0.76) 48%, rgba(34, 43, 31, 0.32)),
-    url("/images/home-ui/card-liuyao.jpg") center / cover no-repeat;
+    radial-gradient(circle at 80% 24%, rgba(232, 214, 165, 0.22), transparent 14%),
+    radial-gradient(ellipse at 82% 48%, rgba(176, 138, 60, 0.2), transparent 28%),
+    repeating-radial-gradient(circle at 78% 42%, transparent 0 28px, rgba(232, 214, 165, 0.08) 29px 30px),
+    linear-gradient(115deg, transparent 0 56%, rgba(232, 214, 165, 0.09) 57% 58%, transparent 59%),
+    repeating-linear-gradient(155deg, transparent 0 34px, rgba(232, 214, 165, 0.06) 35px 37px);
   opacity: 0.96;
 }
 
