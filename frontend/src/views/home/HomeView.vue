@@ -359,6 +359,8 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 <style scoped>
 .home-page {
   --display-font: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", "FangSong", "SimSun", serif;
+  --home-max: 1480px;
+  --home-gap: 16px;
   min-height: 100vh;
   padding: 74px 46px 46px;
   color: #173f35;
@@ -368,15 +370,26 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
     repeating-linear-gradient(105deg, transparent 0 36px, rgba(232, 214, 165, 0.08) 36px 38px);
 }
 
+.home-page,
+.home-page * {
+  box-sizing: border-box;
+}
+
+.home-page button {
+  font: inherit;
+  cursor: pointer;
+}
+
 .home-hero {
   position: relative;
   min-height: 252px;
-  max-width: 1480px;
+  width: 100%;
+  max-width: var(--home-max);
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 30px 82px 42px;
+  padding: 30px 78px 42px;
   color: #f8f0d8;
   overflow: hidden;
 }
@@ -500,7 +513,8 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 }
 
 .today-card {
-  max-width: 1480px;
+  width: 100%;
+  max-width: var(--home-max);
   margin: -32px auto 0;
   padding: 28px 32px;
   position: relative;
@@ -512,6 +526,14 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   align-items: center;
   gap: 10px;
   margin-bottom: 14px;
+  min-width: 0;
+}
+
+.today-card > .card-title {
+  display: grid;
+  grid-template-columns: 34px auto minmax(0, 1fr) auto auto;
+  column-gap: 10px;
+  row-gap: 6px;
 }
 
 .card-title h2 {
@@ -521,12 +543,21 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   font-weight: 400;
   letter-spacing: 0.04em;
   color: #173f35;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .card-title small {
   margin-left: auto;
   color: #806326;
   font-size: 15px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.today-card > .card-title small {
+  justify-self: end;
+  text-align: right;
 }
 
 .lunar-pill {
@@ -537,6 +568,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   color: #9b7430;
   font-size: 13px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .expand-button {
@@ -548,6 +580,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   font-weight: 700;
   line-height: 28px;
   padding: 0 12px;
+  white-space: nowrap;
 }
 
 .leaf-mark {
@@ -563,7 +596,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
 .almanac-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.38fr) minmax(320px, 0.72fr);
+  grid-template-columns: minmax(0, 1.34fr) minmax(320px, 0.66fr);
   gap: 16px;
   align-items: stretch;
 }
@@ -655,7 +688,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   grid-template-columns: 58px minmax(0, 1fr);
   gap: 16px;
   align-items: center;
-  min-height: 105px;
+  min-height: 104px;
   padding: 18px;
   border-radius: 10px;
   border: 1px solid rgba(176, 138, 60, 0.18);
@@ -726,6 +759,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+  align-items: stretch;
 }
 
 .expanded-grid div,
@@ -822,6 +856,8 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   gap: 3px;
   padding: 7px 4px;
   text-align: center;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .calendar-grid button.muted {
@@ -853,18 +889,23 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   opacity: 0.72;
   font-size: 11px;
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .entry-grid {
-  max-width: 1480px;
+  width: 100%;
+  max-width: var(--home-max);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin: 16px auto;
+  gap: var(--home-gap);
+  margin: var(--home-gap) auto;
 }
 
 .feature-card {
   position: relative;
+  width: 100%;
   min-height: 0;
   aspect-ratio: 2.62 / 1;
   border: 1px solid rgba(232, 214, 165, 0.36);
@@ -1100,16 +1141,20 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 }
 
 .home-lower-grid {
-  max-width: 1480px;
+  width: 100%;
+  max-width: var(--home-max);
   margin: 0 auto;
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
-  gap: 16px;
+  gap: var(--home-gap);
+  align-items: stretch;
 }
 
 .advice-card,
 .recent-card {
   padding: 20px;
+  min-width: 0;
+  height: 100%;
 }
 
 .advice-card .card-title button,
@@ -1145,6 +1190,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   padding: 12px 14px;
   color: #173f35;
   text-align: left;
+  min-width: 0;
 }
 
 .recent-empty {
@@ -1189,6 +1235,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   font-size: 14px;
   font-weight: 600;
   line-height: 1.45;
+  min-width: 0;
 }
 
 .support-strip i {
@@ -1198,6 +1245,14 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 }
 
 @media (max-width: 980px) {
+  .home-page {
+    padding-inline: 28px;
+  }
+
+  .almanac-layout {
+    grid-template-columns: 1fr;
+  }
+
   .entry-grid,
   .home-lower-grid {
     grid-template-columns: 1fr;
@@ -1208,6 +1263,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   .home-page {
     min-height: 100dvh;
     padding: 0 14px 92px;
+    --home-gap: 12px;
     background:
       linear-gradient(180deg, rgba(0, 62, 54, 0.97) 0 460px, #f8f1e2 461px),
       radial-gradient(circle at 86px 120px, rgba(232, 214, 165, 0.1), transparent 26%);
@@ -1215,7 +1271,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
   .home-hero {
     min-height: 346px;
-    padding: 78px 20px 86px;
+    padding: 78px 20px 84px;
     align-items: flex-start;
   }
 
@@ -1245,7 +1301,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
 
   .today-card {
     margin-top: -74px;
-    padding: 18px;
+    padding: 16px;
     border-radius: 12px;
   }
 
@@ -1255,24 +1311,51 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
     grid-template-columns: 1fr;
   }
 
-  .card-title {
-    flex-wrap: wrap;
+  .today-card > .card-title {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    margin-bottom: 12px;
   }
 
-  .card-title small {
-    order: 4;
-    width: 100%;
-    margin-left: 44px;
+  .today-card > .card-title h2 {
+    font-size: 24px;
   }
 
-  .lunar-pill {
-    margin-left: 44px;
+  .today-card > .card-title small {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    justify-self: start;
+    width: auto;
+    max-width: 100%;
+    margin-left: 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .today-card > .card-title .lunar-pill {
+    grid-column: 2 / 3;
+    grid-row: 3;
+    justify-self: start;
+    margin-left: 0;
     padding: 5px 10px;
     font-size: 12px;
   }
 
-  .expand-button {
-    margin-left: auto;
+  .today-card > .card-title .expand-button {
+    grid-column: 3 / 4;
+    grid-row: 3;
+    justify-self: end;
+    margin-left: 0;
+  }
+
+  .advice-card .card-title,
+  .recent-card .card-title {
+    flex-wrap: nowrap;
+  }
+
+  .advice-card .card-title h2,
+  .recent-card .card-title h2 {
+    font-size: 23px;
   }
 
   .almanac-date strong {
@@ -1304,6 +1387,7 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   .calendar-grid button {
     min-height: 64px;
     padding: 6px 2px;
+    border-radius: 7px;
   }
 
   .calendar-grid button strong,
@@ -1316,6 +1400,8 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
     aspect-ratio: 2.62 / 1;
     padding: 0;
     border-radius: 8px;
+    background-size: cover;
+    background-position: center;
   }
 
   .feature-emblem {
@@ -1371,6 +1457,20 @@ watch([selectedAlmanacDate, almanacExpanded], ([dateKey, expanded]) => {
   .recent-card {
     padding: 16px;
     border-radius: 12px;
+  }
+
+  .support-strip {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px 10px;
+  }
+
+  .support-strip i {
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .support-strip strong {
+    grid-column: 1 / -1;
   }
 }
 </style>
