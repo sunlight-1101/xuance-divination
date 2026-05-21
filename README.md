@@ -1,111 +1,67 @@
-# 玄策术数分析系统
+# 哲玄
 
-从零开发的八字、六爻、奇门遁甲分析软件。第一版 MVP 优先跑通六爻：
+哲玄是一套传统易学排盘与分析工具，支持八字、六爻、紫微斗数排盘、知识库检索、AI 结构化分析、历史记录与多人生辰资料保存。
+
+> 说明：本项目用于传统文化学习、排盘辅助与个人记录参考，不作为医疗、投资、法律、婚恋等现实决策依据。
+
+## 功能概览
+
+- 八字排盘：根据出生日期、出生时间、出生地生成四柱，支持真太阳时、十神、藏干、自坐、空亡、纳音、神煞、大运与流年信息。
+- 八字分析：结合问题、四柱、大运流年、知识库与典籍片段生成结构化报告。
+- 八字合盘：支持保存并选择多人资料，进行关系合盘分析。
+- 六爻起卦：按三枚铜钱摇卦流程逐爻生成，本卦、变卦、六亲、六神、世应等自动排出。
+- 六爻分析：结合问题、卦象、动爻、日辰月建、空亡和知识库生成断事报告。
+- 紫微斗数：支持基础命盘排盘、十二宫展示与紫微分析报告。
+- 万年历：首页展示今日干支、农历、宜忌，并支持展开查看日历。
+- 知识库：支持八字、六爻、紫微相关规则、案例、典籍资料的管理、搜索与引用。
+- 历史记录：用户点击开始分析后会立即生成记录，显示“正在分析中...”，完成后自动更新为报告。
+- 用户系统：邮箱注册、登录、忘记密码、修改昵称和密码。
+- 移动端适配：以手机使用为优先，支持浏览器访问和添加到主屏幕。
+
+## 技术栈
+
+- 前端：Vue 3、Vite、Element Plus、Pinia、Vue Router
+- 后端：Spring Boot 2.7、MyBatis Plus
+- 数据库：MySQL 8
+- AI：兼容 Chat Completions 格式的模型接口
+- 部署：Docker Compose / Nginx / ECS
+
+## 目录结构
 
 ```text
-摇卦生成六爻 -> 知识库检索 -> AI 结构化报告 -> 历史记录
+.
+├── backend/                 # Spring Boot 后端
+├── frontend/                # Vue 前端
+├── docs/                    # 数据库结构、知识库种子数据和文档
+├── scripts/                 # 本地开发脚本
+├── docker-compose.prod.yml  # 生产部署编排
+├── .env.example             # 环境变量示例
+└── README.md
 ```
 
-## 当前已完成
+## 本地开发
 
-- Spring Boot 后端骨架
-- Vue 3 前端骨架
-- MySQL 表结构文档
-- 用户注册登录接口
-- 知识库规则 CRUD
-- 三枚铜钱法摇卦生成六爻
-- 自动装卦：本卦、变卦、纳甲地支、五行、六亲、世应、六神
-- 六爻分析接口
-- 分析报告展示引用规则
-- 历史记录保存并还原当次引用规则
-- 支持复制报告和导出 Markdown
-- 起卦体验：自动填时间、单爻重摇、本卦/变卦图形展示
-- 手机优先：三步起卦流程、移动端卡片式摇卦、PWA manifest
-- 移动端底部导航
-- 游客体验模式
-- 起卦日干自动计算，不再需要手填日干
-- 八字简要信息可选录入，并随六爻问题一起进入分析
-- 用户档案：出生信息可保存，后续起卦自动带入
-- 手机端简化：月建、日辰、旬空默认收进高级信息，摇满自动定位到卦象
-- 八字分析第一版：手动/半自动四柱输入，结合八字知识库与 AIService 生成报告
-- 八字自动四柱实用版：根据出生日期和时间自动填写年柱、月柱、日柱、时柱、日主，临近节气日可手动校正
-- 八字知识库扩展：补充五行流通、通根透干、合冲刑害、十神组合、婚恋事业财运、应期和边界规则
-- 八字知识库二次扩展：补充十神细分、四柱宫位、格局、神煞辅助、复合正缘、升职辞职、买房合同合作等断事情景
-- 六爻与八字知识库深度扩展：补充六爻断事流程、动变细断、反吟伏吟、合冲应期，以及八字细断、场景判断和可检索案例
-- 六爻与八字案例库进阶扩展：补充感情、复合、求职、升职、辞职、财运、投资、合同、失物、考试、健康边界、买房、合伙等可检索案例
-- 经典断法模型案例：补充六爻用神伏藏、六合六冲、独发多动、入墓、回头生克，以及八字月令提纲、身强身弱、调候、食伤生财、官印相生、杀印相生、伤官见官等经典模型
-- 知识库检索增强：分析时若匹配到案例，会优先保留相关案例供 Agent 类比参考
-- 历史记录查询与删除
-- 本地 mock AIService，占位真实大模型调用
-
-## 启动准备
-
-本机需要安装：
+准备环境：
 
 - JDK 8 或 17
 - Maven 3.8+
-- Node.js 和 npm
-- MySQL 8.0
+- Node.js 18+
+- MySQL 8+
 
-## 数据库
-
-创建数据库并执行：
+初始化数据库：
 
 ```bash
-docs/schema.sql
+mysql -uroot -p < docs/schema.sql
 ```
 
-如 MySQL 用户名密码不是 `root/root`，修改：
-
-```text
-backend/src/main/resources/application.yml
-```
-
-当前开发机已安装 MySQL 8.4.8，开发数据目录为：
-
-```text
-C:/Users/m1913/mysql-data/xuance-mysql-8.4
-```
-
-开发配置文件为：
-
-```text
-C:/Users/m1913/mysql-data/xuance-my.ini
-```
-
-root 密码：`root`
-
-## 后端启动
+启动后端：
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-后端默认端口：`8080`
-
-## AI 配置
-
-默认使用本地 mock 结果。要启用真实大模型，修改：
-
-```text
-backend/src/main/resources/application.yml
-```
-
-配置：
-
-```yaml
-ai:
-  enabled: true
-  base-url: https://api.openai.com/v1/chat/completions
-  api-key: 你的 API Key
-  model: gpt-4o-mini
-  temperature: 0.2
-```
-
-也可以换成其他兼容 Chat Completions 的服务地址。
-
-## 前端启动
+启动前端：
 
 ```bash
 cd frontend
@@ -113,16 +69,95 @@ npm install
 npm run dev
 ```
 
-前端默认端口：`5173`
+访问：
 
-## 一键启动开发环境
+```text
+http://localhost:5173
+```
+
+也可以使用脚本启动开发环境：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/start-dev.ps1
 ```
 
-启动后访问：
+## Docker 部署
 
-```text
-http://localhost:5173
+复制环境变量示例：
+
+```bash
+cp .env.example .env
 ```
+
+按需修改 `.env`：
+
+```env
+APP_PORT=80
+MYSQL_ROOT_PASSWORD=change-this-password
+
+AI_ENABLED=false
+AI_BASE_URL=https://api.deepseek.com/chat/completions
+AI_API_KEY=
+AI_MODEL=deepseek-v4-pro
+AI_TEMPERATURE=0.2
+AI_MAX_TOKENS=1800
+```
+
+启动：
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+查看状态：
+
+```bash
+docker ps
+docker logs -f xuance-backend
+docker logs -f xuance-frontend
+```
+
+## 环境变量
+
+常用配置：
+
+- `MYSQL_ROOT_PASSWORD`：MySQL root 密码
+- `AI_ENABLED`：是否启用真实 AI
+- `AI_BASE_URL`：AI 接口地址
+- `AI_API_KEY`：AI API Key
+- `AI_MODEL`：模型名称
+- `AI_MAX_TOKENS`：最大输出 token
+- `MAIL_ENABLED`：是否启用邮箱验证码
+- `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD`：SMTP 配置
+- `ALMANAC_ENABLED`：是否启用万年历接口
+- `ALMANAC_ID` / `ALMANAC_KEY`：万年历接口配置
+
+请不要把真实的 API Key、邮箱授权码、数据库密码提交到 GitHub。
+
+## 数据库说明
+
+主要表包括：
+
+- `user`：用户信息
+- `user_profile`：用户保存的出生资料
+- `divination_record`：八字、六爻、紫微等分析记录
+- `knowledge_rule`：知识库规则
+- `classic_book` / `classic_chapter`：典籍与章节内容
+- `ai_call_log`：AI 调用日志
+
+`divination_record.status` 用于标记分析状态：
+
+- `PROCESSING`：正在分析中
+- `DONE`：已完成
+- `FAILED`：分析失败
+
+## 安全建议
+
+- 仓库公开前请确认没有提交 `.env`、API Key、SMTP 授权码、数据库密码和支付私钥。
+- 如果密钥曾经公开过，应立即去对应平台重置密钥。
+- 生产环境建议开启 HTTPS，并限制数据库端口只允许容器内部访问。
+- 网站对外宣传建议使用“传统文化排盘工具、学习参考”等表述，避免承诺预测结果或现实收益。
+
+## 免责声明
+
+本项目输出内容由排盘规则、知识库和 AI 共同生成，仅供传统文化学习、娱乐参考和个人记录使用。请勿将其作为医疗、法律、投资、婚恋、就业等重大事项的唯一决策依据。
