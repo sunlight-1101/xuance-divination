@@ -2,6 +2,7 @@ package com.xuance.divination.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xuance.divination.common.BizException;
 import com.xuance.divination.dto.BaziAnalyzeDTO;
 import com.xuance.divination.dto.BaziCompatibilityDTO;
@@ -40,6 +41,7 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
     private final AiCallLogMapper aiCallLogMapper;
     private final ObjectMapper objectMapper;
     private final AnalysisCacheSupport cacheSupport;
+    private final AnalysisTaskExecutor taskExecutor;
 
     @Value("${ai.model:mock-local}")
     private String modelName;
@@ -53,7 +55,8 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
             DivinationRecordMapper recordMapper,
             AiCallLogMapper aiCallLogMapper,
             ObjectMapper objectMapper,
-            AnalysisCacheSupport cacheSupport) {
+            AnalysisCacheSupport cacheSupport,
+            AnalysisTaskExecutor taskExecutor) {
         this.knowledgeService = knowledgeService;
         this.classicBookService = classicBookService;
         this.promptTemplateService = promptTemplateService;
@@ -63,6 +66,7 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         this.aiCallLogMapper = aiCallLogMapper;
         this.objectMapper = objectMapper;
         this.cacheSupport = cacheSupport;
+        this.taskExecutor = taskExecutor;
     }
 
     @Override
@@ -74,35 +78,18 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
             return cachedVO(cached);
         }
         dto.setCacheKey(cacheKey);
+        ensureNoActiveTask(dto.getUserId());
         quotaService.consumeForAnalysis(dto.getUserId(), TYPE);
         String referenceContext = dto.getQuestion() + " " + dto.getQuestionType() + " " + dto.getBaziDetails();
         List<KnowledgeRule> rules = knowledgeService.findForAnalysis(TYPE, referenceContext);
         List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
         String prompt = buildPrompt(dto, rules, classicReferences);
         DivinationRecord record = createPendingRecord(dto.getUserId(), TYPE, dto.getQuestion(), toJson(dto), rules);
-        String resultJson;
-        try {
-            resultJson = aiService.analyze(prompt);
-            completeRecord(record, resultJson);
-        } catch (RuntimeException ex) {
-            failRecord(record, ex);
-            throw ex;
-        }
-
-        AiCallLog log = new AiCallLog();
-        log.setUserId(dto.getUserId());
-        log.setRecordId(record.getId());
-        log.setModelName(modelName);
-        log.setPrompt(prompt);
-        log.setResponse(resultJson);
-        log.setStatus("SUCCESS");
-        log.setCreateTime(LocalDateTime.now());
-        aiCallLogMapper.insert(log);
+        taskExecutor.submit(() -> runAnalysisTask(dto.getUserId(), record, prompt));
 
         BaziAnalyzeVO vo = new BaziAnalyzeVO();
         vo.setRecordId(record.getId());
-        vo.setResultJson(resultJson);
-        vo.setResultText(resultJson);
+        vo.setStatus("PROCESSING");
         vo.setKnowledgeRules(rules);
         vo.setClassicReferences(classicReferences);
         return vo;
@@ -117,6 +104,7 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
             return cachedVO(cached);
         }
         dto.setCacheKey(cacheKey);
+        ensureNoActiveTask(dto.getUserId());
         quotaService.consumeForAnalysis(dto.getUserId(), COMPATIBILITY_TYPE);
         String referenceContext = String.join(" ",
                 safe(dto.getRelationshipType()),
@@ -130,29 +118,11 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
         String prompt = buildCompatibilityPrompt(dto, rules, classicReferences);
         DivinationRecord record = createPendingRecord(dto.getUserId(), COMPATIBILITY_TYPE, "合盘：" + dto.getQuestion(), toJson(dto), rules);
-        String resultJson;
-        try {
-            resultJson = aiService.analyze(prompt);
-            completeRecord(record, resultJson);
-        } catch (RuntimeException ex) {
-            failRecord(record, ex);
-            throw ex;
-        }
-
-        AiCallLog log = new AiCallLog();
-        log.setUserId(dto.getUserId());
-        log.setRecordId(record.getId());
-        log.setModelName(modelName);
-        log.setPrompt(prompt);
-        log.setResponse(resultJson);
-        log.setStatus("SUCCESS");
-        log.setCreateTime(LocalDateTime.now());
-        aiCallLogMapper.insert(log);
+        taskExecutor.submit(() -> runAnalysisTask(dto.getUserId(), record, prompt));
 
         BaziAnalyzeVO vo = new BaziAnalyzeVO();
         vo.setRecordId(record.getId());
-        vo.setResultJson(resultJson);
-        vo.setResultText(resultJson);
+        vo.setStatus("PROCESSING");
         vo.setKnowledgeRules(rules);
         vo.setClassicReferences(classicReferences);
         return vo;
@@ -161,11 +131,49 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
     private BaziAnalyzeVO cachedVO(DivinationRecord record) {
         BaziAnalyzeVO vo = new BaziAnalyzeVO();
         vo.setRecordId(record.getId());
+        vo.setStatus(StringUtils.hasText(record.getStatus()) ? record.getStatus() : "DONE");
         vo.setResultJson(record.getResultJson());
         vo.setResultText(record.getResultText());
         vo.setKnowledgeRules(Collections.emptyList());
         vo.setClassicReferences(Collections.emptyList());
         return vo;
+    }
+
+    private void runAnalysisTask(Long userId, DivinationRecord record, String prompt) {
+        String resultJson = null;
+        try {
+            resultJson = aiService.analyze(prompt);
+            completeRecord(record, resultJson);
+            insertAiLog(userId, record.getId(), prompt, resultJson, "SUCCESS");
+        } catch (RuntimeException ex) {
+            failRecord(record, ex);
+            insertAiLog(userId, record.getId(), prompt, ex.getMessage(), "FAILED");
+        }
+    }
+
+    private void insertAiLog(Long userId, Long recordId, String prompt, String response, String status) {
+        AiCallLog log = new AiCallLog();
+        log.setUserId(userId);
+        log.setRecordId(recordId);
+        log.setModelName(modelName);
+        log.setPrompt(prompt);
+        log.setResponse(response);
+        log.setStatus(status);
+        log.setCreateTime(LocalDateTime.now());
+        aiCallLogMapper.insert(log);
+    }
+
+    private void ensureNoActiveTask(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        Long activeCount = recordMapper.selectCount(new LambdaQueryWrapper<DivinationRecord>()
+                .eq(DivinationRecord::getUserId, userId)
+                .eq(DivinationRecord::getStatus, "PROCESSING")
+                .ge(DivinationRecord::getCreateTime, LocalDateTime.now().minusMinutes(10)));
+        if (activeCount != null && activeCount > 0) {
+            throw new BizException("之前的报告正在分析中，请稍后再试；完成后可以在历史记录查看。");
+        }
     }
 
     private DivinationRecord createPendingRecord(Long userId, String type, String question, String inputJson, List<KnowledgeRule> rules) {

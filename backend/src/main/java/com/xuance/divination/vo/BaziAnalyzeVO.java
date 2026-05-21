@@ -5,6 +5,7 @@ import java.util.List;
 
 public class BaziAnalyzeVO {
     private Long recordId;
+    private String status;
     private String resultJson;
     private String resultText;
     private List<KnowledgeRule> knowledgeRules;
@@ -12,6 +13,8 @@ public class BaziAnalyzeVO {
 
     public Long getRecordId() { return recordId; }
     public void setRecordId(Long recordId) { this.recordId = recordId; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     public String getResultJson() { return resultJson; }
     public void setResultJson(String resultJson) { this.resultJson = resultJson; }
     public String getResultText() { return resultText; }

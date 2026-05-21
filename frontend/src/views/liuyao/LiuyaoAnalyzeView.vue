@@ -431,6 +431,7 @@ import { getDayGanZhi } from '../../utils/ganzhi'
 import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/report'
 import { buildHourOptions, buildMinuteOptions, combineTimeParts, splitTimeParts } from '../../utils/timeOptions'
 import { clearAnalysisCache, finishPendingAnalysis, readAnalysisCache, readPendingAnalysis, saveAnalysisCache, startPendingAnalysis } from '../../utils/analysisCache'
+import { waitForAnalysisRecord } from '../../utils/analysisPolling'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -515,6 +516,27 @@ const beginnerGuideTitle = computed(() => {
   if (!result.value) return '第三步：卦已生成，可以开始分析'
   return '报告已生成'
 })
+
+async function resolveAsyncAnalysis(data, fallbackRules = [], fallbackClassicReferences = []) {
+  if (data?.status === 'PROCESSING' && data.recordId) {
+    analysisNotice.value = '报告已提交，正在分析中...'
+    ElMessage.success('分析已提交，后台正在生成报告')
+    const record = await waitForAnalysisRecord(data.recordId, {
+      onTick(current) {
+        if (current?.status === 'PROCESSING') {
+          analysisNotice.value = '报告正在分析中，请稍候...'
+        }
+      }
+    })
+    return {
+      resultJson: record.resultJson,
+      resultText: record.resultText,
+      knowledgeRules: record.knowledgeRules?.length ? record.knowledgeRules : fallbackRules,
+      classicReferences: fallbackClassicReferences
+    }
+  }
+  return data
+}
 
 const beginnerGuideText = computed(() => {
   if (!form.question.trim()) return '不用懂六爻术语，把问题写具体一点即可，比如“这次面试能否通过”。'
@@ -779,9 +801,10 @@ async function submit() {
       yaoList: form.yaoList.map(({ coins, ...yao }) => ({ ...yao, coins }))
     }
     const data = await analyzeLiuyao(payload)
-    result.value = data.resultJson
-    knowledgeRules.value = data.knowledgeRules || []
-    classicReferences.value = data.classicReferences || []
+    const completed = await resolveAsyncAnalysis(data, data.knowledgeRules || [], data.classicReferences || [])
+    result.value = completed.resultJson
+    knowledgeRules.value = completed.knowledgeRules || []
+    classicReferences.value = completed.classicReferences || []
     saveAnalysisCache(CACHE_KEY, {
       result: result.value,
       knowledgeRules: knowledgeRules.value,

@@ -204,6 +204,7 @@ import { useUserStore } from '../../stores/user'
 import { provinceOptions } from '../../utils/chinaCities'
 import { buildHourOptions, buildMinuteOptions } from '../../utils/timeOptions'
 import { clearAnalysisCache, finishPendingAnalysis, readAnalysisCache, readPendingAnalysis, saveAnalysisCache, startPendingAnalysis } from '../../utils/analysisCache'
+import { waitForAnalysisRecord } from '../../utils/analysisPolling'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -371,6 +372,27 @@ async function submit() {
   }
 }
 
+async function resolveAsyncAnalysis(data, fallbackRules = [], fallbackClassicReferences = []) {
+  if (data?.status === 'PROCESSING' && data.recordId) {
+    analysisNotice.value = '报告已提交，正在分析中...'
+    ElMessage.success('分析已提交，后台正在生成报告')
+    const record = await waitForAnalysisRecord(data.recordId, {
+      onTick(current) {
+        if (current?.status === 'PROCESSING') {
+          analysisNotice.value = '报告正在分析中，请稍候...'
+        }
+      }
+    })
+    return {
+      resultJson: record.resultJson,
+      resultText: record.resultText,
+      knowledgeRules: record.knowledgeRules?.length ? record.knowledgeRules : fallbackRules,
+      classicReferences: fallbackClassicReferences
+    }
+  }
+  return data
+}
+
 async function analyzeCurrentChart() {
   if (!chart.value) {
     ElMessage.warning('请先排盘')
@@ -398,9 +420,10 @@ async function analyzeCurrentChart() {
       question: analysisForm.question,
       chartJson: JSON.stringify(chart.value)
     })
-    analysisResult.value = data.resultJson
-    knowledgeRules.value = data.knowledgeRules || []
-    classicReferences.value = data.classicReferences || []
+    const completed = await resolveAsyncAnalysis(data, data.knowledgeRules || [], data.classicReferences || [])
+    analysisResult.value = completed.resultJson
+    knowledgeRules.value = completed.knowledgeRules || []
+    classicReferences.value = completed.classicReferences || []
     saveAnalysisCache(CACHE_KEY, {
       chart: chart.value,
       result: analysisResult.value,

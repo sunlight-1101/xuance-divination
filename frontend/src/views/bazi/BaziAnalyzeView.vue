@@ -589,6 +589,7 @@ import { buildReportMarkdown, copyText, downloadMarkdown } from '../../utils/rep
 import { provinceOptions } from '../../utils/chinaCities'
 import { buildHourOptions, buildMinuteOptions, combineTimeParts, splitTimeParts } from '../../utils/timeOptions'
 import { clearAnalysisCache, finishPendingAnalysis, readAnalysisCache, readPendingAnalysis, saveAnalysisCache, startPendingAnalysis } from '../../utils/analysisCache'
+import { waitForAnalysisRecord } from '../../utils/analysisPolling'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -1321,6 +1322,27 @@ function syncDayMaster() {
   form.dayMaster = form.dayPillar ? form.dayPillar.slice(0, 1) : ''
 }
 
+async function resolveAsyncAnalysis(data, fallbackRules = [], fallbackClassicReferences = []) {
+  if (data?.status === 'PROCESSING' && data.recordId) {
+    analysisNotice.value = '报告已提交，正在分析中...'
+    ElMessage.success('分析已提交，后台正在生成报告')
+    const record = await waitForAnalysisRecord(data.recordId, {
+      onTick(current) {
+        if (current?.status === 'PROCESSING') {
+          analysisNotice.value = '报告正在分析中，请稍候...'
+        }
+      }
+    })
+    return {
+      resultJson: record.resultJson,
+      resultText: record.resultText,
+      knowledgeRules: record.knowledgeRules?.length ? record.knowledgeRules : fallbackRules,
+      classicReferences: fallbackClassicReferences
+    }
+  }
+  return data
+}
+
 async function submit() {
   fillPillarsFromBirth({ preserveExisting: true })
   syncDayMaster()
@@ -1358,9 +1380,10 @@ async function submit() {
       }),
       userId: accountUserId
     })
-    result.value = data.resultJson
-    knowledgeRules.value = data.knowledgeRules || []
-    classicReferences.value = data.classicReferences || []
+    const completed = await resolveAsyncAnalysis(data, data.knowledgeRules || [], data.classicReferences || [])
+    result.value = completed.resultJson
+    knowledgeRules.value = completed.knowledgeRules || []
+    classicReferences.value = completed.classicReferences || []
     saveAnalysisCache(CACHE_KEY, {
       mode: 'single',
       result: result.value,
@@ -1410,9 +1433,10 @@ async function submitCompatibility() {
       ...flattenCompatibilityPerson('personA', compatForm.personA),
       ...flattenCompatibilityPerson('personB', compatForm.personB)
     })
-    result.value = data.resultJson
-    knowledgeRules.value = data.knowledgeRules || []
-    classicReferences.value = data.classicReferences || []
+    const completed = await resolveAsyncAnalysis(data, data.knowledgeRules || [], data.classicReferences || [])
+    result.value = completed.resultJson
+    knowledgeRules.value = completed.knowledgeRules || []
+    classicReferences.value = completed.classicReferences || []
     saveAnalysisCache(CACHE_KEY, {
       mode: 'compatibility',
       result: result.value,
