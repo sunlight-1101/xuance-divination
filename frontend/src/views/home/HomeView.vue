@@ -209,7 +209,7 @@
           >
             <span>{{ typeLabel(record.type) }}</span>
             <strong>{{ record.question || '未填写问题' }}</strong>
-            <small>{{ formatRecordTime(record.createTime) }}</small>
+            <small>{{ record.status === 'PROCESSING' ? '正在分析中...' : formatRecordTime(record.createTime) }}</small>
           </button>
         </div>
         <div v-else class="recent-empty">

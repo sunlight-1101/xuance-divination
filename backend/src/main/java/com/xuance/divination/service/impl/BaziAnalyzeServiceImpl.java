@@ -79,22 +79,15 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         List<KnowledgeRule> rules = knowledgeService.findForAnalysis(TYPE, referenceContext);
         List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
         String prompt = buildPrompt(dto, rules, classicReferences);
-        String resultJson = aiService.analyze(prompt);
-
-        DivinationRecord record = new DivinationRecord();
-        record.setUserId(dto.getUserId());
-        record.setType(TYPE);
-        record.setQuestion(dto.getQuestion());
-        record.setInputJson(toJson(dto));
-        record.setResultJson(resultJson);
-        record.setResultText(resultJson);
-        record.setKnowledgeRuleIds(rules.stream()
-                .map(KnowledgeRule::getId)
-                .map(String::valueOf)
-                .collect(Collectors.joining(",")));
-        record.setCreateTime(LocalDateTime.now());
-        record.setUpdateTime(LocalDateTime.now());
-        recordMapper.insert(record);
+        DivinationRecord record = createPendingRecord(dto.getUserId(), TYPE, dto.getQuestion(), toJson(dto), rules);
+        String resultJson;
+        try {
+            resultJson = aiService.analyze(prompt);
+            completeRecord(record, resultJson);
+        } catch (RuntimeException ex) {
+            failRecord(record, ex);
+            throw ex;
+        }
 
         AiCallLog log = new AiCallLog();
         log.setUserId(dto.getUserId());
@@ -136,22 +129,15 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         List<KnowledgeRule> rules = knowledgeService.findForAnalysis(TYPE, referenceContext);
         List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
         String prompt = buildCompatibilityPrompt(dto, rules, classicReferences);
-        String resultJson = aiService.analyze(prompt);
-
-        DivinationRecord record = new DivinationRecord();
-        record.setUserId(dto.getUserId());
-        record.setType(COMPATIBILITY_TYPE);
-        record.setQuestion("合盘：" + dto.getQuestion());
-        record.setInputJson(toJson(dto));
-        record.setResultJson(resultJson);
-        record.setResultText(resultJson);
-        record.setKnowledgeRuleIds(rules.stream()
-                .map(KnowledgeRule::getId)
-                .map(String::valueOf)
-                .collect(Collectors.joining(",")));
-        record.setCreateTime(LocalDateTime.now());
-        record.setUpdateTime(LocalDateTime.now());
-        recordMapper.insert(record);
+        DivinationRecord record = createPendingRecord(dto.getUserId(), COMPATIBILITY_TYPE, "合盘：" + dto.getQuestion(), toJson(dto), rules);
+        String resultJson;
+        try {
+            resultJson = aiService.analyze(prompt);
+            completeRecord(record, resultJson);
+        } catch (RuntimeException ex) {
+            failRecord(record, ex);
+            throw ex;
+        }
 
         AiCallLog log = new AiCallLog();
         log.setUserId(dto.getUserId());
@@ -180,6 +166,49 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         vo.setKnowledgeRules(Collections.emptyList());
         vo.setClassicReferences(Collections.emptyList());
         return vo;
+    }
+
+    private DivinationRecord createPendingRecord(Long userId, String type, String question, String inputJson, List<KnowledgeRule> rules) {
+        DivinationRecord record = new DivinationRecord();
+        record.setUserId(userId);
+        record.setType(type);
+        record.setQuestion(question);
+        record.setInputJson(inputJson);
+        record.setKnowledgeRuleIds(ruleIds(rules));
+        record.setStatus("PROCESSING");
+        record.setCreateTime(LocalDateTime.now());
+        record.setUpdateTime(LocalDateTime.now());
+        recordMapper.insert(record);
+        return record;
+    }
+
+    private void completeRecord(DivinationRecord record, String resultJson) {
+        record.setResultJson(resultJson);
+        record.setResultText(resultJson);
+        record.setStatus("DONE");
+        record.setUpdateTime(LocalDateTime.now());
+        recordMapper.updateById(record);
+    }
+
+    private void failRecord(DivinationRecord record, RuntimeException ex) {
+        String message = ex.getMessage() == null ? "分析失败，请稍后重试。" : ex.getMessage();
+        String resultJson = "{\"coreConclusion\":\"分析失败：" + escapeJson(message) + "\",\"confidence\":\"未知\",\"keyEvidence\":[],\"detailedAnalysis\":{},\"timing\":[],\"suggestion\":\"请稍后重试，或检查输入信息后重新分析。\"}";
+        record.setResultJson(resultJson);
+        record.setResultText(resultJson);
+        record.setStatus("FAILED");
+        record.setUpdateTime(LocalDateTime.now());
+        recordMapper.updateById(record);
+    }
+
+    private String ruleIds(List<KnowledgeRule> rules) {
+        return rules.stream()
+                .map(KnowledgeRule::getId)
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+    }
+
+    private String escapeJson(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private String baziCacheKey(BaziAnalyzeDTO dto) {

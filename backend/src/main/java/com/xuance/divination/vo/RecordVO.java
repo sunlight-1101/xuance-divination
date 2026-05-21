@@ -13,6 +13,7 @@ public class RecordVO {
     private String resultJson;
     private String resultText;
     private String knowledgeRuleIds;
+    private String status;
     private List<KnowledgeRule> knowledgeRules;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
@@ -33,6 +34,8 @@ public class RecordVO {
     public void setResultText(String resultText) { this.resultText = resultText; }
     public String getKnowledgeRuleIds() { return knowledgeRuleIds; }
     public void setKnowledgeRuleIds(String knowledgeRuleIds) { this.knowledgeRuleIds = knowledgeRuleIds; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     public List<KnowledgeRule> getKnowledgeRules() { return knowledgeRules; }
     public void setKnowledgeRules(List<KnowledgeRule> knowledgeRules) { this.knowledgeRules = knowledgeRules; }
     public LocalDateTime getCreateTime() { return createTime; }

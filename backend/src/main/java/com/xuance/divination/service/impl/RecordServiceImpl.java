@@ -59,12 +59,20 @@ public class RecordServiceImpl implements RecordService {
         vo.setResultJson(record.getResultJson());
         vo.setResultText(record.getResultText());
         vo.setKnowledgeRuleIds(record.getKnowledgeRuleIds());
+        vo.setStatus(resolveStatus(record));
         vo.setCreateTime(record.getCreateTime());
         vo.setUpdateTime(record.getUpdateTime());
         if (includeRules) {
             vo.setKnowledgeRules(findRules(record.getKnowledgeRuleIds()));
         }
         return vo;
+    }
+
+    private String resolveStatus(DivinationRecord record) {
+        if (StringUtils.hasText(record.getStatus())) {
+            return record.getStatus();
+        }
+        return StringUtils.hasText(record.getResultJson()) ? "DONE" : "PROCESSING";
     }
 
     private List<KnowledgeRule> findRules(String ids) {

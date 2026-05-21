@@ -30,6 +30,11 @@
         <el-table-column label="类型" width="110">
           <template #default="{ row }">{{ typeLabel(row.type) }}</template>
         </el-table-column>
+        <el-table-column label="状态" width="120">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.status)" effect="plain">{{ statusLabel(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="question" label="问题" min-width="260" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="150" fixed="right">
@@ -46,6 +51,7 @@
       <div v-for="row in records" :key="row.id" class="record-card">
         <div class="record-card-head">
           <el-tag size="small">{{ typeLabel(row.type) }}</el-tag>
+          <el-tag size="small" :type="statusTagType(row.status)" effect="plain">{{ statusLabel(row.status) }}</el-tag>
           <span>{{ formatTime(row.createTime) }}</span>
         </div>
         <strong>{{ row.question || '未填写问题' }}</strong>
@@ -88,8 +94,24 @@
         </el-collapse-item>
       </el-collapse>
       <h3>分析结果</h3>
-      <ResultReport :report="parsedResult" />
-      <KnowledgeReferences :rules="current.knowledgeRules || []" />
+      <el-alert
+        v-if="isProcessing(current)"
+        type="info"
+        :closable="false"
+        title="正在分析中..."
+        description="报告还在生成，稍后刷新历史记录即可查看完整结果。"
+      />
+      <el-alert
+        v-else-if="current.status === 'FAILED'"
+        type="error"
+        :closable="false"
+        title="分析失败"
+        description="这次报告生成失败，可以检查输入后重新分析。"
+      />
+      <template v-else>
+        <ResultReport :report="parsedResult" />
+        <KnowledgeReferences :rules="current.knowledgeRules || []" />
+      </template>
       </div>
     </el-dialog>
   </div>
@@ -113,6 +135,7 @@ const windowWidth = ref(typeof window === 'undefined' ? 1024 : window.innerWidth
 const isGuest = computed(() => !userStore.userId)
 const isMobile = computed(() => windowWidth.value <= 700)
 const parsedResult = computed(() => {
+  if (isProcessing(current.value)) return null
   try {
     return current.value.resultJson ? JSON.parse(current.value.resultJson) : null
   } catch {
@@ -187,6 +210,18 @@ function exportCurrentReport() {
 
 function typeLabel(type) {
   return { LIUYAO: '六爻', BAZI: '八字', BAZI_COMPATIBILITY: '八字合盘', ZIWEI: '紫微', QIMEN: '奇门' }[type] || type || '记录'
+}
+
+function statusLabel(status) {
+  return { PROCESSING: '正在分析中...', DONE: '已完成', FAILED: '分析失败' }[status] || '已完成'
+}
+
+function statusTagType(status) {
+  return { PROCESSING: 'warning', FAILED: 'danger', DONE: 'success' }[status] || 'success'
+}
+
+function isProcessing(record) {
+  return record?.status === 'PROCESSING' || (!record?.resultJson && record?.status !== 'FAILED')
 }
 
 function formatTime(value) {
