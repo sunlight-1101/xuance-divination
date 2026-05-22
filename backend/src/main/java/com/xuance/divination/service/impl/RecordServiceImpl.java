@@ -1,6 +1,9 @@
 package com.xuance.divination.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xuance.divination.entity.DivinationRecord;
 import com.xuance.divination.entity.KnowledgeRule;
 import com.xuance.divination.mapper.DivinationRecordMapper;
@@ -18,10 +21,12 @@ import org.springframework.util.StringUtils;
 public class RecordServiceImpl implements RecordService {
     private final DivinationRecordMapper mapper;
     private final KnowledgeRuleMapper knowledgeRuleMapper;
+    private final ObjectMapper objectMapper;
 
-    public RecordServiceImpl(DivinationRecordMapper mapper, KnowledgeRuleMapper knowledgeRuleMapper) {
+    public RecordServiceImpl(DivinationRecordMapper mapper, KnowledgeRuleMapper knowledgeRuleMapper, ObjectMapper objectMapper) {
         this.mapper = mapper;
         this.knowledgeRuleMapper = knowledgeRuleMapper;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -59,6 +64,7 @@ public class RecordServiceImpl implements RecordService {
         vo.setResultJson(record.getResultJson());
         vo.setResultText(record.getResultText());
         vo.setKnowledgeRuleIds(record.getKnowledgeRuleIds());
+        vo.setClassicReferences(parseClassicReferences(record.getClassicReferences()));
         vo.setStatus(resolveStatus(record));
         vo.setCreateTime(record.getCreateTime());
         vo.setUpdateTime(record.getUpdateTime());
@@ -87,5 +93,18 @@ public class RecordServiceImpl implements RecordService {
             return Collections.emptyList();
         }
         return knowledgeRuleMapper.selectBatchIds(ruleIds);
+    }
+
+    private List<String> parseClassicReferences(String value) {
+        if (!StringUtils.hasText(value)) {
+            return Collections.emptyList();
+        }
+        try {
+            return objectMapper.readValue(value, new TypeReference<List<String>>() {});
+        } catch (JsonProcessingException ex) {
+            return Arrays.stream(value.split("\\r?\\n"))
+                    .filter(StringUtils::hasText)
+                    .collect(Collectors.toList());
+        }
     }
 }

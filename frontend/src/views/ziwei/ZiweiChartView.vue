@@ -387,7 +387,7 @@ async function resolveAsyncAnalysis(data, fallbackRules = [], fallbackClassicRef
       resultJson: record.resultJson,
       resultText: record.resultText,
       knowledgeRules: record.knowledgeRules?.length ? record.knowledgeRules : fallbackRules,
-      classicReferences: fallbackClassicReferences
+      classicReferences: record.classicReferences?.length ? record.classicReferences : fallbackClassicReferences
     }
   }
   return data

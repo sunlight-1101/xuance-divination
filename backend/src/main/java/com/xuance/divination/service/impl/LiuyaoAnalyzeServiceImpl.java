@@ -1,6 +1,7 @@
 package com.xuance.divination.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xuance.divination.common.BizException;
@@ -85,7 +86,7 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
         List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
         String prompt = buildPrompt(dto, rules, classicReferences);
         String inputJson = toJson(dto);
-        DivinationRecord record = createPendingRecord(dto.getUserId(), dto.getQuestion(), inputJson, rules);
+        DivinationRecord record = createPendingRecord(dto.getUserId(), dto.getQuestion(), inputJson, rules, classicReferences);
         taskExecutor.submit(() -> runAnalysisTask(dto.getUserId(), record, prompt));
 
         LiuyaoAnalyzeVO vo = new LiuyaoAnalyzeVO();
@@ -103,7 +104,7 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
         vo.setResultJson(record.getResultJson());
         vo.setResultText(record.getResultText());
         vo.setKnowledgeRules(Collections.emptyList());
-        vo.setClassicReferences(Collections.emptyList());
+        vo.setClassicReferences(parseClassicReferences(record.getClassicReferences()));
         return vo;
     }
 
@@ -144,13 +145,14 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
         }
     }
 
-    private DivinationRecord createPendingRecord(Long userId, String question, String inputJson, List<KnowledgeRule> rules) {
+    private DivinationRecord createPendingRecord(Long userId, String question, String inputJson, List<KnowledgeRule> rules, List<String> classicReferences) {
         DivinationRecord record = new DivinationRecord();
         record.setUserId(userId);
         record.setType(TYPE);
         record.setQuestion(question);
         record.setInputJson(inputJson);
         record.setKnowledgeRuleIds(ruleIds(rules));
+        record.setClassicReferences(toJson(classicReferences));
         record.setStatus("PROCESSING");
         record.setCreateTime(LocalDateTime.now());
         record.setUpdateTime(LocalDateTime.now());
@@ -303,6 +305,17 @@ public class LiuyaoAnalyzeServiceImpl implements LiuyaoAnalyzeService {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             throw new BizException("Failed to serialize input");
+        }
+    }
+
+    private List<String> parseClassicReferences(String value) {
+        if (!StringUtils.hasText(value)) {
+            return Collections.emptyList();
+        }
+        try {
+            return objectMapper.readValue(value, new TypeReference<List<String>>() {});
+        } catch (JsonProcessingException ex) {
+            return Collections.emptyList();
         }
     }
 }

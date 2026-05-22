@@ -13,6 +13,7 @@ public class DivinationRecord {
     private String resultJson;
     private String resultText;
     private String knowledgeRuleIds;
+    private String classicReferences;
     private String status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
@@ -33,6 +34,8 @@ public class DivinationRecord {
     public void setResultText(String resultText) { this.resultText = resultText; }
     public String getKnowledgeRuleIds() { return knowledgeRuleIds; }
     public void setKnowledgeRuleIds(String knowledgeRuleIds) { this.knowledgeRuleIds = knowledgeRuleIds; }
+    public String getClassicReferences() { return classicReferences; }
+    public void setClassicReferences(String classicReferences) { this.classicReferences = classicReferences; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public LocalDateTime getCreateTime() { return createTime; }
