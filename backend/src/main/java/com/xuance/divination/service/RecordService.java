@@ -6,6 +6,7 @@ import java.util.List;
 
 public interface RecordService {
     List<RecordVO> list(Long userId, String type, String keyword);
+    List<RecordVO> listAll(Long adminUserId, String type, String keyword);
     RecordVO get(Long id);
     void delete(Long id);
 }

@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api/records")
 public class RecordController {
@@ -22,15 +24,25 @@ public class RecordController {
 
     @GetMapping
     public Result<List<RecordVO>> list(
-            @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String type,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
         return Result.ok(service.list(userId, type, keyword));
     }
 
     @GetMapping("/{id}")
     public Result<RecordVO> get(@PathVariable Long id) {
         return Result.ok(service.get(id));
+    }
+
+    @GetMapping("/all")
+    public Result<List<RecordVO>> listAll(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String keyword,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return Result.ok(service.listAll(userId, type, keyword));
     }
 
     @DeleteMapping("/{id}")

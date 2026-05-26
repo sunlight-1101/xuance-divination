@@ -35,3 +35,7 @@ export function changePassword(data) {
 export function resetPassword(data) {
   return request.post('/auth/reset-password', data)
 }
+
+export function listUsers(params) {
+  return request.get('/auth/users', { params })
+}

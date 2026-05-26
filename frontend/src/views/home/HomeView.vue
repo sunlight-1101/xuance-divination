@@ -382,7 +382,7 @@ async function loadRecentRecords() {
   }
   recentLoading.value = true
   try {
-    const records = await listRecords({ userId: userStore.userId })
+    const records = await listRecords({})
     recentRecords.value = Array.isArray(records) ? records.slice(0, 3) : []
   } catch (error) {
     recentRecords.value = []
@@ -977,6 +977,12 @@ onMounted(() => {
 .feature-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 20px 34px rgba(19, 37, 32, 0.22);
+}
+
+.feature-card:hover .feature-emblem,
+.feature-card:hover .feature-copy,
+.feature-card:hover > i {
+  opacity: 1;
 }
 
 .feature-card::before,

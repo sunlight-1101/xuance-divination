@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api/bazi")
 public class BaziController {
@@ -23,22 +25,26 @@ public class BaziController {
     }
 
     @PostMapping("/analyze")
-    public Result<BaziAnalyzeVO> analyze(@RequestBody BaziAnalyzeDTO dto) {
-        taskGuard.enter(dto.getUserId());
+    public Result<BaziAnalyzeVO> analyze(@RequestBody BaziAnalyzeDTO dto, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        dto.setUserId(userId);
+        taskGuard.enter(userId);
         try {
             return Result.ok(service.analyze(dto));
         } finally {
-            taskGuard.exit(dto.getUserId());
+            taskGuard.exit(userId);
         }
     }
 
     @PostMapping("/compatibility")
-    public Result<BaziAnalyzeVO> analyzeCompatibility(@RequestBody BaziCompatibilityDTO dto) {
-        taskGuard.enter(dto.getUserId());
+    public Result<BaziAnalyzeVO> analyzeCompatibility(@RequestBody BaziCompatibilityDTO dto, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        dto.setUserId(userId);
+        taskGuard.enter(userId);
         try {
             return Result.ok(service.analyzeCompatibility(dto));
         } finally {
-            taskGuard.exit(dto.getUserId());
+            taskGuard.exit(userId);
         }
     }
 }

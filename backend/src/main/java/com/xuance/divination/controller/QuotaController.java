@@ -25,17 +25,22 @@ public class QuotaController {
     }
 
     @GetMapping
-    public Result<QuotaVO> getQuota(@RequestParam Long userId) {
+    public Result<QuotaVO> getQuota(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
         return Result.ok(quotaService.getQuota(userId));
     }
 
     @PostMapping("/recharge")
-    public Result<QuotaVO> recharge(@RequestBody RechargeDTO dto) {
+    public Result<QuotaVO> recharge(@RequestBody RechargeDTO dto, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        dto.setUserId(userId);
         return Result.ok(quotaService.recharge(dto));
     }
 
     @PostMapping("/alipay/create")
-    public Result<PayOrderVO> createAlipayOrder(@RequestBody RechargeDTO dto) {
+    public Result<PayOrderVO> createAlipayOrder(@RequestBody RechargeDTO dto, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        dto.setUserId(userId);
         return Result.ok(quotaService.createAlipayOrder(dto));
     }
 

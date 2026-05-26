@@ -12,6 +12,9 @@ public class UserVO {
     private String birthPlace;
     private String birthDayGanZhi;
     private String birthDayMaster;
+    private Integer status;
+    private String createTime;
+    private String token;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -35,4 +38,10 @@ public class UserVO {
     public void setBirthDayGanZhi(String birthDayGanZhi) { this.birthDayGanZhi = birthDayGanZhi; }
     public String getBirthDayMaster() { return birthDayMaster; }
     public void setBirthDayMaster(String birthDayMaster) { this.birthDayMaster = birthDayMaster; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public String getCreateTime() { return createTime; }
+    public void setCreateTime(String createTime) { this.createTime = createTime; }
+    public String getToken() { return token; }
+    public void setToken(String token) { this.token = token; }
 }

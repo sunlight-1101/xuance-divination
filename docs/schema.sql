@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS divination_record (
   result_text LONGTEXT,
   knowledge_rule_ids VARCHAR(1000),
   classic_references LONGTEXT,
+  status VARCHAR(30) DEFAULT NULL,
   create_time DATETIME,
   update_time DATETIME,
   INDEX idx_record_user_type (user_id, type),

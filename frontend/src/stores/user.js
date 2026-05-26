@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 
 const STORAGE_KEY = 'xuance_user'
+const TOKEN_KEY = 'xuance_token'
 const BIRTH_PROFILE_KEY = 'zhexuan_birth_profile'
 const BIRTH_PROFILES_KEY = 'zhexuan_birth_profiles'
 const APP_VERSION_KEY = 'zhexuan_app_version'
@@ -10,6 +11,7 @@ function readStoredUser() {
   const user = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
   if (user && (!user.id || !/^\d+$/.test(String(user.id)))) {
     localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(TOKEN_KEY)
     return null
   }
   return user
@@ -17,17 +19,19 @@ function readStoredUser() {
 
 if (localStorage.getItem(APP_VERSION_KEY) !== APP_VERSION) {
   localStorage.removeItem(STORAGE_KEY)
+  localStorage.removeItem(TOKEN_KEY)
   localStorage.setItem(APP_VERSION_KEY, APP_VERSION)
 }
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    user: readStoredUser()
+    user: readStoredUser(),
+    token: localStorage.getItem(TOKEN_KEY) || null
   }),
   getters: {
     isLogin: state => {
       const id = state.user?.id
-      return Boolean(id && /^\d+$/.test(String(id)))
+      return Boolean(id && /^\d+$/.test(String(id)) && state.token)
     },
     userId: state => {
       const id = state.user?.id
@@ -38,11 +42,17 @@ export const useUserStore = defineStore('user', {
   actions: {
     setUser(user) {
       this.user = user
+      this.token = user?.token || null
       localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+      if (user?.token) {
+        localStorage.setItem(TOKEN_KEY, user.token)
+      }
     },
     clearUser() {
       this.user = null
+      this.token = null
       localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(TOKEN_KEY)
     },
     getBirthProfile() {
       const profiles = this.getBirthProfiles()

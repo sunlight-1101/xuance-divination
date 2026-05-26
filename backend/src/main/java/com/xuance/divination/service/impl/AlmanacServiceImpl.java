@@ -2,6 +2,8 @@ package com.xuance.divination.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.xuance.divination.common.BizException;
 import com.xuance.divination.service.AlmanacService;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,13 +14,16 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class AlmanacServiceImpl implements AlmanacService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final Map<String, Map<String, Object>> cache = new ConcurrentHashMap<>();
+    private final Cache<String, Map<String, Object>> cache = Caffeine.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(24, TimeUnit.HOURS)
+            .build();
 
     @Value("${almanac.enabled:true}")
     private boolean enabled;
@@ -44,7 +49,7 @@ public class AlmanacServiceImpl implements AlmanacService {
             throw new BizException("日期格式应为 YYYY-MM-DD");
         }
 
-        Map<String, Object> cached = cache.get(date);
+        Map<String, Object> cached = cache.getIfPresent(date);
         if (cached != null) {
             return cached;
         }

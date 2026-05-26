@@ -8,6 +8,17 @@ const request = axios.create({
   timeout: 300000
 })
 
+request.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('xuance_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  error => Promise.reject(error)
+)
+
 request.interceptors.response.use(
   response => {
     const body = response.data
@@ -18,7 +29,14 @@ request.interceptors.response.use(
     return body ? body.data : response.data
   },
   error => {
-    ElMessage.error(error.message || '网络异常')
+    if (error.response?.status === 401) {
+      localStorage.removeItem('xuance_user')
+      localStorage.removeItem('xuance_token')
+      window.location.href = '/login'
+      ElMessage.error('登录已过期，请重新登录')
+    } else {
+      ElMessage.error(error.message || '网络异常')
+    }
     return Promise.reject(error)
   }
 )

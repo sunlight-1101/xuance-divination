@@ -1,23 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import LoginView from '../views/auth/LoginView.vue'
-import RegisterView from '../views/auth/RegisterView.vue'
-import MainLayout from '../components/MainLayout.vue'
-import HomeView from '../views/home/HomeView.vue'
-import DashboardView from '../views/dashboard/DashboardView.vue'
-import BaziAnalyzeView from '../views/bazi/BaziAnalyzeView.vue'
-import LiuyaoAnalyzeView from '../views/liuyao/LiuyaoAnalyzeView.vue'
-import ZiweiChartView from '../views/ziwei/ZiweiChartView.vue'
-import KnowledgeView from '../views/knowledge/KnowledgeView.vue'
-import RecordListView from '../views/record/RecordListView.vue'
-import QuotaView from '../views/quota/QuotaView.vue'
-import AccountView from '../views/account/AccountView.vue'
+
+const MainLayout = () => import('../components/MainLayout.vue')
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/login', component: LoginView },
-    { path: '/register', component: RegisterView },
+    { path: '/login', component: () => import('../views/auth/LoginView.vue') },
+    { path: '/register', component: () => import('../views/auth/RegisterView.vue') },
     {
       path: '/',
       component: MainLayout,
@@ -26,15 +16,17 @@ const router = createRouter({
         return userStore.isAdmin ? '/dashboard' : '/home'
       },
       children: [
-        { path: 'home', component: HomeView },
-        { path: 'dashboard', component: DashboardView, meta: { adminOnly: true } },
-        { path: 'bazi', component: BaziAnalyzeView },
-        { path: 'liuyao', component: LiuyaoAnalyzeView },
-        { path: 'ziwei', component: ZiweiChartView },
-        { path: 'quota', component: QuotaView },
-        { path: 'knowledge', component: KnowledgeView },
-        { path: 'records', component: RecordListView },
-        { path: 'account', component: AccountView }
+        { path: 'home', component: () => import('../views/home/HomeView.vue') },
+        { path: 'dashboard', component: () => import('../views/dashboard/DashboardView.vue'), meta: { adminOnly: true } },
+        { path: 'bazi', component: () => import('../views/bazi/BaziAnalyzeView.vue') },
+        { path: 'liuyao', component: () => import('../views/liuyao/LiuyaoAnalyzeView.vue') },
+        { path: 'ziwei', component: () => import('../views/ziwei/ZiweiChartView.vue') },
+        { path: 'quota', component: () => import('../views/quota/QuotaView.vue') },
+        { path: 'knowledge', component: () => import('../views/knowledge/KnowledgeView.vue') },
+        { path: 'records', component: () => import('../views/record/RecordListView.vue') },
+        { path: 'account', component: () => import('../views/account/AccountView.vue') },
+        { path: 'admin/users', component: () => import('../views/dashboard/UserListView.vue'), meta: { adminOnly: true } },
+        { path: 'admin/records', component: () => import('../views/dashboard/AdminRecordListView.vue'), meta: { adminOnly: true } }
       ]
     }
   ]

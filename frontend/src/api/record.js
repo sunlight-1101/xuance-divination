@@ -8,6 +8,10 @@ export function getRecord(id) {
   return request.get(`/records/${id}`)
 }
 
+export function listAllRecords(params) {
+  return request.get('/records/all', { params })
+}
+
 export function deleteRecord(id) {
   return request.delete(`/records/${id}`)
 }

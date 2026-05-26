@@ -1,7 +1,10 @@
 package com.xuance.divination.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xuance.divination.common.BizException;
+import com.xuance.divination.common.JwtUtil;
+import com.xuance.divination.common.PageResult;
 import com.xuance.divination.dto.ChangePasswordDTO;
 import com.xuance.divination.dto.EmailCodeDTO;
 import com.xuance.divination.dto.LoginDTO;
@@ -18,6 +21,7 @@ import com.xuance.divination.vo.UserVO;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -34,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final VerificationCodeMapper codeMapper;
     private final JavaMailSender mailSender;
+    private final JwtUtil jwtUtil;
 
     @Value("${mail.enabled:false}")
     private boolean mailEnabled;
@@ -41,10 +46,11 @@ public class AuthServiceImpl implements AuthService {
     @Value("${spring.mail.username:}")
     private String mailFrom;
 
-    public AuthServiceImpl(UserMapper userMapper, VerificationCodeMapper codeMapper, JavaMailSender mailSender) {
+    public AuthServiceImpl(UserMapper userMapper, VerificationCodeMapper codeMapper, JavaMailSender mailSender, JwtUtil jwtUtil) {
         this.userMapper = userMapper;
         this.codeMapper = codeMapper;
         this.mailSender = mailSender;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -97,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
         userMapper.insert(user);
-        return toVO(user);
+        return toVOWithToken(user);
     }
 
     @Override
@@ -110,7 +116,7 @@ public class AuthServiceImpl implements AuthService {
         if (user.getStatus() != null && user.getStatus() == 0) {
             throw new BizException("账号已停用");
         }
-        return toVO(user);
+        return toVOWithToken(user);
     }
 
     @Override
@@ -193,6 +199,31 @@ public class AuthServiceImpl implements AuthService {
         return true;
     }
 
+    @Override
+    public PageResult<UserVO> listAllUsers(Long adminUserId, String keyword, long page, long size) {
+        if (adminUserId == null) {
+            throw new BizException("请先登录");
+        }
+        User admin = userMapper.selectById(adminUserId);
+        if (admin == null) {
+            throw new BizException("用户不存在");
+        }
+        if (!"ADMIN".equals(admin.getRole())) {
+            throw new BizException("无权限访问");
+        }
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
+                .orderByDesc(User::getCreateTime);
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w
+                    .like(User::getEmail, keyword)
+                    .or()
+                    .like(User::getNickname, keyword));
+        }
+        Page<User> userPage = userMapper.selectPage(new Page<>(page, size), wrapper);
+        List<UserVO> list = userPage.getRecords().stream().map(this::toVO).collect(java.util.stream.Collectors.toList());
+        return PageResult.of(list, userPage.getTotal(), page, size);
+    }
+
     private String hash(String password) {
         return DigestUtils.md5DigestAsHex(("xuance:" + password).getBytes(StandardCharsets.UTF_8));
     }
@@ -210,6 +241,15 @@ public class AuthServiceImpl implements AuthService {
         vo.setBirthPlace(user.getBirthPlace());
         vo.setBirthDayGanZhi(user.getBirthDayGanZhi());
         vo.setBirthDayMaster(user.getBirthDayMaster());
+        vo.setStatus(user.getStatus());
+        vo.setCreateTime(user.getCreateTime() != null ? user.getCreateTime().toString() : null);
+        return vo;
+    }
+
+    private UserVO toVOWithToken(User user) {
+        UserVO vo = toVO(user);
+        String token = jwtUtil.generateToken(user.getId(), user.getRole());
+        vo.setToken(token);
         return vo;
     }
 

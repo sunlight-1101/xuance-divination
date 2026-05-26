@@ -16,6 +16,8 @@ public class RecordVO {
     private List<String> classicReferences;
     private String status;
     private List<KnowledgeRule> knowledgeRules;
+    private String userEmail;
+    private String userNickname;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
@@ -41,6 +43,10 @@ public class RecordVO {
     public void setStatus(String status) { this.status = status; }
     public List<KnowledgeRule> getKnowledgeRules() { return knowledgeRules; }
     public void setKnowledgeRules(List<KnowledgeRule> knowledgeRules) { this.knowledgeRules = knowledgeRules; }
+    public String getUserEmail() { return userEmail; }
+    public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
+    public String getUserNickname() { return userNickname; }
+    public void setUserNickname(String userNickname) { this.userNickname = userNickname; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
     public LocalDateTime getUpdateTime() { return updateTime; }

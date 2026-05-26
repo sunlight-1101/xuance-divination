@@ -7,6 +7,7 @@ import com.xuance.divination.dto.RegisterDTO;
 import com.xuance.divination.dto.ResetPasswordDTO;
 import com.xuance.divination.dto.UpdateNicknameDTO;
 import com.xuance.divination.dto.UserProfileDTO;
+import com.xuance.divination.common.PageResult;
 import com.xuance.divination.vo.UserVO;
 
 public interface AuthService {
@@ -18,4 +19,5 @@ public interface AuthService {
     UserVO updateNickname(UpdateNicknameDTO dto);
     Boolean changePassword(ChangePasswordDTO dto);
     Boolean resetPassword(ResetPasswordDTO dto);
+    PageResult<UserVO> listAllUsers(Long adminUserId, String keyword, long page, long size);
 }

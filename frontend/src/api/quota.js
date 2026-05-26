@@ -1,7 +1,7 @@
 import request from '../utils/request'
 
-export function getQuota(userId) {
-  return request.get('/quota', { params: { userId } })
+export function getQuota() {
+  return request.get('/quota')
 }
 
 export function rechargeQuota(data) {

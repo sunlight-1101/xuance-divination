@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api/knowledge")
 public class KnowledgeController {
@@ -37,20 +39,25 @@ public class KnowledgeController {
     }
 
     @PostMapping("/create")
-    public Result<KnowledgeRule> create(@RequestBody KnowledgeRule rule) {
-        requireAdmin(rule.getOperatorUserId());
+    public Result<KnowledgeRule> create(@RequestBody KnowledgeRule rule, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        rule.setOperatorUserId(userId);
+        requireAdmin(userId);
         return Result.ok(service.saveRule(rule));
     }
 
     @PutMapping("/update")
-    public Result<KnowledgeRule> update(@RequestBody KnowledgeRule rule) {
-        requireAdmin(rule.getOperatorUserId());
+    public Result<KnowledgeRule> update(@RequestBody KnowledgeRule rule, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        rule.setOperatorUserId(userId);
+        requireAdmin(userId);
         return Result.ok(service.updateRule(rule));
     }
 
     @DeleteMapping("/{id}")
-    public Result<Boolean> delete(@PathVariable Long id, @RequestParam(required = false) Long operatorUserId) {
-        requireAdmin(operatorUserId);
+    public Result<Boolean> delete(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        requireAdmin(userId);
         service.deleteRule(id);
         return Result.ok(true);
     }

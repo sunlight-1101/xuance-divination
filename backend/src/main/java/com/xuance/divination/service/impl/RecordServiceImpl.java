@@ -4,15 +4,20 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.xuance.divination.common.BizException;
 import com.xuance.divination.entity.DivinationRecord;
 import com.xuance.divination.entity.KnowledgeRule;
+import com.xuance.divination.entity.User;
 import com.xuance.divination.mapper.DivinationRecordMapper;
 import com.xuance.divination.mapper.KnowledgeRuleMapper;
+import com.xuance.divination.mapper.UserMapper;
 import com.xuance.divination.service.RecordService;
 import com.xuance.divination.vo.RecordVO;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -21,11 +26,13 @@ import org.springframework.util.StringUtils;
 public class RecordServiceImpl implements RecordService {
     private final DivinationRecordMapper mapper;
     private final KnowledgeRuleMapper knowledgeRuleMapper;
+    private final UserMapper userMapper;
     private final ObjectMapper objectMapper;
 
-    public RecordServiceImpl(DivinationRecordMapper mapper, KnowledgeRuleMapper knowledgeRuleMapper, ObjectMapper objectMapper) {
+    public RecordServiceImpl(DivinationRecordMapper mapper, KnowledgeRuleMapper knowledgeRuleMapper, UserMapper userMapper, ObjectMapper objectMapper) {
         this.mapper = mapper;
         this.knowledgeRuleMapper = knowledgeRuleMapper;
+        this.userMapper = userMapper;
         this.objectMapper = objectMapper;
     }
 
@@ -39,6 +46,39 @@ public class RecordServiceImpl implements RecordService {
                 .stream()
                 .map(record -> toVO(record, false))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<RecordVO> listAll(Long adminUserId, String type, String keyword) {
+        if (adminUserId == null) {
+            throw new BizException("请先登录");
+        }
+        User admin = userMapper.selectById(adminUserId);
+        if (admin == null || !"ADMIN".equals(admin.getRole())) {
+            throw new BizException("无权限访问");
+        }
+        List<DivinationRecord> records = mapper.selectList(new LambdaQueryWrapper<DivinationRecord>()
+                .eq(StringUtils.hasText(type), DivinationRecord::getType, type)
+                .like(StringUtils.hasText(keyword), DivinationRecord::getQuestion, keyword)
+                .orderByDesc(DivinationRecord::getCreateTime));
+        if (records.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Long> userIds = records.stream()
+                .map(DivinationRecord::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, User> userMap = userMapper.selectBatchIds(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+        return records.stream().map(record -> {
+            RecordVO vo = toVO(record, false);
+            User u = userMap.get(record.getUserId());
+            if (u != null) {
+                vo.setUserEmail(u.getEmail());
+                vo.setUserNickname(u.getNickname());
+            }
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     @Override

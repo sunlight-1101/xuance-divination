@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api/ziwei")
 public class ZiweiController {
@@ -32,12 +34,14 @@ public class ZiweiController {
     }
 
     @PostMapping("/analyze")
-    public Result<ZiweiAnalyzeVO> analyze(@RequestBody ZiweiAnalyzeDTO dto) {
-        taskGuard.enter(dto.getUserId());
+    public Result<ZiweiAnalyzeVO> analyze(@RequestBody ZiweiAnalyzeDTO dto, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        dto.setUserId(userId);
+        taskGuard.enter(userId);
         try {
             return Result.ok(analyzeService.analyze(dto));
         } finally {
-            taskGuard.exit(dto.getUserId());
+            taskGuard.exit(userId);
         }
     }
 }
