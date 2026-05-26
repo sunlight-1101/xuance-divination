@@ -244,17 +244,48 @@
                     <span>{{ luckInfo.direction || '未定方向' }} · {{ luckInfo.startAge || '未起运' }}</span>
                   </div>
                   <div v-if="luckInfo.cycles.length" class="luck-timeline">
-                    <div
-                      v-for="luck in luckInfo.cycles"
-                      :key="luck.index"
-                      :class="{ active: luck.active }"
-                    >
-                      <i>{{ luck.index }}</i>
-                      <strong>{{ luck.pillar }}</strong>
-                      <span>{{ luck.startAge }}-{{ luck.endAge }}岁</span>
-                      <small>{{ luck.startYear }}-{{ luck.endYear }}</small>
-                      <em>{{ luck.stemTenGod || '十神待定' }}</em>
-                    </div>
+                    <template v-for="luck in luckInfo.cycles" :key="luck.index">
+                      <div
+                        :class="{ active: luck.active, expanded: expandedLuckIndex === luck.index }"
+                        @click="toggleLuckExpand(luck.index)"
+                      >
+                        <i>{{ luck.index }}</i>
+                        <strong>{{ luck.pillar }}</strong>
+                        <span>{{ luck.startAge }}-{{ luck.endAge }}岁</span>
+                        <small>{{ luck.startYear }}-{{ luck.endYear }}</small>
+                        <em>{{ luck.stemTenGod || '十神待定' }}</em>
+                      </div>
+                      <div v-if="expandedLuckIndex === luck.index" class="flow-years-section">
+                        <div class="flow-years-grid">
+                          <div
+                            v-for="fy in getFlowYearsForLuck(luck)"
+                            :key="fy.year"
+                            :class="{ active: fy.year === new Date().getFullYear(), expanded: expandedYearKey === `${luck.index}-${fy.year}` }"
+                            @click.stop="toggleYearExpand(luck.index, fy.year)"
+                          >
+                            <strong>{{ fy.year }}</strong>
+                            <span>{{ fy.pillar }}</span>
+                            <small>{{ fy.tenGod || '' }}</small>
+                          </div>
+                        </div>
+                        <div v-if="expandedYearKey && expandedYearKey.startsWith(`${luck.index}-`)" class="flow-months-section">
+                          <div class="flow-months-title">
+                            <strong>{{ expandedYearKey.split('-')[1] }}年 流月</strong>
+                            <span>{{ getYearPillarForCalendarYear(Number(expandedYearKey.split('-')[1])) }}年</span>
+                          </div>
+                          <div class="flow-months-grid">
+                            <div
+                              v-for="fm in getFlowMonthsForYear(getYearPillarForCalendarYear(Number(expandedYearKey.split('-')[1])))"
+                              :key="fm.month"
+                            >
+                              <strong>{{ fm.monthName }}</strong>
+                              <span>{{ fm.pillar }}</span>
+                              <small>{{ fm.tenGod || '' }}</small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
                   </div>
                   <div v-else class="empty-fine">填写出生日期、时间、性别后自动推断大运。</div>
                 </section>
@@ -598,6 +629,8 @@ const knowledgeRules = ref([])
 const classicReferences = ref([])
 const analysisNotice = ref('')
 const reportPanelRef = ref(null)
+const expandedLuckIndex = ref(null)
+const expandedYearKey = ref(null)
 const analysisMode = ref('single')
 const baziViewMode = ref('professional')
 const activeChartTab = ref('chart')
@@ -1466,6 +1499,47 @@ function exportCurrentReport() {
     title: reportTitle.value,
     classicReferences: classicReferences.value
   }))
+}
+
+function toggleLuckExpand(index) {
+  expandedYearKey.value = null
+  expandedLuckIndex.value = expandedLuckIndex.value === index ? null : index
+}
+
+function toggleYearExpand(luckIndex, year) {
+  const key = `${luckIndex}-${year}`
+  expandedYearKey.value = expandedYearKey.value === key ? null : key
+}
+
+function getFlowYearsForLuck(luck) {
+  const years = []
+  for (let y = luck.startYear; y < luck.endYear; y++) {
+    const pillar = getYearGanZhi(new Date(y, 0, 1))
+    const stem = pillar.slice(0, 1)
+    const age = y - (luck.endYear - luck.startAge - 10)
+    years.push({ year: y, pillar, stem, age, tenGod: getTenGod(form.dayMaster, stem) })
+  }
+  return years
+}
+
+function getYearPillarForCalendarYear(y) {
+  return getYearGanZhi(new Date(y, 0, 1))
+}
+
+const MONTH_NAMES = ['正月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '冬月', '腊月']
+const YEAR_STEM_MONTH_START = { '甲': 2, '己': 2, '乙': 4, '庚': 4, '丙': 6, '辛': 6, '丁': 8, '壬': 8, '戊': 0, '癸': 0 }
+const MONTH_BRANCHES = ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑']
+const STEMS_ARR = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
+
+function getFlowMonthsForYear(yearPillar) {
+  const stem = yearPillar.slice(0, 1)
+  const start = YEAR_STEM_MONTH_START[stem]
+  if (start == null) return []
+  return MONTH_BRANCHES.map((branch, i) => {
+    const monthStem = STEMS_ARR[(start + i) % 10]
+    const mp = `${monthStem}${branch}`
+    return { month: i + 1, monthName: MONTH_NAMES[i], pillar: mp, tenGod: getTenGod(form.dayMaster, monthStem) }
+  })
 }
 
 onMounted(() => {
@@ -2544,6 +2618,144 @@ onMounted(() => {
   color: #f6e7b8;
 }
 
+.luck-timeline div.expanded:not(.active) {
+  border-color: #b08a3c;
+  background: #fffdf4;
+}
+
+.luck-timeline div {
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.flow-years-section {
+  grid-column: 1 / -1;
+  border: 1px solid #d8c696;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fffdf8, #faf6ec);
+  padding: 12px;
+  margin-top: 4px;
+}
+
+.flow-years-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.flow-years-grid div {
+  border: 1px solid #e8dcc0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 8px 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.flow-years-grid div:hover {
+  background: #fff8e8;
+  border-color: #c5a563;
+}
+
+.flow-years-grid div.active {
+  border-color: #2f6f5e;
+  background: linear-gradient(180deg, rgba(47, 111, 94, 0.08), rgba(47, 111, 94, 0.03));
+}
+
+.flow-years-grid div.expanded {
+  border-color: #b08a3c;
+  background: #fff8e0;
+  box-shadow: 0 2px 8px rgba(176, 138, 60, 0.15);
+}
+
+.flow-years-grid strong,
+.flow-years-grid span,
+.flow-years-grid small {
+  display: block;
+}
+
+.flow-years-grid strong {
+  color: #3f4f49;
+  font-size: 14px;
+}
+
+.flow-years-grid span {
+  color: #806326;
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.flow-years-grid small {
+  color: #9a9a9a;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.flow-months-section {
+  margin-top: 10px;
+  border: 1px solid #d8c696;
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+}
+
+.flow-months-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.flow-months-title strong {
+  color: #173f35;
+  font-size: 15px;
+}
+
+.flow-months-title span {
+  color: #806326;
+  font-size: 13px;
+}
+
+.flow-months-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.flow-months-grid div {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fafafa;
+  padding: 8px 4px;
+  text-align: center;
+}
+
+.flow-months-grid strong,
+.flow-months-grid span,
+.flow-months-grid small {
+  display: block;
+}
+
+.flow-months-grid strong {
+  color: #49645b;
+  font-size: 12px;
+}
+
+.flow-months-grid span {
+  color: #2f6f5e;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.flow-months-grid small {
+  color: #9a9a9a;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
 .annual-grid,
 .detail-grid {
   display: grid;
@@ -2971,6 +3183,32 @@ onMounted(() => {
 
   .luck-timeline div {
     min-height: 104px;
+  }
+
+  .flow-years-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .flow-years-grid div {
+    padding: 6px 2px;
+  }
+
+  .flow-years-grid strong {
+    font-size: 12px;
+  }
+
+  .flow-years-grid span {
+    font-size: 13px;
+  }
+
+  .flow-months-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .flow-months-grid div {
+    padding: 6px 2px;
   }
 
   .luck-grid {
