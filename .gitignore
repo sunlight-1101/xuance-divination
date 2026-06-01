@@ -29,3 +29,8 @@ tmp_pdf_preview/
 id_rsa
 id_ed25519
 
+# Backup and local files
+*_backup.sql
+*.sql.bak
+.understand-anything/
+
