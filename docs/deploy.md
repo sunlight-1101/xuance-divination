@@ -39,7 +39,7 @@ http://192.168.1.23:5173
 服务器目录示例：
 
 ```text
-/opt/xuance-divination
+/opt/zhexuan-divination
 ```
 
 ### 1. 上传项目
@@ -47,7 +47,7 @@ http://192.168.1.23:5173
 把整个 `六爻断事` 文件夹上传到服务器，比如：
 
 ```bash
-scp -r ./六爻断事 root@服务器IP:/opt/xuance-divination
+scp -r ./六爻断事 root@服务器IP:/opt/zhexuan-divination
 ```
 
 也可以用宝塔、FinalShell、Xftp、1Panel 的文件管理上传。
@@ -119,13 +119,13 @@ docker compose -f docker-compose.prod.yml up -d --build
 备份 MySQL：
 
 ```bash
-docker exec xuance-mysql mysqldump -uroot -p xuance_divination > xuance_backup.sql
+docker exec zhexuan-mysql mysqldump -uroot -p zhexuan_divination > zhexuan_backup.sql
 ```
 
 恢复时：
 
 ```bash
-docker exec -i xuance-mysql mysql -uroot -p xuance_divination < xuance_backup.sql
+docker exec -i zhexuan-mysql mysql -uroot -p zhexuan_divination < zhexuan_backup.sql
 ```
 
 ## 手机安装到桌面

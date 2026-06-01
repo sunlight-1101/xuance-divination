@@ -1,11 +1,11 @@
 services:
   mysql:
     image: mysql:8.4
-    container_name: xuance-mysql
+    container_name: zhexuan-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: xuance_divination
+      MYSQL_DATABASE: zhexuan_divination
       TZ: Asia/Shanghai
     command:
       - --character-set-server=utf8mb4
@@ -35,13 +35,13 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: xuance-backend
+    container_name: zhexuan-backend
     restart: unless-stopped
     depends_on:
       mysql:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/xuance_divination?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/zhexuan_divination?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       AI_ENABLED: ${AI_ENABLED:-false}
@@ -73,7 +73,7 @@ services:
   frontend:
     build:
       context: ./frontend
-    container_name: xuance-frontend
+    container_name: zhexuan-frontend
     restart: unless-stopped
     depends_on:
       - backend

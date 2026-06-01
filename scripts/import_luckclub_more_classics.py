@@ -103,7 +103,7 @@ def chapter_sql(title: str, volume: str, order: int, text: str, notes: str) -> s
 
 def main() -> None:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    lines = ["USE xuance_divination;", "SET NAMES utf8mb4;", "SET FOREIGN_KEY_CHECKS=0;"]
+    lines = ["USE zhexuan_divination;", "SET NAMES utf8mb4;", "SET FOREIGN_KEY_CHECKS=0;"]
     report = []
     for spec in BOOKS:
         path = find_pdf(spec.filename_key)

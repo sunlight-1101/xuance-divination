@@ -1,4 +1,4 @@
-USE xuance_divination;
+USE zhexuan_divination;
 SET NAMES utf8mb4;
 
 CREATE TABLE IF NOT EXISTS classic_book (

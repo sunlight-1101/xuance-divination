@@ -113,8 +113,8 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ```bash
 docker ps
-docker logs -f xuance-backend
-docker logs -f xuance-frontend
+docker logs -f zhexuan-backend
+docker logs -f zhexuan-frontend
 ```
 
 ## 环境变量

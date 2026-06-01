@@ -1,8 +1,8 @@
-CREATE DATABASE IF NOT EXISTS xuance_divination
+CREATE DATABASE IF NOT EXISTS zhexuan_divination
   DEFAULT CHARACTER SET utf8mb4
   DEFAULT COLLATE utf8mb4_unicode_ci;
 
-USE xuance_divination;
+USE zhexuan_divination;
 
 CREATE TABLE IF NOT EXISTS user (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,

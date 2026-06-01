@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $outputDir = Join-Path $root "pet-runs"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$zipPath = Join-Path $outputDir "xuance-divination-deploy-$timestamp.zip"
+$zipPath = Join-Path $outputDir "zhexuan-divination-deploy-$timestamp.zip"
 $staging = Join-Path $outputDir "deploy-staging-$timestamp"
 $rootFull = (Resolve-Path -LiteralPath $root).Path.TrimEnd('\')
 

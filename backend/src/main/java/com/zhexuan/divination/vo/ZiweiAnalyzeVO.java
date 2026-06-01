@@ -1,0 +1,26 @@
+package com.zhexuan.divination.vo;
+
+import com.zhexuan.divination.entity.KnowledgeRule;
+import java.util.List;
+
+public class ZiweiAnalyzeVO {
+    private Long recordId;
+    private String status;
+    private String resultJson;
+    private String resultText;
+    private List<KnowledgeRule> knowledgeRules;
+    private List<String> classicReferences;
+
+    public Long getRecordId() { return recordId; }
+    public void setRecordId(Long recordId) { this.recordId = recordId; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public String getResultJson() { return resultJson; }
+    public void setResultJson(String resultJson) { this.resultJson = resultJson; }
+    public String getResultText() { return resultText; }
+    public void setResultText(String resultText) { this.resultText = resultText; }
+    public List<KnowledgeRule> getKnowledgeRules() { return knowledgeRules; }
+    public void setKnowledgeRules(List<KnowledgeRule> knowledgeRules) { this.knowledgeRules = knowledgeRules; }
+    public List<String> getClassicReferences() { return classicReferences; }
+    public void setClassicReferences(List<String> classicReferences) { this.classicReferences = classicReferences; }
+}

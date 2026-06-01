@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
 $mysqlBin = "C:\Program Files\MySQL\MySQL Server 8.4\bin"
-$mysqlConfig = "C:\Users\m1913\mysql-data\xuance-my.ini"
+$mysqlConfig = "C:\Users\m1913\mysql-data\zhexuan-my.ini"
 
 function Ensure-Path {
   $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")

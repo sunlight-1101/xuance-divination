@@ -1,4 +1,4 @@
-USE xuance_divination;
+USE zhexuan_divination;
 SET NAMES utf8mb4;
 
 INSERT INTO knowledge_rule (type, category, title, keywords, rule_content, example, priority, enabled, create_time, update_time)

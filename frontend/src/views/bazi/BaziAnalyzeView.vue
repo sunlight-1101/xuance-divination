@@ -243,49 +243,76 @@
                     <strong>大运流转</strong>
                     <span>{{ luckInfo.direction || '未定方向' }} · {{ luckInfo.startAge || '未起运' }}</span>
                   </div>
-                  <div v-if="luckInfo.cycles.length" class="luck-timeline">
-                    <template v-for="luck in luckInfo.cycles" :key="luck.index">
-                      <div
-                        :class="{ active: luck.active, expanded: expandedLuckIndex === luck.index }"
-                        @click="toggleLuckExpand(luck.index)"
-                      >
-                        <i>{{ luck.index }}</i>
-                        <strong>{{ luck.pillar }}</strong>
-                        <span>{{ luck.startAge }}-{{ luck.endAge }}岁</span>
-                        <small>{{ luck.startYear }}-{{ luck.endYear }}</small>
-                        <em>{{ luck.stemTenGod || '十神待定' }}</em>
-                      </div>
-                      <div v-if="expandedLuckIndex === luck.index" class="flow-years-section">
-                        <div class="flow-years-grid">
-                          <div
-                            v-for="fy in getFlowYearsForLuck(luck)"
-                            :key="fy.year"
-                            :class="{ active: fy.year === new Date().getFullYear(), expanded: expandedYearKey === `${luck.index}-${fy.year}` }"
-                            @click.stop="toggleYearExpand(luck.index, fy.year)"
-                          >
-                            <strong>{{ fy.year }}</strong>
-                            <span>{{ fy.pillar }}</span>
-                            <small>{{ fy.tenGod || '' }}</small>
+                  <div v-if="luckInfo.cycles.length" class="luck-timeline-wrap">
+                    <div class="luck-timeline">
+                      <div class="luck-track">
+                        <div class="luck-line"></div>
+                        <div
+                          v-for="luck in luckInfo.cycles"
+                          :key="luck.index"
+                          class="luck-node"
+                          :class="{ active: luck.active, past: !luck.active && luck.index < currentLuckIdx, expanded: expandedLuckIndex === luck.index - 1 }"
+                          @click="toggleLuckExpand(luck.index)"
+                        >
+                          <div class="luck-dot">
+                            <span v-if="luck.active" class="luck-pulse"></span>
+                          </div>
+                          <div class="luck-card">
+                            <strong class="luck-pillar">{{ luck.pillar }}</strong>
+                            <span class="luck-age">{{ luck.startAge }}-{{ luck.endAge }}岁</span>
+                            <small class="luck-year">{{ luck.startYear }}-{{ luck.endYear }}</small>
+                            <em class="luck-tengod">{{ luck.stemTenGod || '' }}</em>
                           </div>
                         </div>
-                        <div v-if="expandedYearKey && expandedYearKey.startsWith(`${luck.index}-`)" class="flow-months-section">
-                          <div class="flow-months-title">
-                            <strong>{{ expandedYearKey.split('-')[1] }}年 流月</strong>
-                            <span>{{ getYearPillarForCalendarYear(Number(expandedYearKey.split('-')[1])) }}年</span>
-                          </div>
-                          <div class="flow-months-grid">
-                            <div
-                              v-for="fm in getFlowMonthsForYear(getYearPillarForCalendarYear(Number(expandedYearKey.split('-')[1])))"
-                              :key="fm.month"
-                            >
-                              <strong>{{ fm.monthName }}</strong>
-                              <span>{{ fm.pillar }}</span>
-                              <small>{{ fm.tenGod || '' }}</small>
+                      </div>
+                    </div>
+                    <div v-if="expandedLuckIndex !== null" class="flow-years-section">
+                      <div class="flow-years-title">
+                        <strong>{{ getLuckPillar(expandedLuckIndex) }} 大运 · 流年</strong>
+                      </div>
+                      <div class="flow-timeline">
+                        <div class="flow-track">
+                          <div class="flow-line"></div>
+                          <div
+                            v-for="fy in getFlowYearsForLuck(luckInfo.cycles[expandedLuckIndex])"
+                            :key="fy.year"
+                            class="flow-node"
+                            :class="{ active: fy.year === new Date().getFullYear(), expanded: expandedYearKey === `${expandedLuckIndex}-${fy.year}` }"
+                            @click.stop="toggleYearExpand(expandedLuckIndex, fy.year)"
+                          >
+                            <div class="flow-dot"></div>
+                            <div class="flow-card">
+                              <strong>{{ fy.year }}</strong>
+                              <span>{{ fy.pillar }}</span>
+                              <small>{{ fy.tenGod || '' }}</small>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </template>
+                      <div v-if="expandedYearKey && expandedYearKey.startsWith(`${expandedLuckIndex}-`)" class="flow-months-section">
+                        <div class="flow-months-title">
+                          <strong>{{ expandedYearKey.split('-')[1] }}年 流月</strong>
+                          <span>{{ getYearPillarForCalendarYear(Number(expandedYearKey.split('-')[1])) }}年</span>
+                        </div>
+                        <div class="flow-timeline flow-month-timeline">
+                          <div class="flow-track">
+                            <div class="flow-line"></div>
+                            <div
+                              v-for="fm in getFlowMonthsForYear(getYearPillarForCalendarYear(Number(expandedYearKey.split('-')[1])))"
+                              :key="fm.month"
+                              class="flow-node flow-month-node"
+                            >
+                              <div class="flow-dot"></div>
+                              <div class="flow-card">
+                                <strong>{{ fm.monthName }}</strong>
+                                <span>{{ fm.pillar }}</span>
+                                <small>{{ fm.tenGod || '' }}</small>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div v-else class="empty-fine">填写出生日期、时间、性别后自动推断大运。</div>
                 </section>
@@ -759,6 +786,16 @@ const currentLuckDetail = computed(() => {
     rangeText: `${active.startAge}-${active.endAge}岁 · ${active.startYear}-${active.endYear}`
   }
 })
+
+const currentLuckIdx = computed(() => {
+  const idx = luckInfo.value.cycles.findIndex(item => item.active)
+  return idx >= 0 ? idx : -1
+})
+
+function getLuckPillar(zeroBasedIndex) {
+  const luck = luckInfo.value.cycles[zeroBasedIndex]
+  return luck?.pillar || '--'
+}
 
 const currentYearDetail = computed(() => {
   const year = new Date().getFullYear()
@@ -1503,7 +1540,8 @@ function exportCurrentReport() {
 
 function toggleLuckExpand(index) {
   expandedYearKey.value = null
-  expandedLuckIndex.value = expandedLuckIndex.value === index ? null : index
+  const zeroBased = index - 1
+  expandedLuckIndex.value = expandedLuckIndex.value === zeroBased ? null : zeroBased
 }
 
 function toggleYearExpand(luckIndex, year) {
@@ -1561,7 +1599,6 @@ onMounted(() => {
 .result-panel {
   min-height: 520px;
   min-width: 0;
-  overflow-x: hidden;
 }
 
 .bazi-page .panel {
@@ -1733,7 +1770,7 @@ onMounted(() => {
 
 .bamboo-panel {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   border-color: #d8e2d7;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(251, 250, 246, 0.98)),
@@ -2185,7 +2222,7 @@ onMounted(() => {
   padding: 0;
   margin: 14px 0 12px;
   background: #fff;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .manual-collapse {
@@ -2535,6 +2572,7 @@ onMounted(() => {
   border-radius: 8px;
   background: #fff;
   padding: 12px;
+  overflow: visible;
 }
 
 .fine-title {
@@ -2556,141 +2594,264 @@ onMounted(() => {
   text-align: right;
 }
 
+.luck-timeline-wrap {
+  margin-bottom: 16px;
+}
+
 .luck-timeline {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.luck-timeline div {
-  position: relative;
-  border: 1px solid #edf0ea;
-  border-radius: 8px;
-  background: #fbfaf6;
-  padding: 10px 8px;
-  min-height: 116px;
-  display: grid;
-  align-content: start;
-  gap: 4px;
-}
-
-.luck-timeline div.active {
-  border-color: #2f6f5e;
-  background: linear-gradient(180deg, #2f6f5e, #173f35);
-  color: #fff;
-  box-shadow: 0 8px 20px rgba(23, 63, 53, 0.18);
-}
-
-.luck-timeline i {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  color: inherit;
-  opacity: 0.45;
-  font-style: normal;
-  font-size: 12px;
-}
-
-.luck-timeline strong {
-  color: inherit;
-  font-size: 20px;
-  line-height: 1.2;
-}
-
-.luck-timeline span,
-.luck-timeline small,
-.luck-timeline em {
+  padding: 8px 0;
   display: block;
-  color: inherit;
-  opacity: 0.74;
-  font-style: normal;
-  font-size: 12px;
-  line-height: 1.35;
+  width: 100%;
 }
 
-.luck-timeline em {
-  margin-top: 3px;
-  opacity: 0.92;
-  color: #806326;
+.luck-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
 }
 
-.luck-timeline div.active em {
-  color: #f6e7b8;
+.luck-line {
+  display: none;
 }
 
-.luck-timeline div.expanded:not(.active) {
+.luck-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  flex: 0 0 auto;
+  width: calc((100% - 54px) / 10);
+  min-width: 56px;
+  cursor: pointer;
+}
+
+.luck-node + .luck-node {
+  margin-left: 0;
+}
+
+.luck-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #e5e7eb;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.luck-node.past .luck-dot {
+  background: #9ca3af;
+  box-shadow: 0 0 0 2px #9ca3af;
+}
+
+.luck-node.active .luck-dot {
+  background: #2f6f5e;
+  box-shadow: 0 0 0 2px #2f6f5e;
+}
+
+.luck-pulse {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid #2f6f5e;
+  animation: luck-pulse 2s ease-in-out infinite;
+}
+
+@keyframes luck-pulse {
+  0%, 100% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.luck-card {
+  margin-top: 6px;
+  padding: 6px 4px;
+  border: 1px solid #edf0ea;
+  border-radius: 6px;
+  background: #fbfaf6;
+  text-align: center;
+  min-width: 0;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.luck-node.active .luck-card {
+  border-color: #2f6f5e;
+  background: linear-gradient(135deg, #2f6f5e, #173f35);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(23, 63, 53, 0.18);
+}
+
+.luck-node.expanded:not(.active) .luck-card {
   border-color: #b08a3c;
   background: #fffdf4;
 }
 
-.luck-timeline div {
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+.luck-pillar {
+  display: block;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.luck-age {
+  display: block;
+  color: inherit;
+  opacity: 0.74;
+  font-size: 10px;
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+.luck-year {
+  display: block;
+  color: inherit;
+  opacity: 0.6;
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.luck-tengod {
+  display: block;
+  font-style: normal;
+  font-size: 10px;
+  margin-top: 1px;
+  opacity: 0.92;
+  color: #806326;
+}
+
+.luck-node.active .luck-tengod {
+  color: #f6e7b8;
 }
 
 .flow-years-section {
-  grid-column: 1 / -1;
   border: 1px solid #d8c696;
   border-radius: 8px;
   background: linear-gradient(180deg, #fffdf8, #faf6ec);
   padding: 12px;
-  margin-top: 4px;
+  margin-top: 12px;
+  overflow: visible;
 }
 
-.flow-years-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+.flow-years-title {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e8dcc0;
 }
 
-.flow-years-grid div {
-  border: 1px solid #e8dcc0;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.7);
-  padding: 8px 4px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.flow-years-grid div:hover {
-  background: #fff8e8;
-  border-color: #c5a563;
-}
-
-.flow-years-grid div.active {
-  border-color: #2f6f5e;
-  background: linear-gradient(180deg, rgba(47, 111, 94, 0.08), rgba(47, 111, 94, 0.03));
-}
-
-.flow-years-grid div.expanded {
-  border-color: #b08a3c;
-  background: #fff8e0;
-  box-shadow: 0 2px 8px rgba(176, 138, 60, 0.15);
-}
-
-.flow-years-grid strong,
-.flow-years-grid span,
-.flow-years-grid small {
-  display: block;
-}
-
-.flow-years-grid strong {
-  color: #3f4f49;
+.flow-years-title strong {
+  color: #111;
   font-size: 14px;
 }
 
-.flow-years-grid span {
-  color: #806326;
-  font-size: 15px;
-  font-weight: 700;
-  margin-top: 2px;
+.flow-timeline {
+  padding: 6px 0;
+  display: block;
+  width: 100%;
 }
 
-.flow-years-grid small {
+.flow-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0;
+}
+
+.flow-line {
+  display: none;
+}
+
+.flow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  flex: 0 0 auto;
+  width: calc((100% - 44px) / 10);
+  min-width: 48px;
+  cursor: pointer;
+}
+
+.flow-node + .flow-node {
+  margin-left: 0;
+}
+
+.flow-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #e5e7eb;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.flow-node.active .flow-dot {
+  background: #2f6f5e;
+  box-shadow: 0 0 0 2px #2f6f5e;
+}
+
+.flow-node.expanded .flow-dot {
+  background: #b08a3c;
+  box-shadow: 0 0 0 2px #b08a3c;
+}
+
+.flow-card {
+  margin-top: 4px;
+  padding: 4px 3px;
+  border: 1px solid #edf0ea;
+  border-radius: 5px;
+  background: #fbfaf6;
+  text-align: center;
+  min-width: 0;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.flow-card strong {
+  display: block;
+  color: #3f4f49;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.flow-card span {
+  display: block;
+  color: #806326;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.flow-card small {
+  display: block;
   color: #9a9a9a;
-  font-size: 11px;
-  margin-top: 2px;
+  font-size: 9px;
+  margin-top: 0;
+}
+
+.flow-node.active .flow-card {
+  border-color: #2f6f5e;
+  background: linear-gradient(135deg, #2f6f5e, #173f35);
+  color: #fff;
+}
+
+.flow-node.active .flow-card strong,
+.flow-node.active .flow-card span {
+  color: #fff;
+}
+
+.flow-node.active .flow-card small {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.flow-node.expanded .flow-card {
+  border-color: #b08a3c;
+  background: #fffdf4;
 }
 
 .flow-months-section {
@@ -2718,42 +2879,21 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.flow-months-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 6px;
+.flow-month-timeline .flow-node {
+  min-width: 44px;
+  width: calc((100% - 44px) / 10);
 }
 
-.flow-months-grid div {
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fafafa;
-  padding: 8px 4px;
-  text-align: center;
+.flow-month-timeline .flow-card {
+  padding: 3px 2px;
 }
 
-.flow-months-grid strong,
-.flow-months-grid span,
-.flow-months-grid small {
-  display: block;
+.flow-month-timeline .flow-card strong {
+  font-size: 10px;
 }
 
-.flow-months-grid strong {
-  color: #49645b;
-  font-size: 12px;
-}
-
-.flow-months-grid span {
-  color: #2f6f5e;
-  font-size: 14px;
-  font-weight: 700;
-  margin-top: 2px;
-}
-
-.flow-months-grid small {
-  color: #9a9a9a;
+.flow-month-timeline .flow-card span {
   font-size: 11px;
-  margin-top: 2px;
 }
 
 .annual-grid,
@@ -3178,37 +3318,43 @@ onMounted(() => {
   }
 
   .luck-timeline {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 6px 0;
   }
 
-  .luck-timeline div {
-    min-height: 104px;
+  .luck-node {
+    width: calc((100% - 30px) / 6);
+    min-width: 48px;
   }
 
-  .flow-years-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 4px;
+  .luck-card {
+    padding: 5px 3px;
   }
 
-  .flow-years-grid div {
-    padding: 6px 2px;
-  }
-
-  .flow-years-grid strong {
-    font-size: 12px;
-  }
-
-  .flow-years-grid span {
+  .luck-pillar {
     font-size: 13px;
   }
 
-  .flow-months-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 4px;
+  .flow-years-section {
+    margin-top: 8px;
+    padding: 8px;
   }
 
-  .flow-months-grid div {
-    padding: 6px 2px;
+  .flow-timeline {
+    padding: 4px 0;
+  }
+
+  .flow-node {
+    width: calc((100% - 24px) / 6);
+    min-width: 42px;
+  }
+
+  .flow-card {
+    padding: 3px 2px;
+  }
+
+  .flow-month-timeline .flow-node {
+    width: calc((100% - 36px) / 6);
+    min-width: 40px;
   }
 
   .luck-grid {

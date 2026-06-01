@@ -25,6 +25,6 @@ docker compose -f docker-compose.prod.yml up -d --build
 - 不要提交 .env、API Key、SMTP 授权码、数据库密码、支付宝私钥。
 - 修改前端后需要构建 frontend。
 - 修改后端后需要测试并重新部署 backend。
-- 数据库容器名是 xuance-mysql。
-- 后端容器名是 xuance-backend。
-- 前端容器名是 xuance-frontend。
+- 数据库容器名是 zhexuan-mysql。
+- 后端容器名是 zhexuan-backend。
+- 前端容器名是 zhexuan-frontend。

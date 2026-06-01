@@ -3,7 +3,7 @@
     <div class="page-header">
       <div class="page-header-top">
         <h1 class="page-title">全部历史记录</h1>
-        <el-button @click="$router.push('/admin')">← 返回首页</el-button>
+        <el-button @click="$router.push('/dashboard')">← 返回首页</el-button>
       </div>
       <p class="page-desc">查看所有用户的分析记录。</p>
     </div>
@@ -16,7 +16,7 @@
         <el-option label="紫微" value="ZIWEI" />
       </el-select>
       <el-input v-model="query.keyword" placeholder="搜索问题" style="width: 260px" clearable />
-      <el-button @click="load">搜索</el-button>
+      <el-button @click="pagination.page = 1; load()">搜索</el-button>
     </div>
 
     <div class="desktop-records">
@@ -61,6 +61,18 @@
           <el-button type="danger" plain @click="remove(row)">删除</el-button>
         </div>
       </div>
+    </div>
+
+    <div class="pagination-wrap" v-if="pagination.total > 0">
+      <el-pagination
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.size"
+        :total="pagination.total"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
     </div>
 
     <el-dialog
@@ -123,6 +135,7 @@ const loading = ref(false)
 const detailVisible = ref(false)
 const current = ref({})
 const query = reactive({ type: '', keyword: '' })
+const pagination = reactive({ page: 1, size: 20, total: 0 })
 const windowWidth = ref(window.innerWidth)
 const isMobile = computed(() => windowWidth.value <= 700)
 
@@ -172,12 +185,25 @@ const inputSummary = computed(() => {
 async function load() {
   loading.value = true
   try {
-    records.value = await listAllRecords({ ...query })
+    const res = await listAllRecords({ ...query, page: pagination.page, size: pagination.size })
+    records.value = res.list || []
+    pagination.total = res.total || 0
   } catch {
     ElMessage.error('获取记录失败')
   } finally {
     loading.value = false
   }
+}
+
+function handlePageChange(newPage) {
+  pagination.page = newPage
+  load()
+}
+
+function handleSizeChange(newSize) {
+  pagination.size = newSize
+  pagination.page = 1
+  load()
 }
 
 async function show(row) {
@@ -338,6 +364,13 @@ onBeforeUnmount(() => window.removeEventListener('resize', handleResize))
 }
 
 .raw-collapse { margin-bottom: 14px; }
+
+.pagination-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 16px 0;
+}
 
 pre {
   max-height: 320px;

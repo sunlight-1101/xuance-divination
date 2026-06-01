@@ -1,0 +1,75 @@
+# .understandignore — patterns for files/dirs to exclude from analysis
+# Syntax: same as .gitignore (globs, # comments, ! negation, trailing / for dirs)
+
+# Built-in defaults (always excluded unless negated)
+node_modules/
+node_modules
+.git/
+vendor/
+venv/
+.venv/
+__pycache__/
+dist/
+dist
+build/
+build
+out/
+coverage/
+coverage
+.next/
+.cache/
+.turbo/
+target/
+obj/
+*.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.woff
+*.woff2
+*.ttf
+*.eot
+*.mp3
+*.mp4
+*.pdf
+*.zip
+*.tar
+*.gz
+*.min.js
+*.min.css
+*.map
+*.generated.*
+.idea/
+.vscode/
+LICENSE
+.gitignore
+.editorconfig
+.prettierrc
+.eslintrc*
+*.log
+
+# Project-specific exclusions
+pet-runs/
+tmp_pdf_preview/
+tmp_video_frames/
+*.zip
+*.tar
+*.tar.gz
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+id_rsa
+id_ed25519
+
+# Test file patterns
+# *.test.*
+# *.spec.*
+# *.snap

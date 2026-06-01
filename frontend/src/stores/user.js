@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 
-const STORAGE_KEY = 'xuance_user'
-const TOKEN_KEY = 'xuance_token'
+const STORAGE_KEY = 'zhexuan_user'
+const TOKEN_KEY = 'zhexuan_token'
 const BIRTH_PROFILE_KEY = 'zhexuan_birth_profile'
 const BIRTH_PROFILES_KEY = 'zhexuan_birth_profiles'
 const APP_VERSION_KEY = 'zhexuan_app_version'

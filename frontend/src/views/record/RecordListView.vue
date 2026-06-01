@@ -22,7 +22,7 @@
         <el-option label="奇门" value="QIMEN" />
       </el-select>
       <el-input v-model="query.keyword" placeholder="搜索问题" style="width: 260px" clearable />
-      <el-button @click="load">搜索</el-button>
+      <el-button @click="pagination.page = 1; load()">搜索</el-button>
     </div>
 
     <div class="panel desktop-records">
@@ -60,6 +60,18 @@
           <el-button type="danger" plain @click="remove(row)">删除</el-button>
         </div>
       </div>
+    </div>
+
+    <div class="pagination-wrap" v-if="pagination.total > 0">
+      <el-pagination
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.size"
+        :total="pagination.total"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
     </div>
     </template>
 
@@ -131,6 +143,7 @@ const records = ref([])
 const detailVisible = ref(false)
 const current = ref({})
 const query = reactive({ type: '', keyword: '' })
+const pagination = reactive({ page: 1, size: 20, total: 0 })
 const windowWidth = ref(typeof window === 'undefined' ? 1024 : window.innerWidth)
 const isGuest = computed(() => !userStore.userId)
 const isMobile = computed(() => windowWidth.value <= 700)
@@ -183,7 +196,20 @@ async function load() {
     records.value = []
     return
   }
-  records.value = await listRecords({ ...query })
+  const res = await listRecords({ ...query, page: pagination.page, size: pagination.size })
+  records.value = res.list || []
+  pagination.total = res.total || 0
+}
+
+function handlePageChange(newPage) {
+  pagination.page = newPage
+  load()
+}
+
+function handleSizeChange(newSize) {
+  pagination.size = newSize
+  pagination.page = 1
+  load()
 }
 
 async function show(row) {
@@ -353,6 +379,13 @@ pre {
 
 .guest-alert {
   margin-bottom: 16px;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 16px 0;
 }
 
 @media (max-width: 700px) {

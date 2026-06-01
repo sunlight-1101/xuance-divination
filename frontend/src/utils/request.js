@@ -10,7 +10,7 @@ const request = axios.create({
 
 request.interceptors.request.use(
   config => {
-    const token = localStorage.getItem('xuance_token')
+    const token = localStorage.getItem('zhexuan_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -30,8 +30,8 @@ request.interceptors.response.use(
   },
   error => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('xuance_user')
-      localStorage.removeItem('xuance_token')
+      localStorage.removeItem('zhexuan_user')
+      localStorage.removeItem('zhexuan_token')
       window.location.href = '/login'
       ElMessage.error('登录已过期，请重新登录')
     } else {

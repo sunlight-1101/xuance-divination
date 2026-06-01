@@ -3,7 +3,7 @@
     <div class="page-header">
       <div class="page-header-top">
         <h1 class="page-title">用户管理</h1>
-        <el-button @click="$router.push('/admin')">← 返回首页</el-button>
+        <el-button @click="$router.push('/dashboard')">← 返回首页</el-button>
       </div>
       <p class="page-desc">查看所有注册用户信息</p>
     </div>

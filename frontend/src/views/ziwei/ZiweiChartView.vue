@@ -143,15 +143,51 @@
         </div>
 
         <div class="sihua-line">
-          生年（{{ chart.yearGanZhi }}）四化：
-          <span v-for="[star, hua] in Object.entries(chart.transformations || {})" :key="star">{{ star }} {{ hua.replace('化', '') }}</span>
+          <template v-if="activeChartTab === 'year' && chart.flowYear">
+            流年（{{ chart.flowYear.ganZhi }}）四化：
+            <span v-for="[star, hua] in Object.entries(chart.flowYear.transformations || {})" :key="star">{{ star }} {{ hua.replace('化', '') }}</span>
+          </template>
+          <template v-else>
+            生年（{{ chart.yearGanZhi }}）四化：
+            <span v-for="[star, hua] in Object.entries(chart.transformations || {})" :key="star">{{ star }} {{ hua.replace('化', '') }}</span>
+          </template>
         </div>
 
-        <section class="fortune-panel">
-          <div v-for="item in activeDisplayItems" :key="item.title" class="fortune-card">
-            <span>{{ item.label }}</span>
+        <section class="fortune-panel" v-if="activeChartTab === 'luck'">
+          <div class="fortune-timeline">
+            <div class="fortune-track">
+              <div class="fortune-line"></div>
+              <div
+                v-for="(item, idx) in activeDisplayItems"
+                :key="item.title"
+                class="fortune-node"
+                :class="{ current: item.current, past: !item.current && idx < currentLuckIndex }"
+              >
+                <div class="node-dot">
+                  <span v-if="item.current" class="node-pulse"></span>
+                </div>
+                <div class="node-body">
+                  <div class="node-header">
+                    <span class="node-palace">{{ item.label }}</span>
+                    <small v-if="item.current" class="current-badge">当前</small>
+                  </div>
+                  <strong class="node-age">{{ item.title }}</strong>
+                  <small class="node-year">{{ item.desc }}</small>
+                  <div v-if="item.stars" class="node-stars">{{ item.stars }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="fortune-panel fortune-grid" v-else>
+          <div v-for="item in activeDisplayItems" :key="item.title" class="fortune-card" :class="{ current: item.current }">
+            <div class="fortune-card-head">
+              <span>{{ item.label }}</span>
+              <small v-if="item.current" class="current-badge">当前</small>
+            </div>
             <strong>{{ item.title }}</strong>
             <small>{{ item.desc }}</small>
+            <div v-if="item.stars" class="fortune-stars">{{ item.stars }}</div>
           </div>
         </section>
 
@@ -274,6 +310,9 @@ const boardCells = computed(() => {
 const activeDisplayItems = computed(() => {
   if (!chart.value) return []
   if (activeChartTab.value === 'luck') {
+    const currentYear = new Date().getFullYear()
+    const birthYear = chart.value.lunar?.year || currentYear - 25
+    const currentAge = currentYear - birthYear + 1
     return chart.value.palaces
       .filter(item => item.majorLuck)
       .sort((a, b) => a.majorLuck.startAge - b.majorLuck.startAge)
@@ -281,10 +320,20 @@ const activeDisplayItems = computed(() => {
       .map(item => ({
         label: item.name,
         title: `${item.majorLuck.startAge}-${item.majorLuck.endAge}岁`,
-        desc: `${item.majorLuck.startYear}-${item.majorLuck.endYear} · ${item.ganZhi}`
+        desc: `${item.majorLuck.startYear}-${item.majorLuck.endYear} · ${item.ganZhi}`,
+        current: currentAge >= item.majorLuck.startAge && currentAge <= item.majorLuck.endAge,
+        stars: [...(item.mainStars || []), ...(item.transformations || [])].join(' ')
       }))
   }
   if (activeChartTab.value === 'year') {
+    const fy = chart.value.flowYear
+    if (fy && fy.palaces) {
+      return fy.palaces.map(item => ({
+        label: item.name,
+        title: item.mainStars?.length ? item.mainStars.join('、') : item.basePalaceName,
+        desc: `${item.ganZhi} · ${item.basePalaceName}${item.isFlowYearMing ? ' [流年命]' : ''}`
+      }))
+    }
     return chart.value.palaces.map(item => ({
       label: item.name,
       title: item.yearGod || '流年参考',
@@ -296,6 +345,10 @@ const activeDisplayItems = computed(() => {
     title: item.mainStars?.length ? item.mainStars.join('、') : '无主星',
     desc: `${item.ganZhi} · ${item.transformations?.join(' ') || '无四化'}`
   }))
+})
+
+const currentLuckIndex = computed(() => {
+  return activeDisplayItems.value.findIndex(item => item.current)
 })
 
 const trueSolarTimeText = computed(() => {
@@ -534,7 +587,10 @@ onMounted(() => {
   applyProfile()
   const cached = readAnalysisCache(CACHE_KEY)
   if (cached?.result && !analysisResult.value) {
-    if (cached.chart) chart.value = cached.chart
+    // 只恢复包含流年数据的新版排盘
+    if (cached.chart && cached.chart.flowYear) {
+      chart.value = cached.chart
+    }
     analysisResult.value = cached.result
     knowledgeRules.value = cached.knowledgeRules || []
     classicReferences.value = cached.classicReferences || []
@@ -906,17 +962,167 @@ onMounted(() => {
 }
 
 .fortune-panel {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
   margin-bottom: 20px;
 }
 
-.fortune-card {
+.fortune-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fortune-timeline {
+  overflow-x: auto;
+  padding: 16px 0 24px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fortune-track {
+  display: flex;
+  position: relative;
+  min-width: max-content;
+  padding: 0 20px;
+}
+
+.fortune-line {
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: #e5e7eb;
+}
+
+.fortune-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+  position: relative;
+  z-index: 1;
+}
+
+.fortune-node + .fortune-node {
+  margin-left: 4px;
+}
+
+.node-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px #e5e7eb;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.fortune-node.past .node-dot {
+  background: #9ca3af;
+  box-shadow: 0 0 0 2px #9ca3af;
+}
+
+.fortune-node.current .node-dot {
+  background: #b08a3c;
+  box-shadow: 0 0 0 2px #b08a3c;
+}
+
+.node-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #b08a3c;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.node-body {
+  margin-top: 10px;
+  padding: 10px;
   border: 1px solid #eceef2;
   border-radius: 8px;
-  padding: 10px;
   background: #fafafa;
+  text-align: center;
+  min-width: 90px;
+  transition: all 0.2s;
+}
+
+.fortune-node.current .node-body {
+  border-color: #b08a3c;
+  background: linear-gradient(135deg, #fffdf6 0, #fff9eb 100%);
+  box-shadow: 0 2px 12px rgba(176, 138, 60, 0.15);
+}
+
+.node-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.node-palace {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.current-badge {
+  display: inline-block !important;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #b08a3c;
+  color: #fff !important;
+  font-size: 10px !important;
+  font-weight: 700;
+}
+
+.node-age {
+  display: block;
+  color: #111;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.node-year {
+  display: block;
+  color: #9ca3af;
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.node-stars {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* grid card styles for other tabs */
+.fortune-card {
+  border: 1px solid #eceef2;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fafafa;
+  transition: all 0.2s;
+}
+
+.fortune-card.current {
+  border-color: #b08a3c;
+  background: linear-gradient(135deg, #fffdf6 0, #fff9eb 100%);
+  box-shadow: 0 2px 12px rgba(176, 138, 60, 0.15);
+}
+
+.fortune-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
 
 .fortune-card span,
@@ -933,6 +1139,16 @@ onMounted(() => {
   color: #111;
   font-size: 14px;
   line-height: 1.35;
+}
+
+.fortune-stars {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ai-panel {
@@ -1169,21 +1385,59 @@ onMounted(() => {
 
   .sihua-line {
     padding: 12px 0 16px;
-    font-size: 12px;
-    line-height: 1.7;
+    font-size: 13px;
+    line-height: 2;
   }
 
   .sihua-line span {
-    margin: 4px 2px 0;
+    margin: 2px 3px;
+    font-size: 12px;
   }
 
-  .fortune-panel {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .fortune-grid {
+    grid-template-columns: 1fr;
     gap: 8px;
   }
 
   .fortune-card {
+    padding: 12px;
+  }
+
+  .fortune-card strong {
+    font-size: 15px;
+  }
+
+  .fortune-card small {
+    font-size: 13px;
+  }
+
+  .fortune-stars {
+    font-size: 13px;
+  }
+
+  .fortune-timeline {
+    padding: 12px 0 20px;
+  }
+
+  .fortune-node {
+    min-width: 85px;
+  }
+
+  .node-body {
     padding: 8px;
+    min-width: 78px;
+  }
+
+  .node-age {
+    font-size: 12px;
+  }
+
+  .node-year {
+    font-size: 10px;
+  }
+
+  .node-stars {
+    font-size: 10px;
   }
 
   .ai-panel {

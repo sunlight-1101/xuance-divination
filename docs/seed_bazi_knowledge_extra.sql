@@ -1,4 +1,4 @@
-USE xuance_divination;
+USE zhexuan_divination;
 SET NAMES utf8mb4;
 
 DELETE FROM knowledge_rule

@@ -1,0 +1,8 @@
+package com.zhexuan.divination.dto;
+
+public class EmailCodeDTO {
+    private String email;
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+}

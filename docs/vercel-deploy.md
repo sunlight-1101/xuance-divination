@@ -2,9 +2,9 @@
 
 ## 当前线上地址
 
-- 生产地址：https://xuance-divination.vercel.app
-- 本次部署地址：https://xuance-divination-d149pu8i6-sunlights-projects-40eadcaf.vercel.app
-- Vercel 项目：sunlights-projects-40eadcaf/xuance-divination
+- 生产地址：https://zhexuan-divination.vercel.app
+- 本次部署地址：https://zhexuan-divination-d149pu8i6-sunlights-projects-40eadcaf.vercel.app
+- Vercel 项目：sunlights-projects-40eadcaf/zhexuan-divination
 
 ## 当前部署范围
 
@@ -31,7 +31,7 @@ VITE_API_BASE_URL=https://api.example.com/api
 ## Vercel 本地命令
 
 ```powershell
-npx vercel link --yes --project xuance-divination
+npx vercel link --yes --project zhexuan-divination
 npx vercel deploy --yes
 ```
 

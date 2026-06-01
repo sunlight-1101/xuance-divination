@@ -1,4 +1,4 @@
-USE xuance_divination;
+USE zhexuan_divination;
 
 ALTER TABLE user
   ADD COLUMN gender VARCHAR(10) NULL AFTER avatar,
