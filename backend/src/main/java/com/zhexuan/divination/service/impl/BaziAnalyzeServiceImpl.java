@@ -312,11 +312,14 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         append(userInput, "baziDetails", compact(dto.getBaziDetails(), 1600));
         append(userInput, "questionType", dto.getQuestionType());
         append(userInput, "question", dto.getQuestion());
+        String luckCycles = dto.getLuckCycles();
+        String luckSection = StringUtils.hasText(luckCycles) ? "\n\n[LUCK_CYCLES]\n" + luckCycles : "";
         return promptTemplateService.load("bazi-skill.md")
                 + "\n\n" + promptTemplateService.load("knowledge-policy.md")
                 + "\n\n[USER_INPUT]\n" + userInput + "\n"
                 + "[KNOWLEDGE_RULES]\n" + (StringUtils.hasText(knowledgeRules) ? knowledgeRules : "none") + "\n\n"
-                + "[CLASSIC_REFERENCES]\n" + (StringUtils.hasText(classicReferenceText) ? classicReferenceText : "none");
+                + "[CLASSIC_REFERENCES]\n" + (StringUtils.hasText(classicReferenceText) ? classicReferenceText : "none")
+                + luckSection;
     }
 
     private String buildCompatibilityPrompt(BaziCompatibilityDTO dto, List<KnowledgeRule> rules, List<String> classicReferences) {

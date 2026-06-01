@@ -14,6 +14,7 @@ public class BaziAnalyzeDTO {
     private String luckPillar;
     private String currentYearPillar;
     private String baziDetails;
+    private String luckCycles;
     private String questionType;
     private String question;
     private String cacheKey;
@@ -44,6 +45,8 @@ public class BaziAnalyzeDTO {
     public void setCurrentYearPillar(String currentYearPillar) { this.currentYearPillar = currentYearPillar; }
     public String getBaziDetails() { return baziDetails; }
     public void setBaziDetails(String baziDetails) { this.baziDetails = baziDetails; }
+    public String getLuckCycles() { return luckCycles; }
+    public void setLuckCycles(String luckCycles) { this.luckCycles = luckCycles; }
     public String getQuestionType() { return questionType; }
     public void setQuestionType(String questionType) { this.questionType = questionType; }
     public String getQuestion() { return question; }

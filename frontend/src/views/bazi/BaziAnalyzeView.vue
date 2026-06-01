@@ -778,6 +778,17 @@ const luckInfo = computed(() => {
   }
 })
 
+const luckCyclesText = computed(() => {
+  const info = luckInfo.value
+  if (!info.cycles?.length) return ''
+  const lines = info.cycles.map(luck => {
+    const tenGod = getTenGod(form.dayMaster, luck.pillar?.slice(0, 1)) || ''
+    const tag = luck.active ? ' [当前]' : ''
+    return `第${luck.index}步 ${luck.pillar}（${tenGod}） ${luck.startAge}-${luck.endAge}岁 ${luck.startYear}-${luck.endYear}${tag}`
+  })
+  return `${info.direction}，${info.startAge}起运\n` + lines.join('\n')
+})
+
 const currentLuckDetail = computed(() => {
   const active = luckInfo.value.cycles.find(item => item.active)
   if (!active) return { pillar: form.luckPillar || '', rangeText: '' }
@@ -1448,6 +1459,7 @@ async function submit() {
           corrected: trueSolarInfo.value
         }
       }),
+      luckCycles: luckCyclesText.value,
       userId: accountUserId
     })
     const completed = await resolveAsyncAnalysis(data, data.knowledgeRules || [], data.classicReferences || [])
