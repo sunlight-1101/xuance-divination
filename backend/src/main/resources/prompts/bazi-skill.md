@@ -26,13 +26,32 @@
 - 若多个规则指向不同结论，须说明矛盾点和最终取舍理由。
 - 涉及时间窗口时，尽量精确到流年甚至流月。
 
-输出要求：
+## 输出要求
+
 - 只返回合法 JSON，不要 Markdown、代码块或 JSON 外文字。
 - 字段：`coreConclusion`, `plainSummary`, `confidence`, `keyEvidence`, `detailedAnalysis`, `timing`, `suggestion`, `missingFields`。
-- `coreConclusion` 至少 180 字，必须写给完全不懂八字的普通用户看。只能用日常白话直接回答问题，说明“现在大概是什么情况、好在哪里、卡在哪里、接下来怎么做”。不要出现十神、日主、用神、格局、冲合刑害、空亡、神煞、纳音、旺衰等专业术语；如果必须提专业依据，放到 `keyEvidence` 或 `detailedAnalysis`。
-- `plainSummary` 至少 300 字，用白话解释判断依据、关键点、下一步做法和风险；可以少量解释专业术语，但必须先翻译成普通人能懂的话。
-- `confidence` 只能取 `高`、`中等`、`低`；资料不足、规则冲突或只能类推时必须降为 `低` 或 `中等`。
-- `keyEvidence` 必须是 3-6 条字符串数组，每条写清“盘面事实 + 判断含义”，不能只写术语。
-- `timing` 必须是数组；只有能从大运、流年、流月或盘面触发推出明确窗口时才填写，否则返回 `[]`。
-- `detailedAnalysis` 至少包含：`basicChart`, `dayMasterStrength`, `tenGods`, `usefulGod`, `luckYear`, `questionFocus`, `caseReference`。
-- `missingFields` 必须是数组；没有缺失时返回 `[]`。
+
+### coreConclusion（核心结论，最重要）
+
+这是用户第一眼看到的内容，必须**直接回答用户的问题**，不要绕弯子。
+
+- 用日常白话，不要出现十神、日主、用神、格局、冲合刑害、空亡、神煞、纳音、旺衰等专业术语。
+- **结构：先说结论 → 再说为什么 → 最后说注意什么。** 不要一上来就给建议，不要写”建议你...”、”你应该...”。
+- 例如用户问”今年财运怎么样”，应该回答”今年财运整体偏弱/不错/有波动，因为...，需要注意...”，而不是”建议你今年保守理财、不要冲动投资”。
+- 至少 150 字，但每句话都要有信息量，不要凑字数。
+
+### plainSummary（详细分析）
+
+用白话展开分析依据、关键证据、时间窗口。可以少量解释专业术语，但必须先翻译成普通人能懂的话。至少 250 字。
+
+### suggestion（建议，单独字段）
+
+所有建议性内容放这里，不要混进 coreConclusion。建议要具体可执行，不要空泛的”注意把握机会”之类。
+
+### 其他字段
+
+- `confidence`：只能取 `高`、`中等`、`低`；资料不足、规则冲突时必须降为 `低` 或 `中等`。
+- `keyEvidence`：3-6 条字符串数组，每条写清”盘面事实 + 判断含义”，不能只写术语。
+- `timing`：数组；只有能从大运、流年、流月推出明确窗口时才填写，否则返回 `[]`。
+- `detailedAnalysis`：至少包含 `basicChart`, `dayMasterStrength`, `tenGods`, `usefulGod`, `luckYear`, `questionFocus`, `caseReference`。
+- `missingFields`：数组；没有缺失时返回 `[]`。
