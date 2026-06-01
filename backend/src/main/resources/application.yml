@@ -34,7 +34,7 @@ ai:
   api-key: tp-ckv9hsy4v7ju5yaqzxr4take7sido0qij4lyj3xastc868js
   model: mimo-v2.5-pro
   temperature: 0.2
-  max-tokens: 1800
+  max-tokens: 4000
 
 mail:
   enabled: ${MAIL_ENABLED:false}

@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class KnowledgeServiceImpl implements KnowledgeService {
-    private static final int ANALYSIS_RULE_LIMIT = 4;
+    private static final int ANALYSIS_RULE_LIMIT = 8;
     private static final int FALLBACK_RULE_LIMIT = 2;
 
     private final KnowledgeRuleMapper mapper;

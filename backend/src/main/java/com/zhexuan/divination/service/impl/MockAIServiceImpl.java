@@ -64,7 +64,7 @@ public class MockAIServiceImpl implements AIService {
         }
 
         String compactPrompt = buildCompactRetryPrompt(prompt);
-        Integer retryMaxTokens = Math.max(maxTokens == null ? 0 : maxTokens, 8000);
+        Integer retryMaxTokens = Math.max(maxTokens == null ? 0 : maxTokens, 12000);
         responseText = postChatCompletions(compactPrompt, retryMaxTokens);
         if (StringUtils.hasText(responseText)) {
             return normalizeResult(responseText);
@@ -115,7 +115,7 @@ public class MockAIServiceImpl implements AIService {
     }
 
     private String buildCompactRetryPrompt(String prompt) {
-        int limit = 12000;
+        int limit = 16000;
         String compact = prompt == null ? "" : prompt;
         if (compact.length() > limit) {
             compact = compact.substring(0, limit) + "\n【提示】原提示词较长，已截断非关键上下文；请依据已给盘面直接输出 JSON。";
