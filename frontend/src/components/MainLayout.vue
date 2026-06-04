@@ -322,7 +322,7 @@ function handleLogout() {
     min-height: 58px;
     height: calc(58px + env(safe-area-inset-bottom));
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(8, 1fr);
     background: #fff;
     border-top: 1px solid #e5e7eb;
     padding-bottom: env(safe-area-inset-bottom);
