@@ -314,8 +314,10 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         append(userInput, "question", dto.getQuestion());
         String luckCycles = dto.getLuckCycles();
         String luckSection = StringUtils.hasText(luckCycles) ? "\n\n[LUCK_CYCLES]\n" + luckCycles : "";
+        String currentDate = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy年MM月dd日"));
         return promptTemplateService.load("bazi-skill.md")
                 + "\n\n" + promptTemplateService.load("knowledge-policy.md")
+                + "\n\n[CURRENT_DATE]\n当前日期：" + currentDate + "\n当前年柱：" + dto.getCurrentYearPillar()
                 + "\n\n[USER_INPUT]\n" + userInput + "\n"
                 + "[KNOWLEDGE_RULES]\n" + (StringUtils.hasText(knowledgeRules) ? knowledgeRules : "none") + "\n\n"
                 + "[CLASSIC_REFERENCES]\n" + (StringUtils.hasText(classicReferenceText) ? classicReferenceText : "none")
