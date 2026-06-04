@@ -150,7 +150,17 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         String referenceContext = dto.getQuestion() + " " + dto.getQuestionType()
                 + " " + safe(dto.getBaziDetails()) + " " + safe(dto.getChartJson());
         List<KnowledgeRule> rules = knowledgeService.findForAnalysis(TYPE, referenceContext);
-        List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
+        // 同时搜索八字和紫微典籍
+        List<String> baziRefs = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
+        List<String> ziweiRefs = classicBookService.findReferenceSnippets("ZIWEI", referenceContext, 2);
+        List<String> classicReferences = new java.util.ArrayList<>(baziRefs);
+        classicReferences.addAll(ziweiRefs);
+        // 同时搜索八字和紫微知识库规则
+        List<KnowledgeRule> ziweiRules = knowledgeService.findForAnalysis("ZIWEI", referenceContext);
+        if (!ziweiRules.isEmpty()) {
+            rules = new java.util.ArrayList<>(rules);
+            rules.addAll(ziweiRules);
+        }
         String prompt = buildHeCanPrompt(dto, rules, classicReferences);
         DivinationRecord record = createPendingRecord(dto.getUserId(), HECAN_TYPE, "合参：" + dto.getQuestion(), toJson(dto), rules, classicReferences);
         taskExecutor.submit(() -> runAnalysisTask(dto.getUserId(), record, prompt));
