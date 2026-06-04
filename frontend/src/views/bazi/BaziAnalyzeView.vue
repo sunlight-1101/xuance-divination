@@ -420,9 +420,14 @@
               <el-input v-model="form.question" type="textarea" :rows="3" placeholder="例如：今年事业是否适合转型？" />
             </el-form-item>
 
+            <div class="hecan-toggle" v-if="analysisMode === 'single'">
+              <el-switch v-model="form.hecan" />
+              <span>同时参考紫微斗数（八字紫微合参）</span>
+            </div>
+
             <div class="actions">
               <el-button size="large" @click="saveBirthProfile">保存出生资料</el-button>
-              <el-button type="primary" size="large" :loading="loading" @click="submit">开始分析</el-button>
+              <el-button type="primary" size="large" :loading="loading" @click="submit">{{ form.hecan ? '开始合参分析' : '开始分析' }}</el-button>
             </div>
             <el-alert
               v-if="loading"
@@ -638,7 +643,8 @@
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { updateProfile } from '../../api/auth'
-import { analyzeBazi, analyzeBaziCompatibility } from '../../api/bazi'
+import { analyzeBazi, analyzeBaziCompatibility, analyzeHeCan } from '../../api/bazi'
+import { buildZiweiChart } from '../../api/ziwei'
 import KnowledgeReferences from '../../components/KnowledgeReferences.vue'
 import ResultReport from '../../components/ResultReport.vue'
 import { useUserStore } from '../../stores/user'
@@ -696,7 +702,8 @@ const form = reactive({
   luckPillar: '',
   currentYearPillar: '',
   questionType: '综合',
-  question: ''
+  question: '',
+  hecan: false
 })
 
 const compatForm = reactive({
@@ -1441,27 +1448,56 @@ async function submit() {
     return
   }
   loading.value = true
-  startPendingAnalysis(PENDING_KEY, { type: 'BAZI', mode: 'single', question: form.question })
+  const isHecan = form.hecan && analysisMode.value === 'single'
+  startPendingAnalysis(PENDING_KEY, { type: isHecan ? 'BAZI_ZIWEI_HECAN' : 'BAZI', mode: 'single', question: form.question })
   try {
     await saveBirthProfile({ silent: true })
     const accountUserId = userStore.userId
     const { birthHour, birthMinute, ...submitForm } = form
-    const data = await analyzeBazi({
-      ...submitForm,
-      baziDetails: JSON.stringify({
-        ...baziDetails.value,
-        trueSolarTime: {
-          enabled: form.useTrueSolarTime,
-          province: form.birthProvince,
-          city: selectedCity.value?.name || form.birthPlace,
-          longitude: selectedCity.value?.longitude || '',
-          display: trueSolarTimeText.value,
-          corrected: trueSolarInfo.value
-        }
-      }),
-      luckCycles: luckCyclesText.value,
-      userId: accountUserId
+    const baziDetailsStr = JSON.stringify({
+      ...baziDetails.value,
+      trueSolarTime: {
+        enabled: form.useTrueSolarTime,
+        province: form.birthProvince,
+        city: selectedCity.value?.name || form.birthPlace,
+        longitude: selectedCity.value?.longitude || '',
+        display: trueSolarTimeText.value,
+        corrected: trueSolarInfo.value
+      }
     })
+
+    let data
+    if (isHecan) {
+      // 合参模式：自动排紫微
+      let chartJson = ''
+      try {
+        const chartRes = await buildZiweiChart({
+          gender: form.gender,
+          birthDate: form.birthDate,
+          birthTime: form.birthTime || '',
+          birthPlace: form.birthPlace || '',
+          calendarType: 'SOLAR',
+          useTrueSolarTime: form.useTrueSolarTime
+        })
+        if (chartRes?.data) chartJson = JSON.stringify(chartRes.data)
+      } catch (e) {
+        console.warn('紫微排盘失败，使用纯八字分析:', e)
+      }
+      data = await analyzeHeCan({
+        ...submitForm,
+        baziDetails: baziDetailsStr,
+        luckCycles: luckCyclesText.value,
+        chartJson,
+        userId: accountUserId
+      })
+    } else {
+      data = await analyzeBazi({
+        ...submitForm,
+        baziDetails: baziDetailsStr,
+        luckCycles: luckCyclesText.value,
+        userId: accountUserId
+      })
+    }
     const completed = await resolveAsyncAnalysis(data, data.knowledgeRules || [], data.classicReferences || [])
     result.value = completed.resultJson
     knowledgeRules.value = completed.knowledgeRules || []
@@ -3176,6 +3212,15 @@ onMounted(() => {
   .result-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .hecan-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #606266;
   }
 
   .actions {

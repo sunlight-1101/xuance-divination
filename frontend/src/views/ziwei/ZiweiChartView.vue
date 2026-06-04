@@ -196,7 +196,11 @@
             <h2>紫微分析</h2>
             <p>结合命盘结构、主星和四化，生成结构化的紫微斗数解读</p>
           </div>
-          <el-button class="ai-button" :loading="analysisLoading" @click="analyzeCurrentChart">开始分析</el-button>
+          <div class="hecan-toggle">
+            <el-switch v-model="analysisForm.hecan" />
+            <span>同时参考八字（八字紫微合参）</span>
+          </div>
+          <el-button class="ai-button" :loading="analysisLoading" @click="analyzeCurrentChart">{{ analysisForm.hecan ? '开始合参分析' : '开始分析' }}</el-button>
           <el-form label-position="top" class="analysis-form">
             <el-form-item label="分析方向">
               <el-select v-model="analysisForm.questionType">
@@ -234,6 +238,8 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { updateProfile } from '../../api/auth'
 import { analyzeZiwei, buildZiweiChart } from '../../api/ziwei'
+import { analyzeHeCan } from '../../api/bazi'
+import { getFourPillars, getBaziDetails, getLuckCycles, getTenGod } from '../../utils/ganzhi'
 import KnowledgeReferences from '../../components/KnowledgeReferences.vue'
 import ResultReport from '../../components/ResultReport.vue'
 import { useUserStore } from '../../stores/user'
@@ -279,7 +285,8 @@ const form = reactive({
 
 const analysisForm = reactive({
   questionType: '综合命盘',
-  question: '请综合分析这张紫微斗数命盘，重点说明性格底色、事业财运、感情关系、大限趋势和需要注意的风险。'
+  question: '请综合分析这张紫微斗数命盘，重点说明性格底色、事业财运、感情关系、大限趋势和需要注意的风险。',
+  hecan: false
 })
 
 const birthTime = computed(() => `${form.birthHour}:${form.birthMinute}`)
@@ -461,18 +468,62 @@ async function analyzeCurrentChart() {
     return
   }
   analysisLoading.value = true
-  startPendingAnalysis(PENDING_KEY, { type: 'ZIWEI', question: analysisForm.question })
+  const isHecan = analysisForm.hecan
+  startPendingAnalysis(PENDING_KEY, { type: isHecan ? 'BAZI_ZIWEI_HECAN' : 'ZIWEI', question: analysisForm.question })
   try {
-    const data = await analyzeZiwei({
-      userId: userStore.userId,
-      gender: form.gender,
-      birthDate: chart.value.input?.birthDate || form.birthDate,
-      birthTime: chart.value.input?.birthTime || birthTime.value,
-      birthPlace: form.birthPlace,
-      questionType: analysisForm.questionType,
-      question: analysisForm.question,
-      chartJson: JSON.stringify(chart.value)
-    })
+    let data
+    if (isHecan) {
+      // 合参模式：自动算八字
+      const birthDate = chart.value.input?.birthDate || form.birthDate
+      const birthTimeVal = chart.value.input?.birthTime || birthTime.value
+      const pillars = getFourPillars(birthDate, birthTimeVal)
+      const luck = getLuckCycles({
+        birthDate,
+        birthTime: birthTimeVal,
+        gender: form.gender,
+        yearPillar: pillars.yearPillar,
+        monthPillar: pillars.monthPillar
+      })
+      const details = getBaziDetails({ ...pillars, luck })
+      const luckLines = (luck.cycles || []).map(l => {
+        const tg = getTenGod(pillars.dayMaster, l.pillar?.slice(0, 1)) || ''
+        const tag = l.active ? ' [当前]' : ''
+        return `第${l.index}步 ${l.pillar}（${tg}） ${l.startAge}-${l.endAge}岁 ${l.startYear}-${l.endYear}${tag}`
+      })
+      const luckCyclesText = luck.cycles?.length
+        ? `${luck.direction}，${luck.startAge}起运\n${luckLines.join('\n')}`
+        : ''
+      data = await analyzeHeCan({
+        gender: form.gender,
+        birthDate,
+        birthTime: birthTimeVal,
+        birthPlace: form.birthPlace,
+        yearPillar: pillars.yearPillar,
+        monthPillar: pillars.monthPillar,
+        dayPillar: pillars.dayPillar,
+        hourPillar: pillars.hourPillar,
+        dayMaster: pillars.dayMaster,
+        luckPillar: luck.currentLuck || '',
+        currentYearPillar: new Date().getFullYear() + '',
+        baziDetails: JSON.stringify(details),
+        luckCycles: luckCyclesText,
+        chartJson: JSON.stringify(chart.value),
+        questionType: analysisForm.questionType,
+        question: analysisForm.question,
+        userId: userStore.userId
+      })
+    } else {
+      data = await analyzeZiwei({
+        userId: userStore.userId,
+        gender: form.gender,
+        birthDate: chart.value.input?.birthDate || form.birthDate,
+        birthTime: chart.value.input?.birthTime || birthTime.value,
+        birthPlace: form.birthPlace,
+        questionType: analysisForm.questionType,
+        question: analysisForm.question,
+        chartJson: JSON.stringify(chart.value)
+      })
+    }
     const completed = await resolveAsyncAnalysis(data, data.knowledgeRules || [], data.classicReferences || [])
     analysisResult.value = completed.resultJson
     knowledgeRules.value = completed.knowledgeRules || []
@@ -1172,6 +1223,15 @@ onMounted(() => {
 .ai-panel p {
   margin: 0;
   color: #6b7280;
+}
+
+.hecan-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #606266;
 }
 
 .ai-button {

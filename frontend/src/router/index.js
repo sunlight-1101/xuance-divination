@@ -19,7 +19,6 @@ const router = createRouter({
         { path: 'home', component: () => import('../views/home/HomeView.vue') },
         { path: 'dashboard', component: () => import('../views/dashboard/DashboardView.vue'), meta: { adminOnly: true } },
         { path: 'bazi', component: () => import('../views/bazi/BaziAnalyzeView.vue') },
-        { path: 'hecan', component: () => import('../views/bazi/HeCanView.vue') },
         { path: 'liuyao', component: () => import('../views/liuyao/LiuyaoAnalyzeView.vue') },
         { path: 'ziwei', component: () => import('../views/ziwei/ZiweiChartView.vue') },
         { path: 'quota', component: () => import('../views/quota/QuotaView.vue') },
