@@ -1475,11 +1475,12 @@ async function submit() {
           gender: form.gender,
           birthDate: form.birthDate,
           birthTime: form.birthTime || '',
+          birthProvince: form.birthProvince || '',
           birthPlace: form.birthPlace || '',
           calendarType: 'SOLAR',
           useTrueSolarTime: form.useTrueSolarTime
         })
-        if (chartRes?.data) chartJson = JSON.stringify(chartRes.data)
+        if (chartRes) chartJson = JSON.stringify(chartRes)
       } catch (e) {
         console.warn('紫微排盘失败，使用纯八字分析:', e)
       }
