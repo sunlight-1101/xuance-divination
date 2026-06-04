@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zhexuan.divination.common.BizException;
 import com.zhexuan.divination.dto.BaziAnalyzeDTO;
 import com.zhexuan.divination.dto.BaziCompatibilityDTO;
+import com.zhexuan.divination.dto.BaziZiweiHeCanDTO;
 import com.zhexuan.divination.entity.AiCallLog;
 import com.zhexuan.divination.entity.DivinationRecord;
 import com.zhexuan.divination.entity.KnowledgeRule;
@@ -31,6 +32,7 @@ import org.springframework.util.StringUtils;
 public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
     private static final String TYPE = "BAZI";
     private static final String COMPATIBILITY_TYPE = "BAZI_COMPATIBILITY";
+    private static final String HECAN_TYPE = "BAZI_ZIWEI_HECAN";
     private static final String REPORT_STYLE_VERSION = "plain-core-v2";
 
     private final KnowledgeService knowledgeService;
@@ -127,6 +129,92 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         vo.setKnowledgeRules(rules);
         vo.setClassicReferences(classicReferences);
         return vo;
+    }
+
+    @Override
+    public BaziAnalyzeVO analyzeHeCan(BaziZiweiHeCanDTO dto) {
+        if (!StringUtils.hasText(dto.getQuestion())) {
+            throw new BizException("Question is required");
+        }
+        if (!StringUtils.hasText(dto.getDayPillar()) && !StringUtils.hasText(dto.getChartJson())) {
+            throw new BizException("八字日柱或紫微命盘至少提供一个");
+        }
+        String cacheKey = hecanCacheKey(dto);
+        DivinationRecord cached = cacheSupport.findRecent(HECAN_TYPE, dto.getUserId(), cacheKey);
+        if (cached != null) {
+            return cachedVO(cached);
+        }
+        dto.setCacheKey(cacheKey);
+        ensureNoActiveTask(dto.getUserId());
+        quotaService.consumeForAnalysis(dto.getUserId(), HECAN_TYPE);
+        String referenceContext = dto.getQuestion() + " " + dto.getQuestionType()
+                + " " + safe(dto.getBaziDetails()) + " " + safe(dto.getChartJson());
+        List<KnowledgeRule> rules = knowledgeService.findForAnalysis(TYPE, referenceContext);
+        List<String> classicReferences = classicBookService.findReferenceSnippets(TYPE, referenceContext, 2);
+        String prompt = buildHeCanPrompt(dto, rules, classicReferences);
+        DivinationRecord record = createPendingRecord(dto.getUserId(), HECAN_TYPE, "合参：" + dto.getQuestion(), toJson(dto), rules, classicReferences);
+        taskExecutor.submit(() -> runAnalysisTask(dto.getUserId(), record, prompt));
+
+        BaziAnalyzeVO vo = new BaziAnalyzeVO();
+        vo.setRecordId(record.getId());
+        vo.setStatus("PROCESSING");
+        vo.setKnowledgeRules(rules);
+        vo.setClassicReferences(classicReferences);
+        return vo;
+    }
+
+    private String hecanCacheKey(BaziZiweiHeCanDTO dto) {
+        return cacheSupport.fingerprint(
+                HECAN_TYPE, REPORT_STYLE_VERSION,
+                dto.getQuestionType(), dto.getQuestion(),
+                dto.getGender(), dto.getBirthDate(), dto.getBirthTime(),
+                dto.getDayPillar(), dto.getChartJson());
+    }
+
+    private String buildHeCanPrompt(BaziZiweiHeCanDTO dto, List<KnowledgeRule> rules, List<String> classicReferences) {
+        String knowledgeRules = rules.stream()
+                .map(this::formatKnowledgeRule)
+                .collect(Collectors.joining("\n"));
+        String classicReferenceText = String.join("\n", classicReferences);
+
+        String currentDate = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy年MM月dd日"));
+
+        StringBuilder baziInfo = new StringBuilder();
+        append(baziInfo, "yearPillar", dto.getYearPillar());
+        append(baziInfo, "monthPillar", dto.getMonthPillar());
+        append(baziInfo, "dayPillar", dto.getDayPillar());
+        append(baziInfo, "hourPillar", dto.getHourPillar());
+        append(baziInfo, "dayMaster", dto.getDayMaster());
+        append(baziInfo, "luckPillar", dto.getLuckPillar());
+        append(baziInfo, "currentYearPillar", dto.getCurrentYearPillar());
+        append(baziInfo, "baziDetails", compact(dto.getBaziDetails(), 1600));
+
+        StringBuilder ziweiInfo = new StringBuilder();
+        String chartJson = dto.getChartJson();
+        if (StringUtils.hasText(chartJson)) {
+            ziweiInfo.append(compact(chartJson, 4000));
+        }
+
+        StringBuilder userInput = new StringBuilder();
+        append(userInput, "gender", dto.getGender());
+        append(userInput, "birthDate", dto.getBirthDate());
+        append(userInput, "birthTime", dto.getBirthTime());
+        append(userInput, "birthPlace", dto.getBirthPlace());
+        append(userInput, "questionType", dto.getQuestionType());
+        append(userInput, "question", dto.getQuestion());
+
+        String luckCycles = dto.getLuckCycles();
+        String luckSection = StringUtils.hasText(luckCycles) ? "\n\n[LUCK_CYCLES]\n" + luckCycles : "";
+
+        return promptTemplateService.load("bazi-ziwei-hecan-skill.md")
+                + "\n\n" + promptTemplateService.load("knowledge-policy.md")
+                + "\n\n[CURRENT_DATE]\n当前日期：" + currentDate + "\n当前年柱：" + dto.getCurrentYearPillar()
+                + "\n\n[BAZI_INFO]\n" + baziInfo
+                + "\n\n[ZIWEI_INFO]\n" + ziweiInfo
+                + "\n\n[USER_INPUT]\n" + userInput
+                + "\n\n[KNOWLEDGE_RULES]\n" + (StringUtils.hasText(knowledgeRules) ? knowledgeRules : "none")
+                + "\n\n[CLASSIC_REFERENCES]\n" + (StringUtils.hasText(classicReferenceText) ? classicReferenceText : "none")
+                + luckSection;
     }
 
     private BaziAnalyzeVO cachedVO(DivinationRecord record) {

@@ -7,3 +7,7 @@ export function analyzeBazi(data) {
 export function analyzeBaziCompatibility(data) {
   return request.post('/bazi/compatibility', data)
 }
+
+export function analyzeHeCan(data) {
+  return request.post('/bazi/hecan', data)
+}

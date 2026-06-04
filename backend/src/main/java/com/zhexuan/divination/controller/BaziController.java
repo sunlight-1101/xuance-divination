@@ -3,6 +3,7 @@ package com.zhexuan.divination.controller;
 import com.zhexuan.divination.common.Result;
 import com.zhexuan.divination.dto.BaziAnalyzeDTO;
 import com.zhexuan.divination.dto.BaziCompatibilityDTO;
+import com.zhexuan.divination.dto.BaziZiweiHeCanDTO;
 import com.zhexuan.divination.service.BaziAnalyzeService;
 import com.zhexuan.divination.service.impl.AnalysisTaskGuard;
 import com.zhexuan.divination.vo.BaziAnalyzeVO;
@@ -43,6 +44,18 @@ public class BaziController {
         taskGuard.enter(userId);
         try {
             return Result.ok(service.analyzeCompatibility(dto));
+        } finally {
+            taskGuard.exit(userId);
+        }
+    }
+
+    @PostMapping("/hecan")
+    public Result<BaziAnalyzeVO> analyzeHeCan(@RequestBody BaziZiweiHeCanDTO dto, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        dto.setUserId(userId);
+        taskGuard.enter(userId);
+        try {
+            return Result.ok(service.analyzeHeCan(dto));
         } finally {
             taskGuard.exit(userId);
         }

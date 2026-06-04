@@ -12,6 +12,7 @@
         <el-menu-item v-if="userStore.isAdmin" index="/dashboard"><LayoutDashboard :size="18" />管理首页</el-menu-item>
         <el-menu-item index="/home"><Landmark :size="18" />首页</el-menu-item>
         <el-menu-item index="/bazi"><CalendarDays :size="18" />八字</el-menu-item>
+        <el-menu-item index="/hecan"><Sparkles :size="18" />合参</el-menu-item>
         <el-menu-item index="/liuyao"><ScrollText :size="18" />六爻</el-menu-item>
         <el-menu-item index="/ziwei"><Sparkles :size="18" />紫微</el-menu-item>
         <el-menu-item index="/quota"><CreditCard :size="18" />支持开发</el-menu-item>
@@ -57,6 +58,10 @@
       <router-link to="/bazi" class="bottom-item">
         <CalendarDays :size="20" />
         <span>八字</span>
+      </router-link>
+      <router-link to="/hecan" class="bottom-item">
+        <Sparkles :size="20" />
+        <span>合参</span>
       </router-link>
       <router-link to="/liuyao" class="bottom-item">
         <ScrollText :size="20" />
