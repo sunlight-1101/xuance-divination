@@ -202,7 +202,7 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
         StringBuilder ziweiInfo = new StringBuilder();
         String chartJson = dto.getChartJson();
         if (StringUtils.hasText(chartJson)) {
-            ziweiInfo.append(compact(chartJson, 4000));
+            ziweiInfo.append(summarizeZiweiChart(chartJson));
         }
 
         StringBuilder userInput = new StringBuilder();
@@ -225,6 +225,100 @@ public class BaziAnalyzeServiceImpl implements BaziAnalyzeService {
                 + "\n\n[KNOWLEDGE_RULES]\n" + (StringUtils.hasText(knowledgeRules) ? knowledgeRules : "none")
                 + "\n\n[CLASSIC_REFERENCES]\n" + (StringUtils.hasText(classicReferenceText) ? classicReferenceText : "none")
                 + luckSection;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String summarizeZiweiChart(String chartJson) {
+        try {
+            Map<String, Object> chart = objectMapper.readValue(chartJson, Map.class);
+            StringBuilder builder = new StringBuilder();
+            append(builder, "yearGanZhi", strVal(chart.get("yearGanZhi")));
+            append(builder, "hourBranch", strVal(chart.get("hourBranch")));
+            append(builder, "mingGong", strVal(chart.get("mingGong")));
+            append(builder, "shenGong", strVal(chart.get("shenGong")));
+            append(builder, "lifeMaster", strVal(chart.get("lifeMaster")));
+            append(builder, "bodyMaster", strVal(chart.get("bodyMaster")));
+            append(builder, "fiveElementBureau", strVal(chart.get("fiveElementBureau")));
+            Object transformations = chart.get("transformations");
+            if (transformations != null) {
+                builder.append("transformations=").append(compact(transformations.toString(), 200)).append("\n");
+            }
+            // 12宫详细信息
+            Object palacesValue = chart.get("palaces");
+            if (palacesValue instanceof List<?>) {
+                builder.append("palaces=\n");
+                for (Object value : (List<?>) palacesValue) {
+                    if (value instanceof Map) {
+                        Map<String, Object> palace = (Map<String, Object>) value;
+                        StringBuilder p = new StringBuilder();
+                        p.append("宫=").append(palace.get("name")).append(" ");
+                        p.append("干支=").append(palace.get("ganZhi")).append(" ");
+                        p.append("主=").append(joinListStr(palace.get("mainStars"))).append(" ");
+                        p.append("吉=").append(joinListStr(palace.get("luckyStars"))).append(" ");
+                        p.append("煞=").append(joinListStr(palace.get("shaStars"))).append(" ");
+                        p.append("四化=").append(joinListStr(palace.get("transformations"))).append(" ");
+                        p.append("杂=").append(compact(joinListStr(palace.get("otherStars")), 50)).append(" ");
+                        Object majorLuck = palace.get("majorLuck");
+                        if (majorLuck instanceof Map) {
+                            Map<?, ?> ml = (Map<?, ?>) majorLuck;
+                            p.append("限=").append(ml.get("startAge")).append("-").append(ml.get("endAge")).append("岁 ");
+                        }
+                        if (Boolean.TRUE.equals(palace.get("isMing"))) p.append("命 ");
+                        if (Boolean.TRUE.equals(palace.get("isShen"))) p.append("身 ");
+                        builder.append(p.toString().trim()).append("\n");
+                    }
+                }
+            }
+            // 流年信息
+            Object flowYear = chart.get("flowYear");
+            if (flowYear instanceof Map) {
+                Map<?, ?> fy = (Map<?, ?>) flowYear;
+                builder.append("\n[FLOW_YEAR]\n");
+                builder.append("flowYearGanZhi=").append(fy.get("ganZhi")).append("\n");
+                builder.append("flowYearMingPalace=").append(fy.get("mingPalaceName")).append("\n");
+                Object fyTransformations = fy.get("transformations");
+                if (fyTransformations != null) {
+                    builder.append("flowYearTransformations=").append(compact(fyTransformations.toString(), 150)).append("\n");
+                }
+                Object huaPositions = fy.get("huaPositions");
+                if (huaPositions != null) {
+                    builder.append("flowYearHuaPositions=").append(compact(huaPositions.toString(), 250)).append("\n");
+                }
+                Object fyPalaces = fy.get("palaces");
+                if (fyPalaces instanceof List<?>) {
+                    builder.append("flowYearPalaces=");
+                    for (Object value : (List<?>) fyPalaces) {
+                        if (value instanceof Map) {
+                            Map<?, ?> fyp = (Map<?, ?>) value;
+                            String name = strVal(fyp.get("name"));
+                            String base = strVal(fyp.get("basePalaceName"));
+                            String stars = joinListStr(fyp.get("mainStars"));
+                            boolean isMing = Boolean.TRUE.equals(fyp.get("isFlowYearMing"));
+                            builder.append(name).append("(").append(base);
+                            if (StringUtils.hasText(stars)) builder.append(":").append(stars);
+                            if (isMing) builder.append(":流年命");
+                            builder.append(") ");
+                        }
+                    }
+                    builder.append("\n");
+                }
+            }
+            return compact(builder.toString(), 6000);
+        } catch (Exception e) {
+            return compact(chartJson, 4000);
+        }
+    }
+
+    private String strVal(Object value) {
+        return value == null ? "" : String.valueOf(value);
+    }
+
+    private String joinListStr(Object value) {
+        if (!(value instanceof List<?>)) return "";
+        return ((List<?>) value).stream()
+                .map(Object::toString)
+                .filter(StringUtils::hasText)
+                .collect(java.util.stream.Collectors.joining("、"));
     }
 
     private BaziAnalyzeVO cachedVO(DivinationRecord record) {
